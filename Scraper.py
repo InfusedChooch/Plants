@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
 Scraper for combined plant database:
+- Follows search result pages and extracts correct detail links for MBG and Wildflower.org
 - Supports combined CSV with "Plant Type"
 - Fills missing Spread, Bloom, Sun, Water, Distribution, Wildlife fields
-- Uses PDF, Missouri Botanical Garden, and Wildflower.org
 - Outputs updated file, plus optional per-type breakdowns
 """
 
@@ -79,6 +79,18 @@ def mobot_url(name: str) -> str:
 def wildflower_url(name: str) -> str:
     return f"https://www.wildflower.org/plants/search.php?search_field=name_substring&value={'%20'.join(name.strip().split())}"
 
+def extract_mobot_detail_url(soup: BeautifulSoup) -> Optional[str]:
+    link = soup.select_one("a[href*='PlantFinderDetails.aspx']")
+    if link and link.get("href"):
+        return "https://www.missouribotanicalgarden.org" + link.get("href")
+    return None
+
+def extract_wildflower_detail_url(soup: BeautifulSoup) -> Optional[str]:
+    link = soup.select_one("a[href*='/plants/result.php?id_plant=']")
+    if link and link.get("href"):
+        return "https://www.wildflower.org" + link.get("href")
+    return None
+
 def fetch_html(url: str) -> Optional[BeautifulSoup]:
     try:
         resp = requests.get(url, headers=HEADERS, timeout=12, allow_redirects=True)
@@ -126,15 +138,25 @@ def fill_row(df: pd.DataFrame, idx: int) -> None:
 
     if needs_data:
         mb_url = mobot_url(name)
-        mobot_d = parse_mobot(fetch_html(mb_url))
-        df.at[idx, COL_LINK_MB] = f"[MBG]({mb_url})"
+        mb_soup = fetch_html(mb_url)
+        detail_url = extract_mobot_detail_url(mb_soup)
+        if detail_url:
+            mobot_d = parse_mobot(fetch_html(detail_url))
+            df.at[idx, COL_LINK_MB] = f"[MBG]({detail_url})"
+        else:
+            df.at[idx, COL_LINK_MB] = mb_url  # fallback
         time.sleep(DELAY)
 
     needs_data = df.loc[idx, ALL_TARGET_COLS].isna().any()
     if needs_data:
         wf_url = wildflower_url(name)
-        wild_d = parse_wildflower(fetch_html(wf_url))
-        df.at[idx, COL_LINK_WF] = f"[WF]({wf_url})"
+        wf_soup = fetch_html(wf_url)
+        detail_url = extract_wildflower_detail_url(wf_soup)
+        if detail_url:
+            wild_d = parse_wildflower(fetch_html(detail_url))
+            df.at[idx, COL_LINK_WF] = f"[WF]({detail_url})"
+        else:
+            df.at[idx, COL_LINK_WF] = wf_url  # fallback
         time.sleep(DELAY)
 
     df.at[idx, COL_SPREAD]   = safe_first(df.at[idx, COL_SPREAD],   pdf_d["spread"], mobot_d.get("spread"), wild_d.get("spread"))
@@ -161,11 +183,9 @@ def main() -> None:
         if df.loc[idx, ALL_TARGET_COLS].isna().any():
             fill_row(df, idx)
 
-    # Save full combined CSV
     df.to_csv(OUTPUT_CSV, index=False, encoding="utf-8")
     print(f"✔ Combined output saved → {OUTPUT_CSV.name}")
 
-    # Optional: write per-type breakdowns
     if "Plant Type" in df.columns:
         for plant_type, sub_df in df.groupby("Plant Type"):
             name = plant_type.replace(",", "").replace(" ", "_").lower() + "_COMPLETE.csv"
