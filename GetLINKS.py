@@ -1,99 +1,85 @@
+# plants/GetLINKS.py
+# Uses Selenium to find MBG + Wildflower links and appends them to the CSV
+
+import re, time
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import time
-import re
 
-# === File Setup ===
-INPUT_CSV = "Plant Data Base WIP.csv"
+# ─── configuration ──────────────────────────────────────────────────────────
+INPUT_CSV  = "Plant Data Base WIP.csv"
 OUTPUT_CSV = "Plant Data Base WIP_COMPLETE.csv"
-MBG_COL = "Link: Missouri Botanical Garden"
-WF_COL = "Link: Wildflower.org"
+MBG_COL    = "Link: Missouri Botanical Garden"
+WF_COL     = "Link: Wildflower.org"
 
-# === Browser Setup ===
-options = Options()
-options.add_argument("--start-minimized")  # shows browser briefly, not headless
-options.add_argument("--disable-gpu")
-options.add_argument("--log-level=3")
+# ─── Selenium setup ─────────────────────────────────────────────────────────
+opt = Options()
+opt.add_argument("--start-minimized")
+opt.add_argument("--disable-gpu")
+opt.add_argument("--log-level=3")
+driver = webdriver.Chrome(options=opt)
 
-driver = webdriver.Chrome(options=options)
+# ─── load / prepare DataFrame ───────────────────────────────────────────────
+df = pd.read_csv(INPUT_CSV, dtype=str).fillna("")
+for col in (MBG_COL, WF_COL):
+    if col not in df.columns:
+        df[col] = ""
 
-# === Load Data ===
-df = pd.read_csv(INPUT_CSV)
-if MBG_COL not in df.columns:
-    df[MBG_COL] = ""
-if WF_COL not in df.columns:
-    df[WF_COL] = ""
-
-# === MBG Search ===
-def get_mbg_link(botanical_name):
-    """Search MBG via Google CSE and return the first matching PlantFinder link."""
-    url = f"https://cse.google.com/cse?cx=015816930756675652018:7gxyi5crvvu&q={'%20'.join(botanical_name.split())}"
-    driver.get(url)
-    time.sleep(2)
-    try:
-        links = driver.find_elements(By.XPATH, '//a[contains(@href, "PlantFinderDetails.aspx")]')
-        for link in links:
-            href = link.get_attribute("href")
-            if "PlantFinderDetails.aspx" in href:
-                return href
-    except:
-        return None
+# ─── helper: google CSE for MBG ─────────────────────────────────────────────
+def google_mbg_link(name: str) -> str | None:
+    search_url = (
+        "https://cse.google.com/cse"
+        "?cx=015816930756675652018:7gxyi5crvvu&q=" + "+".join(name.split())
+    )
+    driver.get(search_url)
+    time.sleep(1.5)
+    links = driver.find_elements(By.XPATH, '//a[contains(@href,"PlantFinderDetails.aspx")]')
+    for a in links:
+        href = a.get_attribute("href")
+        if "PlantFinderDetails.aspx" in href:
+            return href
     return None
 
-# === Wildflower Search (mimics your manual entry) ===
-def get_wildflower_link(botanical_name):
-    query = f"site:wildflower.org {botanical_name}"
-    url = f"https://www.bing.com/search?q={'+'.join(query.split())}"
-    driver.get(url)
-    time.sleep(2)
-
+# ─── helper: Bing search for Wildflower.org ─────────────────────────────────
+def bing_wildflower_link(name: str) -> str | None:
+    query = "site:wildflower.org " + name
+    driver.get("https://www.bing.com/search?q=" + "+".join(query.split()))
+    time.sleep(1.5)
     links = driver.find_elements(By.XPATH, '//li[@class="b_algo"]//a[@href]')
-    for link in links:
-        href = link.get_attribute("href")
+    for a in links:
+        href = a.get_attribute("href")
         if "wildflower.org/plants/result.php?id_plant=" in href:
             return href
     return None
 
-
-
-
-# === Main Loop ===
+# ─── main loop ─────────────────────────────────────────────────────────────
 for idx, row in df.iterrows():
-    name = row["Botanical Name"]
-
-    has_mbg = isinstance(row[MBG_COL], str) and "PlantFinderDetails.aspx" in row[MBG_COL]
-    has_wf = isinstance(row[WF_COL], str) and "wildflower.org/plants/result.php" in row[WF_COL]
-
-    if has_mbg and has_wf:
+    name      = row["Botanical Name"]
+    have_mbg  = "PlantFinderDetails.aspx" in row[MBG_COL]
+    have_wf   = "wildflower.org/plants/result.php" in row[WF_COL]
+    if have_mbg and have_wf:
         continue
 
     print(f"\n🔍 {name}")
-
-    if not has_mbg:
-        mbg = get_mbg_link(name)
-        if mbg:
-            df.at[idx, MBG_COL] = mbg
-            print(f"✅ MBG: {mbg}")
+    if not have_mbg:
+        link = google_mbg_link(name)
+        if link:
+            df.at[idx, MBG_COL] = link
+            print(f"✅ MBG  → {link}")
         else:
-            print("⚠️  No MBG link found")
+            print("⚠️  MBG  → not found")
 
-    if not has_wf:
-        wf = get_wildflower_link(name)
-        if wf:
-            df.at[idx, WF_COL] = wf
-            print(f"✅ WF: {wf}")
+    if not have_wf:
+        link = bing_wildflower_link(name)
+        if link:
+            df.at[idx, WF_COL] = link
+            print(f"✅ WF   → {link}")
         else:
-            print("⚠️  No Wildflower link found")
+            print("⚠️  WF   → not found")
 
-    time.sleep(1.5)
+    time.sleep(1.0)
 
 driver.quit()
-
-# === Save Results ===
 df.to_csv(OUTPUT_CSV, index=False)
-print(f"\n🎉 Done! File saved as → {OUTPUT_CSV}")
+print(f"\n🎉 All done → {OUTPUT_CSV}")
