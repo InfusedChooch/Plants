@@ -1,0 +1,25 @@
+import pandas as pd
+from pathlib import Path
+
+# Define input files
+files = {
+    "Herbaceous Perennials": "herbaceous_perennials.csv",
+    "Ferns": "ferns.csv",
+    "Grasses, Sedges, and Rushes": "grasses_sedges_and_rushes.csv",
+    "Shrubs": "shrubs.csv",
+    "Trees": "trees.csv"
+}
+
+# Read and tag each dataset
+dfs = []
+for plant_type, path in files.items():
+    df = pd.read_csv(path)
+    df["Plant Type"] = plant_type
+    dfs.append(df)
+
+# Combine into one DataFrame
+combined_df = pd.concat(dfs, ignore_index=True)
+
+# Output to CSV
+combined_df.to_csv("plant_database_combined.csv", index=False, encoding="utf-8")
+print("✔ Combined CSV saved as plant_database_combined.csv")

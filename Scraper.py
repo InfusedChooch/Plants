@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Fill missing Spread / Bloom Time / Sun / Water / Distribution / Wildlife fields
-using:
-1. Rutgers PDF fact-sheets
-2. Missouri Botanical Garden Plant Finder
-3. Lady Bird Johnson Wildflower Center
+Scraper for combined plant database:
+- Supports combined CSV with "Plant Type"
+- Fills missing Spread, Bloom, Sun, Water, Distribution, Wildlife fields
+- Uses PDF, Missouri Botanical Garden, and Wildflower.org
+- Outputs updated file, plus optional per-type breakdowns
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ INPUT_PDF = BASE_DIR / "Plant Guid Data Base.pdf"
 if len(sys.argv) > 1:
     INPUT_FILE = Path(sys.argv[1]).expanduser().resolve()
 else:
-    INPUT_FILE = BASE_DIR / "herbaceous_perennials.xlsx"
+    INPUT_FILE = BASE_DIR / "plant_database_combined.csv"
 
 OUTPUT_CSV = INPUT_FILE.with_name(INPUT_FILE.stem + "_COMPLETE.csv")
 
@@ -31,6 +31,7 @@ PDF_CACHE: dict[str, dict[str, Optional[str]]] = {}
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; PlantDB/1.0; +https://github.com/yourproject)"}
 DELAY = 1.0
 
+# Columns
 COL_SPREAD    = "Spread (ft)"
 COL_BLOOM     = "Bloom Time"
 COL_SUN       = "Sun"
@@ -64,8 +65,8 @@ def pdf_lookup(botanical: str) -> dict[str, Optional[str]]:
                 continue
             if m := re.search(r"Spread:\s*([\d–\-. ]+)\s*ft", txt):
                 result["spread"] = m.group(1).strip().replace(" ", "")
-            if m := re.search(r"Bloom Time:\s*([A-Za-z ,–-]+?)\n", txt):
-                result["bloom"] = re.sub(r"\s+", " ", m.group(1)).strip()
+            if m := re.search(r"Bloom (Time|Period):\s*([A-Za-z ,–-]+?)\n", txt):
+                result["bloom"] = re.sub(r"\s+", " ", m.group(2)).strip()
             if m := re.search(r"(Attracts [^\n]+)", txt):
                 result["wildlife"] = m.group(1).rstrip(".")
             break
@@ -73,14 +74,14 @@ def pdf_lookup(botanical: str) -> dict[str, Optional[str]]:
     return result
 
 def mobot_url(name: str) -> str:
-    return "https://www.missouribotanicalgarden.org/PlantFinder/PlantFinderSearch.aspx?t=" + "+".join(name.split())
+    return f"https://www.missouribotanicalgarden.org/PlantFinder/PlantFinderSearchResults.aspx?query={'+'.join(name.strip().split())}"
 
 def wildflower_url(name: str) -> str:
-    return "https://www.wildflower.org/plants/search.php?search_field=name_substring&value=" + "-".join(name.lower().split())
+    return f"https://www.wildflower.org/plants/search.php?search_field=name_substring&value={'%20'.join(name.strip().split())}"
 
 def fetch_html(url: str) -> Optional[BeautifulSoup]:
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=12)
+        resp = requests.get(url, headers=HEADERS, timeout=12, allow_redirects=True)
         if resp.status_code == 200:
             return BeautifulSoup(resp.text, "lxml")
     except Exception:
@@ -121,19 +122,21 @@ def fill_row(df: pd.DataFrame, idx: int) -> None:
     name = df.at[idx, "Botanical Name"]
     pdf_d = pdf_lookup(name)
     needs_data = df.loc[idx, ALL_TARGET_COLS].isna().any()
-    mobot_d = {}
+    mobot_d, wild_d = {}, {}
+
     if needs_data:
         mb_url = mobot_url(name)
         mobot_d = parse_mobot(fetch_html(mb_url))
-        df.at[idx, COL_LINK_MB] = mb_url
+        df.at[idx, COL_LINK_MB] = f"[MBG]({mb_url})"
         time.sleep(DELAY)
+
     needs_data = df.loc[idx, ALL_TARGET_COLS].isna().any()
-    wild_d = {}
     if needs_data:
         wf_url = wildflower_url(name)
         wild_d = parse_wildflower(fetch_html(wf_url))
-        df.at[idx, COL_LINK_WF] = wf_url
+        df.at[idx, COL_LINK_WF] = f"[WF]({wf_url})"
         time.sleep(DELAY)
+
     df.at[idx, COL_SPREAD]   = safe_first(df.at[idx, COL_SPREAD],   pdf_d["spread"], mobot_d.get("spread"), wild_d.get("spread"))
     df.at[idx, COL_BLOOM]    = safe_first(df.at[idx, COL_BLOOM],    pdf_d["bloom"],   mobot_d.get("bloom"),  wild_d.get("bloom"))
     df.at[idx, COL_SUN]      = safe_first(df.at[idx, COL_SUN],      mobot_d.get("sun"),   wild_d.get("sun"))
@@ -146,14 +149,28 @@ def main() -> None:
         df = pd.read_excel(INPUT_FILE, engine="openpyxl")
     else:
         df = pd.read_csv(INPUT_FILE)
+
+    if "Plant Type" not in df.columns:
+        print("⚠️  No 'Plant Type' column found. Continuing anyway...")
+
     for col in (COL_LINK_MB, COL_LINK_WF):
         if col not in df.columns:
             df[col] = pd.NA
+
     for idx in tqdm(df.index, desc=f"Filling: {INPUT_FILE.name}"):
         if df.loc[idx, ALL_TARGET_COLS].isna().any():
             fill_row(df, idx)
+
+    # Save full combined CSV
     df.to_csv(OUTPUT_CSV, index=False, encoding="utf-8")
-    print(f"✔ Completed → {OUTPUT_CSV.name}")
+    print(f"✔ Combined output saved → {OUTPUT_CSV.name}")
+
+    # Optional: write per-type breakdowns
+    if "Plant Type" in df.columns:
+        for plant_type, sub_df in df.groupby("Plant Type"):
+            name = plant_type.replace(",", "").replace(" ", "_").lower() + "_COMPLETE.csv"
+            sub_df.to_csv(INPUT_FILE.with_name(name), index=False, encoding="utf-8")
+            print(f"  └─ {plant_type} saved as {name}")
 
 if __name__ == "__main__":
     main()
