@@ -84,8 +84,12 @@ def fetch(url: str) -> str | None:
         return None
 
 def grab(txt: str, label: str) -> Optional[str]:
-    m = re.search(fr"(?:{label}):?\s*(.+)", txt, flags=re.I)
-    return ws(m.group(1).split("\n", 1)[0]) if m else None
+    pattern = rf"{label}:\s*(.*)"
+    for line in txt.splitlines():
+        if re.search(pattern, line, flags=re.I):
+            return ws(re.sub(pattern, r"\1", line, flags=re.I))
+    return None
+
 
 def gen_key(bot_name: str, used: set[str]) -> str:
     genus, *rest = bot_name.strip().split()
@@ -100,8 +104,21 @@ def gen_key(bot_name: str, used: set[str]) -> str:
 def parse_mbg(html: str) -> Dict[str, Optional[str]]:
     soup = BeautifulSoup(html, "lxml")
     text = soup.get_text("\n", strip=True)
+
+    # Extract individual pieces
     dist = grab(text, "USDA Native Status|Distribution")
     raw_dist = grab(text, "Native Range|Distribution")
+    base_char = clean_chars(grab(text, "Characteristics?"))
+    tolerate = grab(text, "Tolerate")
+    maintenance = grab(text, "Maintenance")
+
+    # Assemble final Characteristics field
+    char_parts = []
+    if base_char: char_parts.append(base_char)
+    if tolerate: char_parts.append(tolerate.rstrip("."))
+    if maintenance: char_parts.append(f"Maintenance: {maintenance}")
+    full_char = "; ".join(char_parts) if char_parts else None
+
     return {
         "Height (ft)"      : rng(grab(text, "Height")),
         "Spread (ft)"      : rng(grab(text, "Spread")),
@@ -111,9 +128,9 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
         "Water"            : conditions(grab(text, "Water")),
         "Wetland Status"   : grab(text, "Wetland Status"),
         "Habitats"         : grab(text, "Habitats?"),
-        "Characteristics"  : clean_chars(grab(text, "Characteristics?")),
+        "Characteristics"  : full_char,
         "Wildlife Benefits": grab(text, "Attracts"),
-        "Distribution": (f"USDA Hardiness Zone {dist.strip()}" if dist and re.search(r"\d+\s*[-–]\s*\d+", dist) else None),
+        "Distribution"     : (f"USDA Hardiness Zone {dist.strip()}" if dist and re.search(r"\d+\s*[-–]\s*\d+", dist) else None),
         "Plant Type"       : grab(text, "Type"),
         "Type"             : grab(text, "Type"),
     }
@@ -121,6 +138,7 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
 def parse_wf(html: str) -> Dict[str, Optional[str]]:
     soup = BeautifulSoup(html, "lxml")
     text = soup.get_text("\n", strip=True)
+    dist = grab(text, "USDA Native Status|Distribution")
     return {
         "Height (ft)"      : rng(grab(text, "Height")),
         "Spread (ft)"      : rng(grab(text, "Spread")),
@@ -128,9 +146,13 @@ def parse_wf(html: str) -> Dict[str, Optional[str]]:
         "Bloom Time"       : month_rng(grab(text, "Bloom Time")),
         "Sun"              : conditions(grab(text, "Sun")),
         "Water"            : conditions(grab(text, "Moisture")),
-        "Distribution"     : grab(text, "USDA Native Status|Distribution"),
+        "Distribution"     : (
+            f"USDA Hardiness Zone {dist.strip()}" if dist and re.search(r"\d+\s*[-–]\s*\d+", dist) else None
+        ),
         "Wildlife Benefits": grab(text, "Attracts"),
+        "Habitats"         : grab(text, "Native Habitat"),
     }
+
 
 # ─── main workflow ────────────────────────────────────────────────────────
 def main() -> None:
