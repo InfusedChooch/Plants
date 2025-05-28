@@ -1,5 +1,5 @@
 # /plants/TestLinks.py
-# Validates MBG/WF links, logs broken ones, removes bad ones from CSV
+# Validates MBG/WF links, flags broken ones, logs them
 
 import pandas as pd
 import requests
@@ -8,7 +8,7 @@ from pathlib import Path
 
 BASE         = Path(__file__).resolve().parent
 INPUT_CSV    = BASE / "Plants and Links.csv"
-OUTPUT_CSV   = INPUT_CSV.with_name(INPUT_CSV.stem + "_cleaned.csv")
+OUTPUT_CSV   = INPUT_CSV.with_name(INPUT_CSV.stem + "_flagged.csv")
 BROKEN_LOG   = BASE / "broken_links.txt"
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
@@ -25,37 +25,42 @@ def fetch_title(url: str) -> str | None:
         return None
     return None
 
-def validate_and_clean(df: pd.DataFrame) -> pd.DataFrame:
+def flag_broken_link(original: str) -> str:
+    return f"🛑 BROKEN {original}" if not original.startswith("🛑") else original
+
+def validate_and_flag(df: pd.DataFrame) -> pd.DataFrame:
     mbg_ok = wf_ok = 0
     broken = []
 
     for idx, row in df.iterrows():
         bot_name = row.get("Botanical Name", "").strip()
-        genus = bot_name.split()[0].lower() if bot_name else ""
         mbg_link = row.get(MBG_COL, "").strip()
         wf_link  = row.get(WF_COL, "").strip()
 
-        # ─── MBG Check (strict) ─────────────────────────────────────
+        # ─── MBG Check (title-based) ─────────────────────────────
         if mbg_link.startswith("http"):
             title = fetch_title(mbg_link)
             if not title or not all(part.lower() in title.lower() for part in bot_name.split()):
                 msg = f"MBG ❌ {bot_name} → {mbg_link}"
                 print(msg)
                 broken.append(msg)
-                df.at[idx, MBG_COL] = ""
+                df.at[idx, MBG_COL] = flag_broken_link(mbg_link)
             else:
                 mbg_ok += 1
 
-        # ─── WF Check (genus-only) ──────────────────────────────────
+        # ─── WF Check (HTTP status only) ─────────────────────────
         if wf_link.startswith("http"):
-            title = fetch_title(wf_link)
-            if not title or genus not in title.lower():
+            try:
+                r = requests.get(wf_link, headers=HEADERS, timeout=10)
+                if r.ok:
+                    wf_ok += 1
+                else:
+                    raise Exception("Bad status")
+            except Exception:
                 msg = f"WF  ❌ {bot_name} → {wf_link}"
                 print(msg)
                 broken.append(msg)
-                df.at[idx, WF_COL] = ""
-            else:
-                wf_ok += 1
+                df.at[idx, WF_COL] = flag_broken_link(wf_link)
 
     with open(BROKEN_LOG, "w", encoding="utf-8") as f:
         f.write("Broken Links Log\n")
@@ -76,9 +81,9 @@ def main():
         print("❌ Missing 'Botanical Name' column.")
         return
 
-    cleaned = validate_and_clean(df)
-    cleaned.to_csv(OUTPUT_CSV, index=False)
-    print(f"💾 Cleaned file saved → {OUTPUT_CSV.name}")
+    flagged = validate_and_flag(df)
+    flagged.to_csv(OUTPUT_CSV, index=False)
+    print(f"💾 Flagged file saved → {OUTPUT_CSV.name}")
 
 if __name__ == "__main__":
     main()
