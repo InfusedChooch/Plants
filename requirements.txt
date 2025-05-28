@@ -15,3 +15,14 @@ openpyxl       # Enables reading/writing Excel (.xlsx) files with pandas
 #MBG has: Type,Height,Spread,Bloom Time, Bloom Description(Bloom Color), Sun, Water, Suggested Use
 
 #Wildflower has: Bloom Color, Bloom Time, Distribution (USA), USDA Symbol
+
+#Height (ft): Found on MBG as "Height:" : (X - Y) 
+#Spread (ft): Found on MBG as "Spread:": (X - Y)
+#Bloom Color: Found on WF as "Bloom Color:": (Color, Color, Color)
+#Bloom Time: Found on WF as "Bloom Time": (Month, Month, Month) 
+#Sun: Found on MBG as "Sun:" : (Full Sun, Part Sun, Shade, Part Shade)
+#Water: Found on MBG as "Water:": (Dry, Medium, Wet)
+#Characteristics: Found on MBG as "Tolerate:" "Maintenance:" : Combine them into a cell
+#Habitat: Found on WF as "Native Habitat:" : 
+#Wildlife Benefits: Found on MBG as "Attracts:"
+#Distribution: Found on MBG as "Zone:" : Fill as (USDA Hardiness Zone X - Y)
