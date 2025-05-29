@@ -114,10 +114,27 @@ class PlantPDF(FPDF):
                 self.cell(0, 8, ptype.title(), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
                 self.set_font("Helvetica", "", 11)
                 self.set_text_color(0, 0, 0)
-                for name, page in entries:
-                    self.cell(140, 6, f"  {name}")
-                    self.cell(0, 6, f"{page}", align="R", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-                self.ln(2)
+            for name, page, link, mbg, wf in entries:
+                self.set_x(self.l_margin)
+                text_x = self.get_x()
+
+                # Name (clickable)
+                self.set_text_color(0, 0, 0)
+                self.cell(self.get_string_width(name) + 2, 6, name, link=link)
+
+                # Inline MBG / WF
+                if mbg:
+                    self.set_text_color(0, 0, 200)
+                    self.cell(self.get_string_width(" [MBG]") + 1, 6, " [MBG]", link=mbg)
+                if wf:
+                    self.cell(self.get_string_width(" [WF]") + 1, 6, " [WF]", link=wf)
+
+                # Page number (right-aligned)
+                self.set_text_color(0, 0, 0)
+                self.set_x(self.w - self.r_margin - 10)
+                self.cell(10, 6, str(page), align="R", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+
 
     def add_plant(self, row, plant_type):
         bot_name = safe_text(row.get("Botanical Name", ""))
@@ -128,7 +145,9 @@ class PlantPDF(FPDF):
         self.footer_links = (mbg if mbg else None, wf if wf else None)
 
         display_page = self.page_no() - getattr(self, "_ghost_pages", 0)
-        self.toc[plant_type].append((bot_name, display_page))
+        link = self.add_link()
+        self.set_link(link)
+        self.toc[plant_type].append((bot_name, display_page, link, mbg if mbg else None, wf if wf else None))
 
         self.set_font("Helvetica", "I", 18)
         self.set_text_color(22, 92, 34)
