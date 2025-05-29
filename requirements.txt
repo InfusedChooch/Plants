@@ -1,13 +1,16 @@
 # requirements.txt — for Scraper_FULL_PATCHED.py
 
-pandas         # Data manipulation and CSV reading/writing
-numpy          # Efficient handling of missing values (e.g. np.nan)
-requests       # HTTP requests for fetching web pages
-beautifulsoup4 # HTML parsing to extract detail links from MBG and Wildflower
-lxml           # Fast and robust HTML parser used by BeautifulSoup
-tqdm           # Progress bar display for tracking row completion
-pdfplumber     # Extracts text from PDF fact sheets (e.g. Rutgers guide)
-openpyxl       # Enables reading/writing Excel (.xlsx) files with pandas
+fpdf2
+pandas
+openpyxl
+beautifulsoup4==4.12.3
+requests==2.31.0
+pdfplumber==0.10.2
+tqdm==4.66.2
+Pillow
+lxml==5.2.1
+selenium==4.20.0
+PyPDF2==3.0.1
 
 
 #PDF has mostly: Botanical Name, Common Name, Appearance: Height,Spread, Flower Color (Bloom Color), Flowering period ( Bloom Time), Habitat, Hyrodology, Wildlife benfits, Distribution
