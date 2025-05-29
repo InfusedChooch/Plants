@@ -1,3 +1,10 @@
+# /plants/Excelify_v2.py
+# Enhanced version with:
+# - Stats and Summary tabs
+# - Improved missing value highlighting
+# - Column filters applied selectively
+# - Versioned script overview in README
+
 # /plants/Excelify.py
 
 from pathlib import Path
