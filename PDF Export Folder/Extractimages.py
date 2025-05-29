@@ -68,3 +68,18 @@ for page_index, page in enumerate(doc, start=1):
 pd.DataFrame(image_rows).to_csv(MAP_CSV, index=False)
 print(f"✅ Extracted {len(image_rows)} images")
 print(f"🗂  Image mapping written to → {MAP_CSV}")
+
+# ─── Optional: Convert extracted PNGs to JPEGs ───────────────────────────
+from PIL import Image
+
+jpeg_dir = OUT_DIR / "jpeg"
+jpeg_dir.mkdir(exist_ok=True)
+
+converted = 0
+for png_file in OUT_DIR.glob("*.png"):
+    img = Image.open(png_file).convert("RGB")
+    jpg_file = jpeg_dir / (png_file.stem + ".jpg")
+    img.save(jpg_file, "JPEG", quality=85)
+    converted += 1
+
+print(f"📸 Converted {converted} PNG images to JPEGs in → {jpeg_dir}")
