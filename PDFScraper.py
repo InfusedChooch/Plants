@@ -1,4 +1,4 @@
-# PDFScrape.py ─ Extracts basic plant rows from the Rutgers PDF
+# PDFScraper.py ─ Extracts basic plant rows from the Rutgers PDF
 # Patched 2025-05-28g —  ignore “Plant Fact Sheet” headers so page 21 resolves correctly
 
 import re, csv                  # std-lib regex and CSV helpers
@@ -10,7 +10,7 @@ from tqdm import tqdm           # progress-bar for loops
 
 # ─── Paths ───────────────────────────────────────────────────────────────
 BASE     = Path(__file__).resolve().parent      # folder containing this script
-PDF_PATH = BASE / "Plant Guid Data Base.pdf"    # source guide
+PDF_PATH = BASE / "Plant Guide Data Base.pdf"    # source guide
 OUT_CSV  = BASE / "Plants_Nolinks.csv"          # destination file
 
 # ─── Column Order (fixed) ────────────────────────────────────────────────

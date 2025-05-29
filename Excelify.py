@@ -8,7 +8,7 @@ from openpyxl.utils import get_column_letter
 from datetime import datetime
 
 BASE      = Path(__file__).resolve().parent
-CSV_FILE  = BASE / "Plants_COMPLETE.csv"
+CSV_FILE  = BASE / "Plants_Links_Filled.csv"
 XLSX_FILE = CSV_FILE.with_suffix(".xlsx")
 
 # ─── Load DataFrame and write to Excel ────────────────────────────────────

@@ -11,7 +11,7 @@ from tqdm import tqdm                   # progress bar
 
 # ─── Files & Network constants ───────────────────────────────────────────
 BASE          = Path(__file__).resolve().parent
-IN_CSV        = BASE / "Plants and Links.csv"      # must already contain URLs
+IN_CSV        = BASE / "Plants and Links TEST.csv"      # must already contain URLs
 OUT_CSV       = BASE / "Plants_COMPLETE.csv"       # output
 MASTER_CSV    = IN_CSV                            # template for col order
 SLEEP_BETWEEN = 0.7                               # throttle between HTTPs

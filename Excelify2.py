@@ -15,7 +15,7 @@ from openpyxl.utils import get_column_letter
 from datetime import datetime
 
 BASE      = Path(__file__).resolve().parent
-CSV_FILE  = BASE / "Plants_COMPLETE.csv"
+CSV_FILE  = BASE / "Plants_Links_Filled.csv"
 XLSX_FILE = CSV_FILE.with_suffix(".xlsx")
 
 # ─── Load DataFrame and write to Excel ────────────────────────────────────
@@ -69,15 +69,15 @@ readme["A10"] = "1. Click the filter dropdown on the column header (e.g., Sun or
 readme["A11"] = "2. Choose 'Text Filters' > 'Contains...'"
 readme["A12"] = "3. Type a partial term (e.g., 'shade', 'yellow') and click OK."
 readme["A13"] = "💡 You can use this to find plants matching conditions across categories."
-readme["A15"] = "📄 https://github.com/InfusedChooch/Plants."
+readme["A15"] = "📄 https://github.com/InfusedChooch/Plants"
 
 # ─── Add Script Version Info ──────────────────────────────────────────────
 script_descriptions = {
-    "PDFScrape.py"          : "Extracts plant data from the PDF guide",
-    "GetLinks_FullHybrid.py": "Finds official MBG and WF URLs for each plant",
-    "fill.py"               : "Populates missing fields using those links",
-    "TestLinks.py"          : "Validates that all stored links return a live page",
-    "Excelify.py"           : "Creates formatted Excel output with filters and highlights",
+    "PDFScraper.py"          : "Extracts plant data from the PDF guide",
+    "GetLinks.py": "Finds official MBG and WF URLs for each plant",
+    "FillMissingData.py"               : "Populates missing fields using those links",
+    "TestLinks.py"          : "Validates that all stored links return a live page --- Broken!!!",
+    "Excelify2.py"           : "Creates formatted Excel output with filters and highlights",
 }
 row_start = readme.max_row + 2
 readme[f"A{row_start}"] = "📁 Script Version Info (Last Modified):"

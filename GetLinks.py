@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# GetLinks_FullHybrid.py ─ Hybrid Bing-Selenium + HTML parse to resolve MBG & WF URLs
+# GetLinks.py ─ Hybrid Bing-Selenium + HTML parse to resolve MBG & WF URLs
 
 import time                          # delays / pacing
 import pandas as pd                  # CSV I/O
@@ -13,7 +13,7 @@ from typing import Optional          # type hints
 
 # ─── File / Column constants ─────────────────────────────────────────────
 INPUT_CSV  = "Plants_Nolinks.csv"            # produced by PDFScrape
-OUTPUT_CSV = "Plants and Links TEST.csv"     # enriched version
+OUTPUT_CSV = "Plants_Links"     # enriched version
 MBG_COL    = "Link: Missouri Botanical Garden"
 WF_COL     = "Link: Wildflower.org"
 HEADERS    = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}  # polite header
