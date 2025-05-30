@@ -7,9 +7,9 @@ from pathlib import Path           # fs paths
 
 # ─── Files ───────────────────────────────────────────────────────────────
 BASE         = Path(__file__).resolve().parent
-INPUT_CSV    = BASE / "Plants_Linked"  # original dataset to verify
+INPUT_CSV    = BASE / "Static/Outputs/Plants_Linked"  # original dataset to verify
 OUTPUT_CSV   = INPUT_CSV.with_name(INPUT_CSV.stem + "_flagged.csv")
-BROKEN_LOG   = BASE / "broken_links.txt"
+BROKEN_LOG   = BASE / "Static/Outputs/broken_links.txt"
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}  # polite header
 MBG_COL = "Link: Missouri Botanical Garden"

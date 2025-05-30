@@ -13,13 +13,15 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Generate plant guide PDF")
 parser.add_argument("--in_csv", default="Plants_Linked_Filled_Master.csv", help="Input CSV file")
-parser.add_argument("--out_pdf", default="Plant_Guide_EXPORT.pdf", help="Output PDF file")
+parser.add_argument("--out_pdf", default="Static/Outputs/Static/Outputs/Plant_Guide_EXPORT.pdf", help="Output PDF file")
+parser.add_argument("--img_dir", default= "Static/Outputs/pdf_images" / "jpeg", help="Directory with Images")
+
 args = parser.parse_args()
 
 # ─── Constants ────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent      # Directory containing this script
 CSV_FILE = BASE_DIR / args.in_csv
-IMG_DIR  = BASE_DIR / "pdf_images" / "jpeg"     # Directory with plant images
+IMG_DIR  = BASE_DIR / args.img_dir     # Directory with plant images
 OUTPUT   = BASE_DIR / args.out_pdf
 
 # ─── Load and Prepare Data ────────────────────────────────────────────────
@@ -318,8 +320,8 @@ pdf._ghost_pages = 0                           # Title page unnumbered
 # ─── Title Page ──────────────────────────────────────────────────────────
 pdf.skip_footer = True                         # Disable footer on cover
 pdf.add_page()
-left_logo  = BASE_DIR / "pdf_images" / "001_rutgers_cooperative_extension_1.png"
-right_logo = BASE_DIR / "pdf_images" / "001_rutgers_cooperative_extension_2.png"
+left_logo  = BASE_DIR / "Static/Outputs/pdf_images" / "001_rutgers_cooperative_extension_1.png"
+right_logo = BASE_DIR / "Static/Outputs/pdf_images" / "001_rutgers_cooperative_extension_2.png"
 pdf.image(str(left_logo), x=pdf.l_margin, y=20, h=30)      # Left logo
 pdf.image(str(right_logo), x=pdf.w-pdf.r_margin-50, y=20, h=30)  # Right logo
 pdf.set_y(70)

@@ -13,12 +13,14 @@ from typing import Optional          # for simple type hints in function signatu
 import argparse
 
 parser = argparse.ArgumentParser(description="Find missing MBG/WF plant links")
-parser.add_argument("--in_csv", default="Plants_NeedLinks.csv", help="Input CSV file")
-parser.add_argument("--out_csv", default="Plants_Linked.csv", help="Output CSV file")
+
+parser.add_argument("--in_csv", default="Static/Outputs/Static/Outputs/Plants_NeedLinks.csv", help="Input CSV file")
+parser.add_argument("--out_csv", default="Static/Outputs/Static/Outputs/Plants_Linked.csv", help="Output CSV file")
 args = parser.parse_args()
 
 # ─── File and Column Settings ─────────────────────────────────────────────
 
+BASE = Path(__file__).resolve().parent
 INPUT_CSV  = BASE / args.in_csv
 OUTPUT_CSV = BASE / args.out_csv
 MBG_COL    = "Link: Missouri Botanical Garden"

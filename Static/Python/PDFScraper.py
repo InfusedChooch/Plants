@@ -14,16 +14,19 @@ from PIL import Image  # Python Imaging Library (Pillow) for image conversion an
 
 # ─── CLI Arguments ────────────────────────────────────────────────────────
 parser = argparse.ArgumentParser(description="Extract plant data from a PDF guide.")
-parser.add_argument("--in_pdf", default="Plant Guide 2025 Update.pdf", help="PDF input file")
-parser.add_argument("--out_csv", default="Plants_NeedLinks.csv", help="CSV output file")
+parser.add_argument("--in_pdf", default="Static/Templates/Plant Guide 2025 Update.pdf", help="PDF input file")
+parser.add_argument("--out_csv", default="Static/Outputs/Plants_NeedLinks.csv", help="CSV output file")
+parser.add_argument("--img_dir", default= "Static/Outputs/pdf_images", help="Directory for PNG Dump")
+parser.add_argument("--map_csv", default= "Static/Outputs/image_map.csv", help="Directory for IMG Map")
+
 args = parser.parse_args()
 
 # ─── Paths ───────────────────────────────────────────────────────────────
 BASE = Path(__file__).resolve().parent  # directory where this script resides
 PDF_PATH = BASE / args.in_pdf
 OUT_CSV  = BASE / args.out_csv
-IMG_DIR = BASE / "pdf_images"  # directory where extracted images will be saved
-MAP_CSV = BASE / "image_map.csv"  # CSV that maps saved image files to plant entries
+IMG_DIR = BASE / args.img_dir
+MAP_CSV = BASE / args.map_csv  # CSV that maps saved image files to plant entries
 
 # create the image directory if it doesn't already exist
 IMG_DIR.mkdir(exist_ok=True)

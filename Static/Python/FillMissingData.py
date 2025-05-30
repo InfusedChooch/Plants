@@ -15,8 +15,8 @@ from tqdm import tqdm             # progress bar utility when looping over many 
 import argparse
 
 parser = argparse.ArgumentParser(description="Fill missing plant fields using MBG/WF")
-parser.add_argument("--in_csv", default="Plants_Linked.csv", help="Input CSV file")
-parser.add_argument("--out_csv", default="Plants_Linked_Filled.csv", help="Output CSV file")
+parser.add_argument("--in_csv", default="Static/Outputs/Plants_Linked.csv", help="Input CSV file")
+parser.add_argument("--out_csv", default="Static/Outputs/Plants_Linked_Filled.csv", help="Output CSV file")
 args = parser.parse_args()
 
 # ─── File Paths & Configuration ───────────────────────────────────────────

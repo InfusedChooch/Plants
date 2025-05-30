@@ -54,7 +54,7 @@ def run_selected():
             if val2: args += [arg2, val2]
             if arg1.startswith("--in") and val1 and not Path(val1).exists():
                 status.configure(text=f"❌ {tool}: Missing {val1}", text_color="red")
-                return87
+                return
             subprocess.run(args)
     status.configure(text="✅ All selected tools finished.", text_color="green")
 

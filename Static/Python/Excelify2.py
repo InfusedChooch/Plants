@@ -11,8 +11,8 @@ import black  # New: for Black-style formatting
 import argparse
 
 parser = argparse.ArgumentParser(description="Export formatted Excel from CSV")
-parser.add_argument("--in_csv", default="Plants_Linked_Filled_Master.csv", help="Input CSV file")
-parser.add_argument("--out_xlsx", default="Plants_Linked_Filled_Master.xlsx", help="Output Excel file")
+parser.add_argument("--in_csv", default="Static/Templates/Plants_Linked_Filled_Master.csv", help="Input CSV file")
+parser.add_argument("--out_xlsx", default="Static/Outputs/Plants_Linked_Filled_Review.xlsx", help="Output Excel file")
 args = parser.parse_args()
 
 # ─── File Paths ───────────────────────────────────────────────────────────
@@ -121,8 +121,8 @@ for script_name in script_descriptions:
         ws[f"A{i}"] = line
     ws[f"A{i+1}"] = "```"
 
-# ─── Step 9: Import README.md as its own tab ──────────────────────────────
-readme_md_path = BASE / "README.md"
+# ─── Step 9: Import readme.md as its own tab ──────────────────────────────
+readme_md_path = BASE / "readme.md"
 if readme_md_path.exists():
     readme_full = wb.create_sheet("README_full")
     readme_full.column_dimensions["A"].width = 120
@@ -130,7 +130,7 @@ if readme_md_path.exists():
         for i, line in enumerate(f, start=1):
             readme_full[f"A{i}"] = line.rstrip("\n")
 else:
-    print("⚠️ README.md not found. Skipping README_full tab.")
+    print("⚠️ readme.md not found. Skipping README_full tab.")
 
 # ─── Step 10: Save Excel ─────────────────────────────────────────────────
 wb.save(XLSX_FILE)
