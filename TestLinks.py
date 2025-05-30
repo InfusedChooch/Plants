@@ -7,7 +7,7 @@ from pathlib import Path           # fs paths
 
 # ─── Files ───────────────────────────────────────────────────────────────
 BASE         = Path(__file__).resolve().parent
-INPUT_CSV    = BASE / "Plants and Links copy.csv"  # original dataset to verify
+INPUT_CSV    = BASE / "Plants_Linked"  # original dataset to verify
 OUTPUT_CSV   = INPUT_CSV.with_name(INPUT_CSV.stem + "_flagged.csv")
 BROKEN_LOG   = BASE / "broken_links.txt"
 

@@ -1,172 +1,260 @@
-# fill.py ─ Pulls numeric / habitat details from MBG + Wildflower.org into CSV
+# FillMissingData.py
+# Description: Pull numeric, habitat, and other details from Missouri Botanical Garden and Wildflower.org pages and fill them into a CSV.
 
-from __future__ import annotations      # postpone evaluation of type hints
-import csv, re, time                    # std-lib helpers
-from pathlib import Path
-from typing import Dict, Optional
-import pandas as pd                     # CSV read-modify-write
-import requests                         # HTTP
-from bs4 import BeautifulSoup           # HTML parsing
-from tqdm import tqdm                   # progress bar
+from __future__ import annotations  # allow postponed evaluation of type hints for forward references
+import csv                        # built-in support for CSV operations (writing with quotes)
+import re                         # regular expressions for searching and cleaning text
+import time                       # to pause between HTTP requests for politeness
+from pathlib import Path          # easy file system path manipulations
+from typing import Dict, Optional# type hinting for dictionaries and optional return values
 
-# ─── Files & Network constants ───────────────────────────────────────────
+import pandas as pd               # data handling library for reading and writing CSVs as DataFrames
+import requests                   # HTTP library to fetch webpage content
+from bs4 import BeautifulSoup     # HTML parser to extract text from web pages
+from tqdm import tqdm             # progress bar utility when looping over many items
+import argparse
+
+parser = argparse.ArgumentParser(description="Fill missing plant fields using MBG/WF")
+parser.add_argument("--in_csv", default="Plants_Linked.csv", help="Input CSV file")
+parser.add_argument("--out_csv", default="Plants_Linked_Filled.csv", help="Output CSV file")
+args = parser.parse_args()
+
+# ─── File Paths & Configuration ───────────────────────────────────────────
 BASE          = Path(__file__).resolve().parent
-IN_CSV        = BASE / "Plants and Links TEST.csv"      # must already contain URLs
-OUT_CSV       = BASE / "Plants_COMPLETE.csv"       # output
-MASTER_CSV    = IN_CSV                            # template for col order
-SLEEP_BETWEEN = 0.7                               # throttle between HTTPs
-HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
+IN_CSV     = BASE / args.in_csv
+OUT_CSV    = BASE / args.out_csv
+MASTER_CSV    = IN_CSV                               # template file to match column order
+SLEEP_BETWEEN = 0.7                                  # seconds to wait between each HTTP request
+HEADERS       = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}  # identify as a browser
 
-# ─── Helper: HTTP fetch with timeout/quiet failure ───────────────────────
+# ─── Helper Function: Fetch HTML Safely ────────────────────────────────────
 def fetch(url: str) -> str | None:
+    """
+    Try to download HTML from `url`. Return the page text if successful;
+    otherwise return None quietly on errors.
+    """
     try:
-        r = requests.get(url, timeout=12, headers=HEADERS)
+        r = requests.get(url, timeout=12, headers=HEADERS)  # attempt HTTP GET
         if r.ok:
-            return r.text
+            return r.text  # return the HTML body if status code is 200
     except requests.RequestException:
-        pass
-    return None
+        pass             # ignore network errors, timeouts, etc.
+    return None          # return None if anything goes wrong
 
-# ─── Tiny text parsers / cleaners ────────────────────────────────────────
+# ─── Text Parsing Utilities ────────────────────────────────────────────────
 def grab(txt: str, label_pat: str) -> str | None:
-    # Search “Label: value” patterns (case-insensitive, dash variants)
+    """
+    Look for patterns like "Label: value" or "Label–value" in `txt`.
+    Return the captured `value` or None if not found.
+    """
+    # regex uses case‑insensitive match of the label pattern, then a colon/dash, then the text
     m = re.search(rf"(?:{label_pat})\s*[:–-]\s*(.+?)(?:\n|$)", txt, flags=re.I)
     return m.group(1).strip() if m else None
 
-def rng(s: str | None) -> str | None:   # normalize “1–3 ft” → “1 - 3”
-    if not s: return None
-    s = s.replace("–", "-")
-    nums = re.findall(r"[\d.]+", s)
+
+def rng(s: str | None) -> str | None:
+    """
+    Normalize ranges like "1–3 ft" or "1 to 3 ft" into "1 - 3".
+    Returns None if input is empty or no numbers found.
+    """
+    if not s:
+        return None
+    s = s.replace("–", "-")                # unify dash characters
+    nums = re.findall(r"[\d.]+", s)          # extract all numbers
+    # convert floats that are whole ints into int strings
     nums = [str(int(float(n))) if float(n).is_integer() else n for n in nums]
     return " - ".join(nums) if nums else None
 
-def month_rng(s: str | None) -> str | None:   # Jan–Mar → “Jan, Feb, Mar”
-    if not s: return None
+
+def month_rng(s: str | None) -> str | None:
+    """
+    Convert month ranges like "Jan–Mar" or "Feb through Apr"
+    into comma-separated full months "Jan, Feb, Mar, Apr".
+    """
+    if not s:
+        return None
+    # replace words like "to" or "through" with a hyphen
     s = re.sub(r"\b(?:to|through)\b", "-", s, flags=re.I)
-    parts = [w.title().strip() for w in re.split(r"[,\-/]", s) if w.strip()]
+    parts = [w.title().strip() for w in re.split(r"[,/\-]", s) if w.strip()]
     return ", ".join(parts)
 
+
 def split_conditions(s: str | None) -> list[str]:
-    if not s: return []
+    """
+    Break strings like "full sun to part shade" or "dry/moist"
+    into a clean list of individual conditions.
+    """
+    if not s:
+        return []
+    # replace common separators with commas, then split
     s = s.replace(" to ", ",").replace("–", ",").replace("/", ",")
     return [part.strip() for part in s.split(",") if part.strip()]
 
+
 def sun_conditions(s: str | None) -> str | None:
-    return ", ".join([p.title() for p in split_conditions(s)]) if s else None
+    """
+    Standardize sun exposure terms to Title Case, comma-separated.
+    """
+    return ", ".join(p.title() for p in split_conditions(s)) if s else None
+
 
 def water_conditions(s: str | None) -> str | None:
-    return ", ".join([p.lower() for p in split_conditions(s)]) if s else None
+    """
+    Standardize water needs to lowercase, comma-separated.
+    """
+    return ", ".join(p.lower() for p in split_conditions(s)) if s else None
 
-# Build “Characteristics” composites
+
 def mbg_chars(tolerate: str | None, maintenance: str | None) -> str | None:
+    """
+    Combine MBG’s "Tolerate" and "Maintenance" fields into one string,
+    separated by " | ".
+    """
     parts = []
-    if tolerate:     parts.append(f"Tolerate: {tolerate}")
-    if maintenance:  parts.append(f"Maintenance: {maintenance}")
+    if tolerate:
+        parts.append(f"Tolerate: {tolerate}")
+    if maintenance:
+        parts.append(f"Maintenance: {maintenance}")
     return " | ".join(parts) if parts else None
+
 
 def wf_chars(leaf_retention: str | None, fruit_type: str | None) -> str | None:
+    """
+    Combine Wildflower.org’s "Leaf Retention" and "Fruit Type" into one string.
+    """
     parts = []
-    if fruit_type:     parts.append(f"Fruit Type: {fruit_type}")
-    if leaf_retention: parts.append(f"Leaf Retention: {leaf_retention}")
+    if fruit_type:
+        parts.append(f"Fruit Type: {fruit_type}")
+    if leaf_retention:
+        parts.append(f"Leaf Retention: {leaf_retention}")
     return " | ".join(parts) if parts else None
 
-# merge_field: combines MBG+WF values without duplicates
+
 def merge_field(primary: str | None, secondary: str | None) -> str | None:
-    parts = []
+    """
+    Merge two comma- or pipe-separated strings without duplicates,
+    preserving the order they appear.
+    """
+    parts: list[str] = []
     for source in (primary, secondary):
         if source:
             for p in re.split(r"[|,]", source):
-                p = p.strip()
-                if p and p not in parts:
-                    parts.append(p)
+                val = p.strip()
+                if val and val not in parts:
+                    parts.append(val)
     return ", ".join(parts) if parts else None
 
-# generate unique Key if missing (same algorithm as PDFScrape)
+
 def gen_key(botanical: str, used: set[str]) -> str:
-    base = "".join(w[0] for w in botanical.split()[:2]).upper()
-    suffix = ""; i = 1
+    """
+    Create a simple unique key from the first letters of genus and species,
+    appending numbers if needed to avoid duplicates.
+    """
+    parts = botanical.split()
+    base = "".join(w[0] for w in parts[:2]).upper()
+    suffix = ""
+    i = 1
     while base + suffix in used:
-        suffix = str(i); i += 1
+        suffix = str(i)
+        i += 1
     used.add(base + suffix)
     return base + suffix
 
-# ─── Parsers: MBG & WF HTML → dict of fields ─────────────────────────────
+# ─── HTML Parsers for Each Site ──────────────────────────────────────────
 def parse_mbg(html: str) -> Dict[str, Optional[str]]:
+    """
+    Extract MBG details: height, spread, sun, water, characteristics,
+    wildlife benefits, and distribution (hardiness zone).
+    """
     soup = BeautifulSoup(html, "lxml")
     text = soup.get_text("\n", strip=True)
     return {
-        "Height (ft)"      : rng(grab(text, r"Height")),
-        "Spread (ft)"      : rng(grab(text, r"Spread")),
-        "Sun"              : sun_conditions(grab(text, r"Sun")),
-        "Water"            : water_conditions(grab(text, r"Water")),
-        "Characteristics"  : mbg_chars(grab(text, r"Tolerate"), grab(text, r"Maintenance")),
+        "Height (ft)":      rng(grab(text, r"Height")),
+        "Spread (ft)":      rng(grab(text, r"Spread")),
+        "Sun":              sun_conditions(grab(text, r"Sun")),
+        "Water":            water_conditions(grab(text, r"Water")),
+        "Characteristics":  mbg_chars(grab(text, r"Tolerate"), grab(text, r"Maintenance")),
         "Wildlife Benefits": grab(text, r"Attracts"),
-        "Distribution"     : (f"USDA Hardiness Zone {grab(text, r'Zone')}"
-                              if grab(text, r'Zone') else None),
+        "Distribution":     (f"USDA Hardiness Zone {grab(text, r'Zone')}" if grab(text, r"Zone") else None),
     }
 
+
 def parse_wf(html: str, mbg_missing: bool = False) -> Dict[str, Optional[str]]:
+    """
+    Extract Wildflower.org details: bloom color/time and habitats.
+    If MBG data is missing, also pull sun, water, benefits, and characteristics from WF.
+    """
     soup = BeautifulSoup(html, "lxml")
     text = soup.get_text("\n", strip=True)
     data = {
-        "Bloom Color" : ", ".join(split_conditions(grab(text, r"Bloom Color"))),
-        "Bloom Time"  : month_rng(grab(text, r"Bloom Time")),
-        "Habitats"    : grab(text, r"Native Habitat"),
+        "Bloom Color": ", ".join(split_conditions(grab(text, r"Bloom Color"))),
+        "Bloom Time":  month_rng(grab(text, r"Bloom Time")),
+        "Habitats":    grab(text, r"Native Habitat"),
     }
-    if mbg_missing:   # if MBG parse failed, fill primary fields from WF
+    if mbg_missing:
+        # fill core fields when MBG had no data
         data.update({
-            "Sun"              : sun_conditions(grab(text, r"Light Requirement")),
-            "Water"            : water_conditions(grab(text, r"Soil Moisture")),
+            "Sun":              sun_conditions(grab(text, r"Light Requirement")),
+            "Water":            water_conditions(grab(text, r"Soil Moisture")),
             "Wildlife Benefits": grab(text, r"Benefit"),
-            "Characteristics"  : wf_chars(grab(text, r"Leaf Retention"),
-                                          grab(text, r"Fruit Type")),
+            "Characteristics":  wf_chars(grab(text, r"Leaf Retention"), grab(text, r"Fruit Type")),
         })
     return data
 
-# ─── Main Routine ────────────────────────────────────────────────────────
+# ─── Main Processing Loop ─────────────────────────────────────────────────
 def main() -> None:
+    # load CSV into a DataFrame, ensuring all empty cells become blank strings
     df = pd.read_csv(IN_CSV, dtype=str).fillna("")
+    # ensure a Key column exists for identifying rows uniquely
     if "Key" not in df.columns:
-        df["Key"] = ""                              # ensure key column exists
+        df["Key"] = ""
     if "Botanical Name" not in df.columns:
         raise ValueError("❌ Missing 'Botanical Name' column in input CSV.")
 
-    used_keys = set(df["Key"].dropna())             # track assigned keys
+    used_keys = set(df["Key"].dropna())  # track already-used keys
 
+    # iterate each plant row with a progress bar
     for idx, row in tqdm(df.iterrows(), total=len(df), desc="Website Fill"):
+        # skip rows without a botanical name
         if not row.get("Botanical Name", "").strip():
-            continue                                # skip blanks
+            continue
+        # generate a key if missing
         if not row.get("Key"):
             df.at[idx, "Key"] = gen_key(row["Botanical Name"], used_keys)
 
-        # ─── Parse MBG first ────────────────────────────────────────────
+        # ── Fetch and parse MBG if URL exists ──────────────────────────
         mbg_url = row.get("Link: Missouri Botanical Garden", "").strip()
-        mbg_data = {}
-        if mbg_url.startswith("http") and (html := fetch(mbg_url)):
-            mbg_data = parse_mbg(html)
-            for col, val in mbg_data.items():
-                if val: df.at[idx, col] = val
-            time.sleep(SLEEP_BETWEEN)              # throttle
-
-        # ─── Then WF (fills missing or merges) ─────────────────────────
-        wf_url = row.get("Link: Wildflower.org", "").strip()
-        mbg_missing = not bool(mbg_data)
-        if wf_url.startswith("http") and (html := fetch(wf_url)):
-            wf_data = parse_wf(html, mbg_missing)
-            for col, val in wf_data.items():
-                if val:
-                    # merge certain fields to keep additive info
-                    if col in {"Sun","Water","Wildlife Benefits","Characteristics"}:
-                        df.at[idx, col] = merge_field(df.at[idx, col], val)
-                    else:
+        mbg_data: Dict[str, Optional[str]] = {}
+        if mbg_url.startswith("http"):
+            html = fetch(mbg_url)
+            if html:
+                mbg_data = parse_mbg(html)
+                for col, val in mbg_data.items():
+                    if val:
                         df.at[idx, col] = val
-            time.sleep(SLEEP_BETWEEN)
+                time.sleep(SLEEP_BETWEEN)
 
-    # Reorder columns to template + extras (safety)
+        # ── Fetch and parse WF, merging or filling missing ─────────────
+        wf_url = row.get("Link: Wildflower.org", "").strip()
+        if wf_url.startswith("http"):
+            html = fetch(wf_url)
+            if html:
+                wf_data = parse_wf(html, mbg_missing=not bool(mbg_data))
+                for col, val in wf_data.items():
+                    if val:
+                        # merge additive fields vs overwrite others
+                        if col in {"Sun","Water","Wildlife Benefits","Characteristics"}:
+                            df.at[idx, col] = merge_field(df.at[idx, col], val)
+                        else:
+                            df.at[idx, col] = val
+                time.sleep(SLEEP_BETWEEN)
+
+    # reorder columns to match original template, keeping extras at end
     template = list(pd.read_csv(MASTER_CSV, nrows=0).columns)
     df = df[template + [c for c in df.columns if c not in template]]
+    # save out the newly filled CSV
     df.to_csv(OUT_CSV, index=False, quoting=csv.QUOTE_MINIMAL)
     print(f"✅ Saved → {OUT_CSV}")
 
 if __name__ == "__main__":
-    main()  # CLI entry-point
+    main()  # run when executed as a script
