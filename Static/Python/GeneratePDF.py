@@ -12,17 +12,19 @@ from datetime import datetime                    # To display current date on ti
 import argparse
 
 parser = argparse.ArgumentParser(description="Generate plant guide PDF")
-parser.add_argument("--in_csv", default="Plants_Linked_Filled_Master.csv", help="Input CSV file")
-parser.add_argument("--out_pdf", default="Static/Outputs/Static/Outputs/Plant_Guide_EXPORT.pdf", help="Output PDF file")
-parser.add_argument("--img_dir", default= "Static/Outputs/pdf_images" / "jpeg", help="Directory with Images")
-
+parser.add_argument("--in_csv", default="Static/Templates/Plants_Linked_Filled_Master.csv", help="Input CSV file")
+parser.add_argument("--out_pdf", default="Static/Outputs/Plant_Guide_EXPORT.pdf", help="Output PDF file")
+parser.add_argument("--img_dir", default="Static/Outputs/pdf_images/jpeg", help="Image directory")
 args = parser.parse_args()
 
 # ─── Constants ────────────────────────────────────────────────────────────
-BASE_DIR = Path(__file__).resolve().parent      # Directory containing this script
-CSV_FILE = BASE_DIR / args.in_csv
-IMG_DIR  = BASE_DIR / args.img_dir     # Directory with plant images
-OUTPUT   = BASE_DIR / args.out_pdf
+BASE_DIR = Path(__file__).resolve().parent
+CSV_FILE = Path(args.in_csv) if args.in_csv else Path("Static/Templates/Plants_Linked_Filled_Master.csv")
+IMG_DIR = Path(args.img_dir) if args.img_dir else BASE_DIR / "Static/Outputs/pdf_images"
+OUTPUT = Path(args.out_pdf)
+logo_dir = IMG_DIR.parent if IMG_DIR.name == "jpeg" else IMG_DIR
+
+
 
 # ─── Load and Prepare Data ────────────────────────────────────────────────
 df = pd.read_csv(CSV_FILE, dtype=str).fillna("")            # Read CSV, empty cells → ""
@@ -186,7 +188,7 @@ class PlantPDF(FPDF):
         self.ln(2)
 
         # ── Images ──
-        images = sorted(IMG_DIR.glob(f"*_{base_name}_*.jpg"))    # Find up to 3 images
+        images = sorted(list(IMG_DIR.glob(f"*_{base_name}_*.jpg")) + list(IMG_DIR.glob(f"*_{base_name}_*.png")))    # Find up to 3 images
         count = max(1, min(len(images), 3))
         margin = self.l_margin
         avail_w = self.w - margin - self.r_margin
@@ -320,10 +322,21 @@ pdf._ghost_pages = 0                           # Title page unnumbered
 # ─── Title Page ──────────────────────────────────────────────────────────
 pdf.skip_footer = True                         # Disable footer on cover
 pdf.add_page()
-left_logo  = BASE_DIR / "Static/Outputs/pdf_images" / "001_rutgers_cooperative_extension_1.png"
-right_logo = BASE_DIR / "Static/Outputs/pdf_images" / "001_rutgers_cooperative_extension_2.png"
-pdf.image(str(left_logo), x=pdf.l_margin, y=20, h=30)      # Left logo
-pdf.image(str(right_logo), x=pdf.w-pdf.r_margin-50, y=20, h=30)  # Right logo
+def try_image_path(base_dir, filenames):
+    for name in filenames:
+        path = base_dir / name
+        if path.exists():
+            return path
+    return None
+
+left_logo = try_image_path(logo_dir, ["001_rutgers_cooperative_extension_1.jpg", "001_rutgers_cooperative_extension_1.png"])
+right_logo = try_image_path(logo_dir, ["001_rutgers_cooperative_extension_2.jpg", "001_rutgers_cooperative_extension_2.png"])
+if left_logo:
+    pdf.image(str(left_logo), x=pdf.l_margin, y=20, h=30)
+if right_logo:
+    pdf.image(str(right_logo), x=pdf.w - pdf.r_margin - 50, y=20, h=30)
+
+
 pdf.set_y(70)
 pdf.set_font("Helvetica", "B", 22)
 pdf.set_text_color(0,70,120)

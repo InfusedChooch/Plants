@@ -23,13 +23,23 @@ args = parser.parse_args()
 
 # ─── Paths ───────────────────────────────────────────────────────────────
 BASE = Path(__file__).resolve().parent  # directory where this script resides
-PDF_PATH = BASE / args.in_pdf
-OUT_CSV  = BASE / args.out_csv
-IMG_DIR = BASE / args.img_dir
-MAP_CSV = BASE / args.map_csv  # CSV that maps saved image files to plant entries
+PDF_PATH = Path(args.in_pdf).resolve()
+OUT_CSV  = Path(args.out_csv).resolve()
+IMG_DIR  = Path(args.img_dir).resolve()
+MAP_CSV  = Path(args.map_csv).resolve()
 
 # create the image directory if it doesn't already exist
 IMG_DIR.mkdir(exist_ok=True)
+
+# ─── Safe print helper  (ADD just after the imports) ─────────────────────
+def safe_print(*objs, **kw):
+  
+    try:
+        print(*objs, **kw)
+    except UnicodeEncodeError:
+        txt = " ".join(str(o) for o in objs)
+        fallback = txt.encode(sys.stdout.encoding or "ascii", "ignore").decode()
+        print(fallback, **kw)
 
 # ─── CSV Columns ─────────────────────────────────────────────────────────
 # the exact order and names of columns in our final CSV output
@@ -149,6 +159,7 @@ def build_page_type_map(pdf_path: Path) -> Dict[int, str]:
     title_pages: List[tuple[int, str]] = []
     # scan first two lines of each page for section titles
     with pdfplumber.open(pdf_path) as pdf:
+        total_pages = len(pdf.pages)  # ✅ define total_pages here
         for idx, page in enumerate(pdf.pages, start=1):
             lines = [ln.strip() for ln in (page.extract_text() or "").splitlines()]
             for line in lines[:2]:
@@ -158,8 +169,9 @@ def build_page_type_map(pdf_path: Path) -> Dict[int, str]:
     # build map: from the start of a section to the next section start
     page_type_map: Dict[int, str] = {}
     for i, (start_page, label) in enumerate(title_pages):
-        end_page = title_pages[i + 1][0] if i + 1 < len(title_pages) else float('inf')
-        for p in range(start_page + 1, int(end_page)):
+        end_page = title_pages[i + 1][0] if i + 1 < len(title_pages) else total_pages + 1
+        for p in range(start_page + 1, end_page):
+
             page_type_map[p] = label
         # mark the heading page itself as skipped (empty type)
         page_type_map[start_page] = ""
@@ -325,7 +337,7 @@ def extract_images(df: pd.DataFrame) -> None:
         jpg_file = jpeg_dir / (png_file.stem + ".jpg")
         img.save(jpg_file, "JPEG", quality=85)
         converted += 1
-    print(f"📸 Converted {converted} PNG images to JPEGs in → {jpeg_dir}")
+    print(f" Converted {converted} PNG images to JPEGs in {jpeg_dir}")
 
 # ─── Main Entry Point ────────────────────────────────────────────────────
 
@@ -334,7 +346,7 @@ def main() -> None:
     # extract data rows and write to CSV
     df = pd.DataFrame(extract_rows(), columns=COLUMNS)
     df.to_csv(OUT_CSV, index=False, quoting=csv.QUOTE_MINIMAL)
-    print(f"✅ Saved → {OUT_CSV.name} ({len(df)} rows)")
+    print(f"Saved → {OUT_CSV.name} ({len(df)} rows)")
     # extract images based on the CSV we just wrote
     extract_images(df)
 

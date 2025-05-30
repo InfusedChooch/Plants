@@ -1,63 +1,80 @@
 #!/usr/bin/env python3
-# GetLinks.py ── Find and fill in missing plant website links using web searches
+# GetLinks.py ── Prefill, find, and validate MBG / Wildflower links for plants
 
-import time                          # for pausing between requests
-import pandas as pd                  # for reading and writing CSV files
-import requests                      # for simple HTTP requests
-from bs4 import BeautifulSoup        # for parsing HTML pages
-from urllib.parse import quote_plus  # for safely encoding search terms in URLs
-from selenium import webdriver       # for controlling a web browser programmatically
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from typing import Optional          # for simple type hints in function signatures
+import time
 import argparse
+from pathlib import Path
+from typing import Optional
 
-parser = argparse.ArgumentParser(description="Find missing MBG/WF plant links")
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import quote_plus
 
-parser.add_argument("--in_csv", default="Static/Outputs/Static/Outputs/Plants_NeedLinks.csv", help="Input CSV file")
-parser.add_argument("--out_csv", default="Static/Outputs/Static/Outputs/Plants_Linked.csv", help="Output CSV file")
+# ─── Selenium setup ──────────────────────────────────────────────────────
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+
+# --- CLI Arguments -------------------------------------------------------
+parser = argparse.ArgumentParser(
+    description="Prefill, locate, and validate MBG / Wildflower links."
+)
+parser.add_argument("--in_csv",  default="Static/Outputs/Plants_NeedLinks.csv")
+parser.add_argument("--out_csv", default="Static/Outputs/Plants_Linked.csv")
+parser.add_argument("--master_csv",
+                    default="Static/Templates/Plants_Linked_Filled_Master.csv")
+
+# NEW: build a safe default for chromedriver
+default_cd = (Path(__file__).resolve().parent / "chromedriver.exe").as_posix()
+parser.add_argument("--chromedriver",
+                    default=default_cd,
+                    help="Full path to chromedriver.exe")
+
 args = parser.parse_args()
 
-# ─── File and Column Settings ─────────────────────────────────────────────
+# ─── Constants ───────────────────────────────────────────────────────────
+BASE        = Path(__file__).resolve().parent
+INPUT_CSV   = BASE / args.in_csv
+OUTPUT_CSV  = BASE / args.out_csv
+MASTER_CSV  = BASE / args.master_csv
+if not MASTER_CSV.is_absolute():
+    # treat the path as relative to the REPO ROOT, not Static/Python
+    MASTER_CSV = (BASE.parent / MASTER_CSV).resolve()
+CHROMEDRIVER= BASE / args.chromedriver
+if not CHROMEDRIVER.is_absolute():          # if user gave a relative path
+    CHROMEDRIVER = (BASE / CHROMEDRIVER).resolve()
 
-BASE = Path(__file__).resolve().parent
-INPUT_CSV  = BASE / args.in_csv
-OUTPUT_CSV = BASE / args.out_csv
-MBG_COL    = "Link: Missouri Botanical Garden"
-WF_COL     = "Link: Wildflower.org"
-HEADERS    = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}  # pretend to be a normal browser
+MBG_COL = "Link: Missouri Botanical Garden"
+WF_COL  = "Link: Wildflower.org"
 
-# ─── Start a headless Chrome browser via Selenium ──────────────────────────
+HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
+
+# ─── Start Selenium (headless Chrome) ────────────────────────────────────
 opt = Options()
-opt.add_argument("--headless=new")   # run without opening a visible window
-opt.add_argument("--disable-gpu")    # avoid GPU-related errors
-opt.add_argument("--log-level=3")    # hide extra browser logs
-driver = webdriver.Chrome(options=opt)
+opt.add_argument("--headless=new")
+opt.add_argument("--disable-gpu")
+opt.add_argument("--log-level=3")
+driver = webdriver.Chrome(service=Service(str(CHROMEDRIVER)), options=opt)
 
-# ─── Helper: Try an HTTP GET with retries ─────────────────────────────────
-def safe_get(url: str, retries=2, delay=2) -> Optional[requests.Response]:
-    """
-    Try to fetch `url` up to (retries + 1) times using requests.
-    Wait `delay` seconds between attempts.
-    Return the Response object if successful, or None if all fail.
-    """
+# ─── Helper: polite GET with retries ─────────────────────────────────────
+def safe_get(url: str, retries: int = 2, delay: int = 2) -> Optional[requests.Response]:
     for _ in range(retries + 1):
         try:
             r = requests.get(url, headers=HEADERS, timeout=10)
             if r.ok:
                 return r
         except Exception:
-            time.sleep(delay)
-    return None  # give up after all retries
+            pass
+        time.sleep(delay)
+    return None
 
-# ─── Direct MBG Search via HTML ───────────────────────────────────────────
+# ─── MBG direct HTML query ───────────────────────────────────────────────
 def query_mbg(name: str) -> Optional[str]:
-    """
-    Use Missouri Botanical Garden’s own search page (no JavaScript needed).
-    Return the link to the details page if found, else None.
-    """
-    base = "https://www.missouribotanicalgarden.org/PlantFinder/PlantFinderSearchResults.aspx"
-    url = f"{base}?basic={quote_plus(name)}"
+    base = ("https://www.missouribotanicalgarden.org/"
+            "PlantFinder/PlantFinderSearchResults.aspx")
+    url  = f"{base}?basic={quote_plus(name)}"
     if (r := safe_get(url)):
         soup = BeautifulSoup(r.text, "lxml")
         a = soup.select_one("a[href*='PlantFinderDetails.aspx']")
@@ -65,115 +82,127 @@ def query_mbg(name: str) -> Optional[str]:
             return "https://www.missouribotanicalgarden.org" + a["href"]
     return None
 
-# ─── MBG Lookup via Bing + Selenium ────────────────────────────────────────
-def selenium_mbg_link(name: str) -> Optional[str]:
-    """
-    Open Bing search for '"name" site:missouribotanicalgarden.org',
-    then look for the first result pointing to a MBG details page.
-    """
-    query = f'"{name}" site:missouribotanicalgarden.org'
-    driver.get(f"https://www.bing.com/search?q={quote_plus(query)}")
-    time.sleep(1)  # let the page load
-    # Find all result links and pick the first that matches
-    for a in driver.find_elements(By.XPATH, '//li[@class="b_algo"]//a[@href]'):
-        href = a.get_attribute("href")
-        if "PlantFinderDetails.aspx" in href:
-            return href
-    return None
-
-# ─── Wildflower.org Lookup via Bing + Selenium ────────────────────────────
-def selenium_wf_link(name: str) -> Optional[str]:
-    """
-    Similar to selenium_mbg_link, but search site:wildflower.org
-    looking for the wildflower.org 'plants/result.php' pages.
-    """
-    query = f'"{name}" site:wildflower.org "plants/result.php"'
+# ─── Selenium search helpers ─────────────────────────────────────────────
+def selenium_bing_link(query: str, include: str) -> Optional[str]:
     driver.get(f"https://www.bing.com/search?q={quote_plus(query)}")
     time.sleep(1)
     for a in driver.find_elements(By.XPATH, '//li[@class="b_algo"]//a[@href]'):
         href = a.get_attribute("href")
-        if "wildflower.org/plants/result.php" in href:
+        if include in href:
             return href
     return None
 
-# ─── Prepare Different Name Variations ────────────────────────────────────
+def selenium_mbg_link(name: str) -> Optional[str]:
+    return selenium_bing_link(f'"{name}" site:missouribotanicalgarden.org',
+                              "PlantFinderDetails.aspx")
+
+def selenium_wf_link(name: str) -> Optional[str]:
+    return selenium_bing_link(f'"{name}" site:wildflower.org "plants/result.php"',
+                              "wildflower.org/plants/result.php")
+
+# ─── Name variants to widen search net ───────────────────────────────────
 def name_variants(row):
-    """
-    Build a list of names to try in searches:
-      1) the full botanical name
-      2) the common name (if present)
-      3) just the genus + species (no subspecies)
-    This helps catch cases where the site might list a slightly different variant.
-    """
     names = [row["Botanical Name"]]
     if row.get("Common Name"):
         names.append(row["Common Name"])
-    # take only the first two words of botanical name
-    names.append(" ".join(row["Botanical Name"].split()[:2]))
-    return list(dict.fromkeys(names))  # remove duplicates, keep order
+    names.append(" ".join(row["Botanical Name"].split()[:2]))  # Genus + species
+    return list(dict.fromkeys(names))
 
-# ─── Check That the Page Title Matches the Plant ──────────────────────────
-def title_contains(botanical_name: str) -> bool:
-    """
-    After navigating to a candidate page, ensure the browser’s title
-    contains all parts of the botanical name (case-insensitive).
-    This avoids false positives.
-    """
-    title = driver.title.lower()
-    return all(part.lower() in title for part in botanical_name.split())
+# ─── Title must contain each part of botanical name ──────────────────────
+def title_contains(botanical: str) -> bool:
+    t = driver.title.lower()
+    return all(part.lower() in t for part in botanical.split())
 
-# ─── Load CSV and Add Missing Columns ─────────────────────────────────────
-df = pd.read_csv(INPUT_CSV, dtype=str).fillna("")  # read in original CSV
+# ─── Load input & master CSVs ─────────────────────────────────────────────
+df      = pd.read_csv(INPUT_CSV, dtype=str).fillna("")
+master  = pd.read_csv(MASTER_CSV, dtype=str).fillna("")
+master_index = master.set_index("Botanical Name")
+
 for col in (MBG_COL, WF_COL):
     if col not in df.columns:
-        df[col] = ""  # make sure link columns exist
+        df[col] = ""
 
-# ─── Main Loop: Fill in Missing Links ────────────────────────────────────
+# ── 1) Prefill from master CSV ───────────────────────────────────────────
+prefilled = 0
+for idx, row in df.iterrows():
+    bot_name = row["Botanical Name"]
+    if bot_name in master_index.index:
+        mrow = master_index.loc[bot_name]
+        for col in (MBG_COL, WF_COL):
+            if not df.at[idx, col] and mrow.get(col, "").startswith("http"):
+                df.at[idx, col] = mrow[col]
+                prefilled += 1
+print(f"🔄 Prefilled {prefilled} links from master.")
+
+# ── 2) Search for still-missing links ────────────────────────────────────
 for idx, row in df.iterrows():
     bname = row["Botanical Name"]
-    cname = row.get("Common Name", "")
     have_mbg = "PlantFinderDetails.aspx" in row[MBG_COL]
     have_wf  = "wildflower.org/plants/result.php" in row[WF_COL]
 
-    print(f"\n🔍 {bname} ({cname})")  # show progress
+    print(f"\n🔍 {bname}")
 
-    # — MBG lookup: try Selenium first, then HTML fallback ——
+    # MBG search (selenium → fallback HTML)
     if not have_mbg:
-        # 1) Selenium-based search
+        found = False
         for variant in name_variants(row):
             if link := selenium_mbg_link(variant):
                 driver.get(link); time.sleep(1)
                 if title_contains(bname):
                     df.at[idx, MBG_COL] = link
-                    print(f"✅ MBG → {link}")
+                    found = True
+                    print(f"✅ MBG   → {link}")
                     break
-        else:
-            # 2) Plain HTML-based query if Selenium did not find it
+        if not found:
             for variant in name_variants(row):
                 if link := query_mbg(variant):
                     driver.get(link); time.sleep(1)
                     if title_contains(bname):
                         df.at[idx, MBG_COL] = link
-                        print(f"✅ MBG (fallback) → {link}")
+                        print(f"✅ MBG ♻ → {link}")
                         break
             else:
-                print("⚠️ MBG not found or invalid")
+                print("⚠️  MBG not found")
 
-    # — Wildflower.org lookup: only Selenium ——
+    # Wildflower search
     if not have_wf:
         for variant in name_variants(row):
             if link := selenium_wf_link(variant):
                 driver.get(link); time.sleep(1)
                 if title_contains(bname):
                     df.at[idx, WF_COL] = link
-                    print(f"✅ WF  → {link}")
+                    print(f"✅ WF    → {link}")
                     break
         else:
-            print("⚠️ WF not found or invalid")
+            print("⚠️  WF not found")
 
-    time.sleep(1.0)  # pause between rows for politeness
+    time.sleep(1.0)  # polite pause
 
-# ─── Wrap Up: save and close browser ──────────────────────────────────────
+# ── 3) Validate every link added/copied in this run ──────────────────────
+def validate_link(url: str) -> bool:
+    if not url.startswith("http") or url.startswith("🛑"):
+        return False
+    r = safe_get(url, retries=0)
+    return bool(r)
+
+broken_log = []
+for idx, row in df.iterrows():
+    for col in (MBG_COL, WF_COL):
+        url = row[col]
+        if url and not url.startswith("🛑") and not validate_link(url):
+            df.at[idx, col] = f"🛑 BROKEN {url}"
+            broken_log.append(f"{row['Botanical Name']} → {url}")
+
+if broken_log:
+    log_path = OUTPUT_CSV.with_name("broken_links_this_run.txt")
+    with open(log_path, "w", encoding="utf-8") as f:
+        f.write("Broken Links Detected This Run\n==============================\n")
+        f.writelines(line + "\n" for line in broken_log)
+    print(f"\n🛑 {len(broken_log)} broken links flagged. Log → {log_path.name}")
+else:
+    print("\n✅ All new or copied links responded with HTTP 200.")
+
+# ─── Save & cleanup ──────────────────────────────────────────────────────
 driver.quit()
 df.to_csv(OUTPUT_CSV, index=False)
-print(f"\n🎉 Done → {OUTPUT_CSV}")
+print(f"\n🎉 Complete → {OUTPUT_CSV.relative_to(BASE)}")
