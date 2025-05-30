@@ -11,5 +11,6 @@ Pillow
 lxml==5.2.1
 selenium==4.20.0
 PyPDF2==3.0.1
-
-
+Customtkinter
+tkinter
+black
