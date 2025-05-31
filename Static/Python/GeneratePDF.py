@@ -71,37 +71,39 @@ class PlantPDF(FPDF):
         self.footer_links = (None, None)          # Store MBG/WF links for footer
 
     def footer(self):
-        """Customize footer: section title, MBG/WF links, page number."""
         if self.skip_footer:
-            return                              # Skip if flagged
-        self.set_y(-12)                         # Position 12 units from bottom
-        self.set_font("Helvetica", "I", 9)      # Italic small font
+            return
 
-        # ── Section name centered ──
+        self.set_y(-12)
+        self.set_font("Helvetica", "I", 9)
+        self.set_text_color(0, 0, 200)
+
+        mbg, wf = self.footer_links
+        page_str = str(self.page_no() - getattr(self, "_ghost_pages", 0))
+        self.set_y(-12)
+
+        # LEFT: MBG / WF
+        self.set_x(self.l_margin)
+        if mbg:
+            label = "[Missouri Botanical Garden]"
+            self.cell(self.get_string_width(label) + 2, 6, label, link=mbg)
+            self.cell(4, 6, "")
+        if wf:
+            label = "[Wildflower.org]"
+            self.cell(self.get_string_width(label) + 2, 6, label, link=wf)
+
+        # CENTER: Plant type
         if self.current_plant_type:
             self.set_text_color(90, 90, 90)
-            self.set_x(0)
-            self.cell(0, 6, self.current_plant_type.title(), align="C")
-            self.ln(3)
+            center_x = self.w / 2 - self.get_string_width(self.current_plant_type.title()) / 2
+            self.set_xy(center_x, -12)
+            self.cell(self.get_string_width(self.current_plant_type.title()) + 2, 6, self.current_plant_type.title())
 
-        # ── MBG and WF links ──
-        self.set_text_color(0, 0, 200)
-        x_start = self.l_margin
-        mbg, wf = self.footer_links
-        if mbg:
-            self.set_x(x_start)
-            self.cell(self.get_string_width("[MBG]")+2, 6, "[MBG]", link=mbg)
-            x_start += self.get_string_width("[MBG]") + 8
-        if wf:
-            self.set_x(x_start)
-            self.cell(self.get_string_width("[WF]")+2, 6, "[WF]", link=wf)
-
-        # ── Page number right-aligned ──
+        # RIGHT: Page number
         self.set_text_color(128, 128, 128)
-        self.set_x(-20)
-        display_page = self.page_no() - getattr(self, "_ghost_pages", 0)
-        if display_page > 0:
-            self.cell(0, 6, f"{display_page}", align="R")
+        self.set_xy(self.w - self.r_margin - self.get_string_width(page_str), -12)
+        self.cell(0, 6, page_str)
+
 
     def add_type_divider(self, plant_type):
         """Insert a full-page section divider with title and link anchor."""

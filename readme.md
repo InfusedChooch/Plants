@@ -18,6 +18,9 @@ Pillow
 lxml==5.2.1
 selenium==4.20.0
 PyPDF2==3.0.1
+Customtkinter
+tkinter
+black
 ```
 
 To install all dependencies:
@@ -26,18 +29,21 @@ To install all dependencies:
 pip install -r requirements.txt
 ```
 
+> **Chrome Note**: To use Selenium, you must install [Google Chrome Portable](https://portableapps.com/apps/internet/google_chrome_portable) and place it inside the `Static/GoogleChromePortable/` folder. Also ensure `chromedriver.exe` is in `Static/Python/`.
+
 ---
 
 ## 🔁 Workflow Overview
 
-| Step | Script               | Purpose                                                                               |
-| ---- | -------------------- | ------------------------------------------------------------------------------------- |
-| 1    | `PDFScraper.py`      | Extracts plant data from the Rutgers PDF and saves a partially filled CSV and images. |
-| 2    | `GetLinks.py`        | Locates MBG and Wildflower.org links for each plant and updates the CSV.              |
-| 3    | `FillMissingData.py` | Pulls additional plant info from those links to complete the dataset.                 |
-| 4    | `TestLinks.py`       | Checks all links to flag and log any broken entries.                                  |
-| 5    | `Excelify2.py`       | Produces a styled Excel file with filters, highlights, and embedded source code.      |
-| 6    | `GeneratePDF.py`     | Generates a clean, printable PDF plant guide with TOC, sections, and images.          |
+| Step | Script               | Purpose                                                                                |
+| ---- | -------------------- | -------------------------------------------------------------------------------------- |
+| 1    | `PDFScraper.py`      | Extracts plant data from the Rutgers PDF and saves a partially filled CSV and images.  |
+| 2    | `GetLinks.py`        | Locates MBG and Wildflower.org links for each plant and updates the CSV.               |
+| 3    | `FillMissingData.py` | Pulls additional plant info from those links to complete the dataset.                  |
+| 4    | `TestLinks.py`       | Checks all links to flag and log any broken entries.                                   |
+| 5    | `Excelify2.py`       | Produces a styled Excel file with filters, highlights, and embedded source code.       |
+| 6    | `GeneratePDF.py`     | Generates a clean, printable PDF plant guide with TOC, sections, and images.           |
+| -    | `Launcher.py`        | CustomTkinter GUI to run the toolchain with override paths, console log, and controls. |
 
 ---
 
@@ -52,28 +58,36 @@ pip install -r requirements.txt
 
 ### `GetLinks.py`
 
-* Uses Selenium (with Bing) and direct queries to find MBG and Wildflower.org links.
-* Updates missing URLs in `Plants_NeedLinks.csv` → `Plants_Linked.csv`.
+* Uses Selenium (with Bing and HTML fallback) to find MBG and Wildflower.org links.
+* Requires portable Chrome setup.
+* Outputs `Plants_Linked.csv`.
 
 ### `FillMissingData.py`
 
 * Scrapes plant details from the MBG and WF links.
-* Merges new data into `Plants_Linked.csv` → `Plants_Linked_Filled.csv`.
+* Adds missing attributes like bloom, sun, water, habitat, and characteristics.
+* Outputs `Plants_Linked_Filled.csv`.
 
 ### `TestLinks.py`
 
-* Validates all saved URLs.
-* Flags broken links in a new CSV and logs issues to `broken_links.txt`.
+* Validates all stored URLs.
+* Flags broken links in a new CSV and logs them to `broken_links.txt`.
 
 ### `Excelify2.py`
 
-* Converts the enriched CSV to a styled Excel workbook.
-* Adds conditional formatting, filters, a README tab, and embeds code from all scripts.
+* Converts the final CSV to a styled Excel workbook.
+* Adds filters, missing-cell highlights, README tab, pip list, and Black-styled embedded source code.
 
 ### `GeneratePDF.py`
 
 * Reads the final CSV.
-* Creates a printable PDF with a title page, TOC, section dividers, and one plant per page.
+* Creates a printable PDF with a title page, TOC, plant sections, and footers with source links.
+
+### `Launcher.py`
+
+* CustomTkinter interface for running tools with override support for input/output.
+* Auto-generates output paths using prefix/suffix.
+* Logs real-time script output.
 
 ---
 
@@ -82,41 +96,42 @@ pip install -r requirements.txt
 * `Plants_NeedLinks.csv` – initial extract from PDF.
 * `Plants_Linked.csv` – with links filled in.
 * `Plants_Linked_Filled.csv` – full dataset with scraped attributes.
-* `broken_links.txt` – human-readable list of broken links.
-* `Plants_Linked_Filled.xlsx` – styled Excel export.
-* `Plant_Guide_EXPORT.pdf` – final print-ready guide.
-* `pdf_images/` – extracted images (JPG).
+* `broken_links.txt` – log of broken links.
+* `Plants_Linked_Filled.xlsx` – styled Excel export with embedded code.
+* `Plant_Guide_EXPORT.pdf` – print-ready guide.
+* `pdf_images/` – extracted JPEG images.
 * `image_map.csv` – mapping of images to plants/pages.
 
 ---
 
 ## 🚀 Quickstart
 
-1. Run `PDFScraper.py` to initialize your dataset and images.
-2. Run `GetLinks.py` to fill in MBG/WF URLs.
-3. Run `FillMissingData.py` to enrich with scraped data.
-4. Run `TestLinks.py` to verify the URLs work.
-5. Run `Excelify2.py` to create your styled spreadsheet.
-6. Run `GeneratePDF.py` to output the full plant guide PDF.
+1. Run `PDFScraper.py` to extract data and images.
+2. Run `GetLinks.py` to search and assign MBG/WF links.
+3. Run `FillMissingData.py` to scrape additional data.
+4. Run `TestLinks.py` to validate all links.
+5. Run `Excelify2.py` to generate the Excel workbook.
+6. Run `GeneratePDF.py` to produce the final guide.
+7. Optionally, use `Launcher.py` for a GUI-driven experience.
 
 ---
 
 ## 🔧 Notes
 
-* Image filenames follow this format: `page#_botanical_slug_count.jpg`.
-* All data columns follow the order and format from the original PDF + websites.
-* Headers, filters, and empty cell highlights are defined in `Excelify2.py`.
-* PDF pages are auto-grouped by plant type (Herbaceous, Ferns, etc).
-* You can customize TOC layout, logos, and color schemes in `GeneratePDF.py`.
+* Chrome/Selenium requires a portable installation of Chrome.
+* Image filenames use: `page#_botanical_slug_count.jpg`.
+* PDF sections auto-group by type (Herbaceous, Ferns, Shrubs, etc).
+* `Excelify2.py` sets filters on select columns and highlights missing values.
+* Scripts are designed to be rerun with override support.
 
 ---
 
-## 🔢 Column Data Sources
+## 📃 Column Data Sources
 
 | **Column**           | **PDF (Rutgers)** | **MBG** | **Wildflower.org** |
 | -------------------- | ----------------- | ------- | ------------------ |
 | Page in PDF          | ✅                 |         |                    |
-| Plant Type           | ✅ (by page range) |         |                    |
+| Plant Type           | ✅ (from headings) |         |                    |
 | Key                  | ✅ (generated)     |         |                    |
 | Botanical Name       | ✅                 |         |                    |
 | Common Name          | ✅                 |         |                    |

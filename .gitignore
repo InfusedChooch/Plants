@@ -1,0 +1,16 @@
+# Ignore output files
+Static/Outputs/
+Static/Outputs/pdf_images/
+Static/Outputs/Plants_Nolinks_example.csv
+
+# Ignore local Chrome install
+Static/GoogleChromePortable/
+
+# Ignore compiled Python files
+__pycache__/
+*.pyc
+
+# Ignore environment and IDE settings
+.venv/
+.vscode/
+.idea/

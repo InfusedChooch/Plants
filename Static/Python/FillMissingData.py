@@ -254,7 +254,7 @@ def main() -> None:
     df = df[template + [c for c in df.columns if c not in template]]
     # save out the newly filled CSV
     df.to_csv(OUT_CSV, index=False, quoting=csv.QUOTE_MINIMAL)
-    print(f"✅ Saved → {OUT_CSV}")
+    print(f"Saved → {OUT_CSV}")
 
 if __name__ == "__main__":
     main()  # run when executed as a script

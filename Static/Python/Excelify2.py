@@ -1,4 +1,4 @@
-# /plants/Excelify2.py
+# Static\Python\Excelify2.py
 # Description: Generate a styled Excel workbook from the filled plant CSV, with highlights, filters, and embedded script info (Black-styled)
 
 from pathlib import Path
@@ -17,8 +17,10 @@ args = parser.parse_args()
 
 # ─── File Paths ───────────────────────────────────────────────────────────
 BASE = Path(__file__).resolve().parent
-CSV_FILE  = BASE / args.in_csv
-XLSX_FILE = BASE / args.out_xlsx
+REPO = BASE.parent.parent  # Goes from Static/Python → repo root
+CSV_FILE = (REPO / args.in_csv).resolve()
+XLSX_FILE = (REPO / args.out_xlsx).resolve()
+
 
 # ─── Step 1: Load CSV and write it to a basic Excel file ────────────────
 df = pd.read_csv(CSV_FILE, dtype=str).fillna("")
@@ -69,6 +71,9 @@ readme["A11"] = "2. Choose 'Text Filters' > 'Contains...'"
 readme["A12"] = "3. Type a partial term (e.g., 'shade', 'yellow') and click OK."
 readme["A13"] = "💡 Use this to find plants matching conditions across categories."
 readme["A15"] = "📄 https://github.com/InfusedChooch/Plants"
+readme["A16"] = "This Excel was generated from the filled CSV using the script Excelify2.py"
+readme["A17"] = "Downlaod https://portableapps.com/apps/internet/google_chrome_portable and place it in the /Static folder"
+readme["A18"] = "Static/GoogleChromePortable"
 
 # ─── Step 6: Script Version Info ──────────────────────────────────────────
 script_descriptions = {
@@ -89,7 +94,7 @@ for i, (filename, description) in enumerate(script_descriptions.items(), start=r
         readme[f"A{i}"] = f"{filename:<24} → MISSING        {description}"
 
 # ─── Step 7: Append pip requirements ──────────────────────────────────────
-req_path = BASE / "requirements.txt"
+req_path = REPO / "requirements.txt"
 readme_row = readme.max_row + 2
 readme[f"A{readme_row}"] = "📦 Required Python Packages:"
 try:
@@ -122,7 +127,7 @@ for script_name in script_descriptions:
     ws[f"A{i+1}"] = "```"
 
 # ─── Step 9: Import readme.md as its own tab ──────────────────────────────
-readme_md_path = BASE / "readme.md"
+readme_md_path = REPO / "readme.md"
 if readme_md_path.exists():
     readme_full = wb.create_sheet("README_full")
     readme_full.column_dimensions["A"].width = 120
@@ -130,8 +135,17 @@ if readme_md_path.exists():
         for i, line in enumerate(f, start=1):
             readme_full[f"A{i}"] = line.rstrip("\n")
 else:
-    print("⚠️ readme.md not found. Skipping README_full tab.")
+    print("[WARN] readme.md not found. Skipping README_full tab.")
+
+def safe_print(*objs, **kw):
+    try:
+        print(*objs, **kw)
+    except UnicodeEncodeError:
+        fallback = " ".join(str(o) for o in objs)
+        encoded = fallback.encode(sys.stdout.encoding or "ascii", "ignore").decode()
+        print(encoded, **kw)
+
 
 # ─── Step 10: Save Excel ─────────────────────────────────────────────────
 wb.save(XLSX_FILE)
-print(f"📘 Final Excel saved → {XLSX_FILE}")
+print(f"Yeehaw Final Excel saved --> {XLSX_FILE}")

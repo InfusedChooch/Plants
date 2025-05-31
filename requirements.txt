@@ -1,16 +1,24 @@
-# requirements.txt — for Scraper_FULL_PATCHED.py
-
-fpdf2
+# Core data and file handling
 pandas
 openpyxl
-beautifulsoup4==4.12.3
-requests==2.31.0
-pdfplumber==0.10.2
-tqdm==4.66.2
+fpdf2
+pdfplumber
 Pillow
-lxml==5.2.1
+PyPDF2
+lxml
+tqdm
+requests
+argparse  # builtin, used in all scripts
+
+# Web scraping and parsing
+beautifulsoup4==4.12.3
 selenium==4.20.0
-PyPDF2==3.0.1
-Customtkinter
-tkinter
-black
+
+# GUI and formatting
+customtkinter
+tkinter          # pre-installed with Python
+black            # for code formatting in Excelify2
+
+# Optional / Windows-specific notes
+# Google Chrome Portable (manual install)
+# chromedriver.exe (matching Chrome version)
