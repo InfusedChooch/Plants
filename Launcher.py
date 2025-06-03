@@ -56,8 +56,8 @@ app.geometry("860x760")
 
 # ─── Global Vars ─────────────────────────────────────────────────────────
 out_dir_var = ctk.StringVar(value=str(OUTDEF))
-pre_var     = ctk.StringVar(value="")
-suf_var     = ctk.StringVar(value=f"_{today}")
+pre_var     = ctk.StringVar(value=f"{today}_")
+suf_var     = ctk.StringVar(value="")
 img_dir_var = ctk.StringVar(value=str(OUTDEF / "pdf_images"))
 _img_user_set = False
 
