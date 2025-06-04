@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
 
 # ─── CLI ────────────────────────────────────────────────────────────────
-parser = argparse.ArgumentParser(description="Fill missing MBG / WF links")
+parser = argparse.ArgumentParser(description="Fill missing plant site links")
 parser.add_argument("--in_csv",      default="Static/Outputs/Plants_NeedLinks.csv")
 parser.add_argument("--out_csv",     default="Static/Outputs/Plants_Linked.csv")
 parser.add_argument("--master_csv",  default="Static/Templates/Plants_Linked_Filled_Master.csv")
@@ -43,12 +43,18 @@ MASTER = repo_path(args.master_csv)
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
 MBG_COL, WF_COL = "MBG Link", "WF Link"
+PR_COL  = "Pleasant Run Link"
+NM_COL  = "New Moon Link"
+PN_COL  = "Pinelands Link"
 
 # ─── Step 1: load CSVs & prefill from master ────────────────────────────
 df = pd.read_csv(INPUT, dtype=str).fillna("")
 df = df.rename(columns={
     "Link: Missouri Botanical Garden": MBG_COL,
     "Link: Wildflower.org": WF_COL,
+    "Link: Pleasant Run": PR_COL,
+    "Link: New Moon": NM_COL,
+    "Link: Pinelands": PN_COL,
 })
 
 try:
@@ -56,6 +62,9 @@ try:
     master = master.rename(columns={
         "Link: Missouri Botanical Garden": MBG_COL,
         "Link: Wildflower.org": WF_COL,
+        "Link: Pleasant Run": PR_COL,
+        "Link: New Moon": NM_COL,
+        "Link: Pinelands": PN_COL,
     })
 except FileNotFoundError:
     print(f"Master CSV not found at {MASTER} – skipping prefill.")
@@ -63,7 +72,7 @@ except FileNotFoundError:
 
 m_idx = master.set_index("Botanical Name")
 
-for col in (MBG_COL, WF_COL):
+for col in (MBG_COL, WF_COL, PR_COL, NM_COL, PN_COL):
     if col not in df.columns:
         df[col] = ""
 
@@ -71,8 +80,8 @@ pref = 0
 for i, row in df.iterrows():
     b = row["Botanical Name"]
     if b in m_idx.index:
-        for col in (MBG_COL, WF_COL):
-            val = m_idx.at[b, col]
+        for col in (MBG_COL, WF_COL, PR_COL, NM_COL, PN_COL):
+            val = m_idx.at[b, col] if col in m_idx.columns else ""
             if val.startswith("http") and not df.at[i, col]:
                 df.at[i, col] = val
                 pref += 1
@@ -80,7 +89,10 @@ print(f"Prefilled {pref} links from master.")
 
 # ─── Step 2: if nothing missing, save & quit ────────────────────────────
 needs = df[(~df[MBG_COL].str.startswith("http")) |
-           (~df[WF_COL].str.startswith("http"))]
+           (~df[WF_COL].str.startswith("http")) |
+           (~df[PR_COL].str.startswith("http")) |
+           (~df[NM_COL].str.startswith("http")) |
+           (~df[PN_COL].str.startswith("http"))]
 
 if needs.empty:
     template_cols = list(pd.read_csv(MASTER, nrows=0).columns)
@@ -199,6 +211,9 @@ for i, row in needs.iterrows():
     bname = row["Botanical Name"]
     have_mbg = row[MBG_COL].startswith("http")
     have_wf  = row[WF_COL].startswith("http")
+    have_pr  = row[PR_COL].startswith("http")
+    have_nm  = row[NM_COL].startswith("http")
+    have_pn  = row[PN_COL].startswith("http")
     print(f"Finding {bname}")
 
     if not have_mbg:
@@ -227,6 +242,39 @@ for i, row in needs.iterrows():
                     print(f" WF  --> {link}"); break
         else:
             print("  WF not found")
+
+    if not have_pr:
+        for v in name_variants(row):
+            if link := bing_link(f'"{v}" site:pleasantrunnursery.com',
+                                 "pleasantrunnursery.com"):
+                driver.get(link); time.sleep(1)
+                if title_ok(bname):
+                    df.at[i, PR_COL] = link
+                    print(f" PR  --> {link}"); break
+        else:
+            print("  PR not found")
+
+    if not have_nm:
+        for v in name_variants(row):
+            if link := bing_link(f'"{v}" site:newmoonnursery.com',
+                                 "newmoonnursery.com"):
+                driver.get(link); time.sleep(1)
+                if title_ok(bname):
+                    df.at[i, NM_COL] = link
+                    print(f" NM  --> {link}"); break
+        else:
+            print("  NM not found")
+
+    if not have_pn:
+        for v in name_variants(row):
+            if link := bing_link(f'"{v}" site:pinelandsnursery.com',
+                                 "pinelandsnursery.com"):
+                driver.get(link); time.sleep(1)
+                if title_ok(bname):
+                    df.at[i, PN_COL] = link
+                    print(f" PN  --> {link}"); break
+        else:
+            print("  PN not found")
     time.sleep(1)
 
 # ─── Save & exit ────────────────────────────────────────────────────────

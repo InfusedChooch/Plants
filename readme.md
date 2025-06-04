@@ -38,7 +38,7 @@ pip install -r requirements.txt
 | Step | Script               | Purpose                                                                                |
 | ---- | -------------------- | -------------------------------------------------------------------------------------- |
 | 1    | `PDFScraper.py`      | Extracts plant data from the Rutgers PDF and saves a partially filled CSV and images.  |
-| 2    | `GetLinks.py`        | Locates MBG and Wildflower.org links for each plant and updates the CSV.               |
+| 2    | `GetLinks.py`        | Locates links for MBG, Wildflower.org, Pleasant Run, New Moon, and Pinelands sites. |
 | 3    | `FillMissingData.py` | Pulls additional plant info from those links to complete the dataset.                  |
 | 4    | `TestLinks.py`       | Checks all links to flag and log any broken entries.                                   |
 | 5    | `Excelify2.py`       | Produces a styled Excel file with filters, highlights, and embedded source code.       |
@@ -58,7 +58,7 @@ pip install -r requirements.txt
 
 ### `GetLinks.py`
 
-* Uses Selenium (with Bing and HTML fallback) to find MBG and Wildflower.org links.
+* Uses Selenium (with Bing and HTML fallback) to find links for Missouri Botanical Garden, Wildflower.org, Pleasant Run Nursery, New Moon Nursery, and Pinelands Nursery.
 * Requires portable Chrome setup.
 * Outputs `Plants_Linked.csv`.
 
@@ -107,7 +107,7 @@ pip install -r requirements.txt
 ## 🚀 Quickstart
 
 1. Run `PDFScraper.py` to extract data and images.
-2. Run `GetLinks.py` to search and assign MBG/WF links.
+2. Run `GetLinks.py` to search and assign links for all supported sites.
 3. Run `FillMissingData.py` to scrape additional data.
 4. Run `TestLinks.py` to validate all links.
 5. Run `Excelify2.py` to generate the Excel workbook.
