@@ -56,6 +56,15 @@ rename_map = {
 }
 df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns}, inplace=True)
 
+# Map legacy/internal column names to the canonical headers above.
+reverse_map = {
+    "MBG Link": MBG_COL,
+    "WF Link": WF_COL,
+    "Link: Pleasant Run": PR_COL,
+    "Link: New Moon": NM_COL,
+    "Link: Pinelands": PN_COL,
+}
+
 try:
     master = pd.read_csv(MASTER, dtype=str).fillna("")
     master.rename(columns={k: v for k, v in rename_map.items() if k in master.columns}, inplace=True)
@@ -93,6 +102,8 @@ needs = df[~safe_starts(MBG_COL) |
            ~safe_starts(PN_COL)]
 
 if needs.empty:
+    # Normalize any legacy column names before exporting
+    df.rename(columns=reverse_map, inplace=True)
     template_cols = list(pd.read_csv(MASTER, nrows=0).columns)
     df = df.reindex(columns=template_cols + [c for c in df.columns if c not in template_cols])
     df.to_csv(OUTPUT, index=False)
@@ -339,6 +350,7 @@ for i, row in needs.iterrows():
 
 # ─── Save & exit ────────────────────────────────────────────────────────
 driver.quit()
+df.rename(columns=reverse_map, inplace=True)
 template_cols = list(pd.read_csv(MASTER, nrows=0).columns)
 df = df.reindex(columns=template_cols + [c for c in df.columns if c not in template_cols])
 df.to_csv(OUTPUT, index=False)
