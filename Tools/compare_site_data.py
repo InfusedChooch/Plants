@@ -299,3 +299,4 @@ print(line)
 print("-+-".join("-" * w for w in widths))
 for row in rows:
     print(" | ".join(str(c).ljust(w) for c, w in zip(row, widths)))
+
