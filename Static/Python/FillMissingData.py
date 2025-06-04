@@ -266,15 +266,18 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
     soup = BeautifulSoup(html, "lxml")
     text = soup.get_text("\n", strip=True)
     return {
-
-        "Height (ft)":      rng(grab(text, r"Height")),
-        "Spread (ft)":      rng(grab(text, r"Spread")),
-        "Sun":              sun_conditions(grab(text, r"Sun")),
-        "Water":            water_conditions(grab(text, r"Water")),
-        "Tolerates":        grab(text, r"Tolerate"),
-        "Maintenance":      grab(text, r"Maintenance"),
-        "Attracts":         grab(text, r"Attracts"),
-        "Zone":             (f"USDA Hardiness Zone {grab(text, r'Zone')}" if grab(text, r"Zone") else None),
+        "Height (ft)": rng(grab(text, r"Height")),
+        "Spread (ft)": rng(grab(text, r"Spread")),
+        "Sun": sun_conditions(grab(text, r"Sun")),
+        "Water": water_conditions(grab(text, r"Water")),
+        "Tolerates": grab(text, r"Tolerate"),
+        "Maintenance": grab(text, r"Maintenance"),
+        "Attracts": grab(text, r"Attracts"),
+        "Zone": (
+            f"USDA Hardiness Zone {grab(text, r'Zone')}"
+            if grab(text, r"Zone")
+            else None
+        ),
     }
 
 
@@ -290,7 +293,9 @@ def parse_wf(html: str, mbg_missing: bool = False) -> Dict[str, Optional[str]]:
         "Bloom Time": month_rng(grab(text, r"Bloom Time")),
         "Habitats": grab(text, r"Native Habitat"),
         "Soil Description": grab(text, r"Soil Description"),
-        "AGCP Regional Status": grab(text, r"(?:National Wetland Indicator Status|AGCP)"),
+        "AGCP Regional Status": grab(
+            text, r"(?:National Wetland Indicator Status|AGCP)"
+        ),
     }
     if mbg_missing:
         # fill core fields when MBG had no data
@@ -328,7 +333,6 @@ def parse_pr(html: str) -> Dict[str, Optional[str]]:
     }
 
 
-
 def parse_nm(html: str) -> Dict[str, Optional[str]]:
     """Extract sun/water and other details from New Moon Nursery."""
     soup = BeautifulSoup(html, "lxml")
@@ -345,9 +349,11 @@ def parse_nm(html: str) -> Dict[str, Optional[str]]:
         "Sun": sun_conditions(find_label("Exposure")),
         "Water": water_conditions(find_label("Soil Moisture Preference")),
         "Bloom Color": find_label("Bloom Colors"),
-        "Height (ft)": rng(re.search(r"Height\s*:\s*([\d\s-]+)\s*ft", flat, flags=re.I).group(1))
-        if re.search(r"Height\s*:\s*([\d\s-]+)\s*ft", flat, flags=re.I)
-        else None,
+        "Height (ft)": (
+            rng(re.search(r"Height\s*:\s*([\d\s-]+)\s*ft", flat, flags=re.I).group(1))
+            if re.search(r"Height\s*:\s*([\d\s-]+)\s*ft", flat, flags=re.I)
+            else None
+        ),
     }
 
     salts = find_label("Salt Tolerance")
@@ -387,19 +393,22 @@ def parse_pn(html: str) -> Dict[str, Optional[str]]:
 
     return {k: v for k, v in data.items() if v}
 
+
 # ─── Main Processing Loop ─────────────────────────────────────────────────
 def main() -> None:
     # load CSV into a DataFrame, ensuring all empty cells become blank strings
     df = pd.read_csv(IN_CSV, dtype=str).fillna("")
 
-    df = df.rename(columns={
-        "Link: Missouri Botanical Garden": "MBG Link",
-        "Link: Wildflower.org": "WF Link",
-        "Link: Pleasantrunnursery.com": "PR Link",
-        "Link: Newmoonnursery.com": "NM Link",
-        "Link: Pinelandsnursery.com": "PN Link",
-        "Distribution": "Zone",
-    })
+    df = df.rename(
+        columns={
+            "Link: Missouri Botanical Garden": "MBG Link",
+            "Link: Wildflower.org": "WF Link",
+            "Link: Pleasantrunnursery.com": "PR Link",
+            "Link: Newmoonnursery.com": "NM Link",
+            "Link: Pinelandsnursery.com": "PN Link",
+            "Distribution": "Zone",
+        }
+    )
 
     # ensure a Key column exists for identifying rows uniquely
     if "Key" not in df.columns:
