@@ -58,7 +58,7 @@ pip install -r requirements.txt
 
 ### `GetLinks.py`
 
-* Uses Selenium (with Bing and HTML fallback) to find links for Missouri Botanical Garden, Wildflower.org, Pleasant Run Nursery, New Moon Nursery, and Pinelands Nursery.
+* Uses each site's search first, then falls back to Bing with Selenium (HTML fallback).
 * Requires portable Chrome setup.
 * Outputs `Plants_Linked.csv`.
 

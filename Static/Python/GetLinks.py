@@ -206,6 +206,37 @@ def query_mbg_html(name: str) -> Optional[str]:
         if a and a.get("href"):
             return "https://www.missouribotanicalgarden.org"+a["href"]
 
+def query_pr_html(name: str) -> Optional[str]:
+    url = ("https://www.pleasantrunnursery.com/index.cfm/"
+           "fuseaction/plants.kwSearchPost?presearch="+quote_plus(name))
+    if r := safe_get(url):
+        soup = BeautifulSoup(r.text, "lxml")
+        a = soup.select_one("a[href*='/plant-name/']")
+        if a and a.get("href"):
+            href = a["href"]
+            return href if href.startswith("http") else \
+                   "https://www.pleasantrunnursery.com" + href
+
+def query_nm_html(name: str) -> Optional[str]:
+    url = f"https://newmoonnursery.com/?s={quote_plus(name)}"
+    if r := safe_get(url):
+        soup = BeautifulSoup(r.text, "lxml")
+        a = soup.select_one("a[href*='/nursery-plants/']")
+        if a and a.get("href"):
+            href = a["href"]
+            return href if href.startswith("http") else \
+                   "https://newmoonnursery.com" + href
+
+def query_pn_html(name: str) -> Optional[str]:
+    url = f"https://www.pinelandsnursery.com/search?query={quote_plus(name)}"
+    if r := safe_get(url):
+        soup = BeautifulSoup(r.text, "lxml")
+        a = soup.select_one("a[href*='/plant-material/']")
+        if a and a.get("href"):
+            href = a["href"]
+            return href if href.startswith("http") else \
+                   "https://www.pinelandsnursery.com" + href
+
 # ─── Search only rows that still need links ─────────────────────────────
 for i, row in needs.iterrows():
     bname = row["Botanical Name"]
@@ -252,7 +283,12 @@ for i, row in needs.iterrows():
                     df.at[i, PR_COL] = link
                     print(f" PR  --> {link}"); break
         else:
-            print("  PR not found")
+            for v in name_variants(row):
+                if link := query_pr_html(v):
+                    df.at[i, PR_COL] = link
+                    print(f" PR ♻ {link}"); break
+            else:
+                print("  PR not found")
 
     if not have_nm:
         for v in name_variants(row):
@@ -263,7 +299,12 @@ for i, row in needs.iterrows():
                     df.at[i, NM_COL] = link
                     print(f" NM  --> {link}"); break
         else:
-            print("  NM not found")
+            for v in name_variants(row):
+                if link := query_nm_html(v):
+                    df.at[i, NM_COL] = link
+                    print(f" NM ♻ {link}"); break
+            else:
+                print("  NM not found")
 
     if not have_pn:
         for v in name_variants(row):
@@ -274,7 +315,12 @@ for i, row in needs.iterrows():
                     df.at[i, PN_COL] = link
                     print(f" PN  --> {link}"); break
         else:
-            print("  PN not found")
+            for v in name_variants(row):
+                if link := query_pn_html(v):
+                    df.at[i, PN_COL] = link
+                    print(f" PN ♻ {link}"); break
+            else:
+                print("  PN not found")
     time.sleep(1)
 
 # ─── Save & exit ────────────────────────────────────────────────────────
