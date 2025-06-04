@@ -46,7 +46,8 @@ MBG_COLS = {
     "Spread (ft)",
     "Sun",
     "Water",
-    "Characteristics",
+    "Tolerates",
+    "Maintenance",
     "Attracts",
     "Zone",
 }
@@ -215,7 +216,8 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
         "Spread (ft)":      rng(grab(text, r"Spread")),
         "Sun":              sun_conditions(grab(text, r"Sun")),
         "Water":            water_conditions(grab(text, r"Water")),
-        "Characteristics":  mbg_chars(grab(text, r"Tolerate"), grab(text, r"Maintenance")),
+        "Tolerates":        grab(text, r"Tolerate"),
+        "Maintenance":      grab(text, r"Maintenance"),
         "Attracts":         grab(text, r"Attracts"),
         "Zone":             (f"USDA Hardiness Zone {grab(text, r'Zone')}" if grab(text, r"Zone") else None),
     }
@@ -301,7 +303,14 @@ def main() -> None:
             if html:
                 mbg_data = parse_mbg(html)
                 for col, val in mbg_data.items():
-                    if val and missing(df.at[idx, col]):
+                    if not val:
+                        continue
+                    if col in {"Attracts", "Tolerates"}:
+                        if df.at[idx, col]:
+                            df.at[idx, col] = merge_field(df.at[idx, col], val)
+                        else:
+                            df.at[idx, col] = val
+                    elif missing(df.at[idx, col]):
                         df.at[idx, col] = val
                 time.sleep(SLEEP_BETWEEN)
 
