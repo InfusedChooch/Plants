@@ -60,6 +60,7 @@ WF_COLS = {
     "Water",
     "Attracts",
     "Characteristics",
+    "AGCP Regional Status",
 }
 PR_COLS = {
     "Tolerates",
@@ -235,6 +236,7 @@ def parse_wf(html: str, mbg_missing: bool = False) -> Dict[str, Optional[str]]:
         "Bloom Time":  month_rng(grab(text, r"Bloom Time")),
         "Habitats":    grab(text, r"Native Habitat"),
         "Soil Description": grab(text, r"Soil Description"),
+        "AGCP Regional Status": grab(text, r"(?:National Wetland Indicator Status|AGCP)"),
     }
     if mbg_missing:
         # fill core fields when MBG had no data

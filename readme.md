@@ -145,7 +145,7 @@ Every field is first scraped from the Rutgers PDF. Missing values are filled fro
 | Attracts | PDF → Pleasant Run + WF + MBG | |
 | Soil Description | PDF → Wildflower | |
 | Distribution Zone | PDF → MBG | |
-| AGCP Regional Status | PDF → Wildflower | |
+| AGCP Regional Status | PDF → Wildflower | from "National Wetland Indicator Status" |
 | Link: Missouri Botanical Garden | from GetLinks | |
 | Link: Wildflower.org | from GetLinks | |
 | Link: Pleasantrunnursery.com | from GetLinks | |
