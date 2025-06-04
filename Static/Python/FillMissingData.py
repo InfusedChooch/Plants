@@ -19,16 +19,22 @@ from bs4 import BeautifulSoup  # HTML parser to extract text from web pages
 from tqdm import tqdm  # progress bar utility when looping over many items
 import argparse
 
-parser = argparse.ArgumentParser(description="Fill missing plant fields using MBG/WF")
-parser.add_argument(
-    "--in_csv", default="Static/Outputs/Plants_Linked.csv", help="Input CSV file"
-)
-parser.add_argument(
-    "--out_csv",
-    default="Static/Outputs/Plants_Linked_Filled.csv",
-    help="Output CSV file",
-)
-args = parser.parse_args()
+
+def parse_cli_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Return CLI arguments for script execution."""
+    parser = argparse.ArgumentParser(
+        description="Fill missing plant fields using MBG/WF"
+    )
+    parser.add_argument(
+        "--in_csv", default="Static/Outputs/Plants_Linked.csv", help="Input CSV file"
+    )
+    parser.add_argument(
+        "--out_csv",
+        default="Static/Outputs/Plants_Linked_Filled.csv",
+        help="Output CSV file",
+    )
+    return parser.parse_args(argv)
+
 
 # ─── File Paths & Configuration ───────────────────────────────────────────
 BASE = Path(__file__).resolve().parent
@@ -46,8 +52,8 @@ def repo_path(arg: str) -> Path:
     return cand if cand.exists() else (REPO / p).resolve()
 
 
-IN_CSV = repo_path(args.in_csv)
-OUT_CSV = repo_path(args.out_csv)
+IN_CSV = repo_path("Static/Outputs/Plants_Linked.csv")
+OUT_CSV = repo_path("Static/Outputs/Plants_Linked_Filled.csv")
 MASTER_CSV = repo_path("Static/Templates/Plants_Linked_Filled_Master.csv")
 SLEEP_BETWEEN = 0.7  # seconds to wait between each HTTP request
 # identify as a browser
@@ -395,9 +401,9 @@ def parse_pn(html: str) -> Dict[str, Optional[str]]:
 
 
 # ─── Main Processing Loop ─────────────────────────────────────────────────
-def main() -> None:
+def main(in_csv: Path = IN_CSV, out_csv: Path = OUT_CSV) -> None:
     # load CSV into a DataFrame, ensuring all empty cells become blank strings
-    df = pd.read_csv(IN_CSV, dtype=str).fillna("")
+    df = pd.read_csv(in_csv, dtype=str).fillna("")
 
     df = df.rename(
         columns={
@@ -532,9 +538,12 @@ def main() -> None:
     template = list(pd.read_csv(MASTER_CSV, nrows=0).columns)
     df = df[template + [c for c in df.columns if c not in template]]
     # save out the newly filled CSV
-    df.to_csv(OUT_CSV, index=False, quoting=csv.QUOTE_MINIMAL, na_rep="")
-    print(f"Saved → {OUT_CSV}")
+    df.to_csv(out_csv, index=False, quoting=csv.QUOTE_MINIMAL, na_rep="")
+    print(f"Saved → {out_csv}")
 
 
 if __name__ == "__main__":
-    main()  # run when executed as a script
+    cli_args = parse_cli_args()
+    main(
+        repo_path(cli_args.in_csv), repo_path(cli_args.out_csv)
+    )  # run when executed as a script
