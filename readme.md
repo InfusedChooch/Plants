@@ -85,6 +85,12 @@ pip install -r requirements.txt
 * Auto-generates output paths using prefix/suffix.
 * Logs real-time script output.
 
+### `Tools/compare_site_data.py`
+
+* Given MBG, Wildflower, Pleasant Run, New Moon, and Pinelands URLs,
+  prints which fields each site provides.
+* Use `--json` to output the results as JSON instead of a table.
+
 ---
 
 ## 📂 Output Files
