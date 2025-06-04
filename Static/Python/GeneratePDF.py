@@ -192,7 +192,10 @@ class PlantPDF(FPDF):
         self.ln(2)
 
         # ── Images ──
-        images = sorted(list(IMG_DIR.glob(f"*_{base_name}_*.jpg")) + list(IMG_DIR.glob(f"*_{base_name}_*.png")))    # Find up to 3 images
+        images = sorted(
+            list(IMG_DIR.glob(f"{base_name}_*.jpg"))
+            + list(IMG_DIR.glob(f"{base_name}_*.png"))
+        )  # Find up to 3 images
         count = max(1, min(len(images), 3))
         margin = self.l_margin
         avail_w = self.w - margin - self.r_margin
@@ -333,8 +336,8 @@ def try_image_path(base_dir, filenames):
             return path
     return None
 
-left_logo = try_image_path(logo_dir, ["001_rutgers_cooperative_extension_1.jpg", "001_rutgers_cooperative_extension_1.png"])
-right_logo = try_image_path(logo_dir, ["001_rutgers_cooperative_extension_2.jpg", "001_rutgers_cooperative_extension_2.png"])
+left_logo = try_image_path(logo_dir, ["rutgers_cooperative_extension_0.jpg", "rutgers_cooperative_extension_0.png"])
+right_logo = try_image_path(logo_dir, ["rutgers_cooperative_extension_1.jpg", "rutgers_cooperative_extension_1.png"])
 if left_logo:
     pdf.image(str(left_logo), x=pdf.l_margin, y=20, h=30)
 if right_logo:
