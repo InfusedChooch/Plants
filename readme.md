@@ -40,9 +40,8 @@ pip install -r requirements.txt
 | 1    | `PDFScraper.py`      | Extracts plant data from the Rutgers PDF and saves a partially filled CSV and images.  |
 | 2    | `GetLinks.py`        | Locates links for MBG, Wildflower.org, Pleasantrunnursery.com, Newmoonnursery.com, and Pinelandsnursery.com sites. |
 | 3    | `FillMissingData.py` | Pulls additional plant info from those links to complete the dataset.                  |
-| 4    | `TestLinks.py`       | Checks all links to flag and log any broken entries.                                   |
-| 5    | `Excelify2.py`       | Produces a styled Excel file with filters, highlights, and embedded source code.       |
-| 6    | `GeneratePDF.py`     | Generates a clean, printable PDF plant guide with TOC, sections, and images.           |
+| 4    | `Excelify2.py`       | Produces a styled Excel file with filters, highlights, and embedded source code.       |
+| 5    | `GeneratePDF.py`     | Generates a clean, printable PDF plant guide with TOC, sections, and images.           |
 | -    | `Launcher.py`        | CustomTkinter GUI to run the toolchain with override paths, console log, and controls. |
 
 ---
@@ -98,7 +97,6 @@ pip install -r requirements.txt
 * `Plants_NeedLinks.csv` – initial extract from PDF.
 * `Plants_Linked.csv` – with links filled in.
 * `Plants_Linked_Filled.csv` – full dataset with scraped attributes.
-* `broken_links.txt` – log of broken links.
 * `Plants_Linked_Filled.xlsx` – styled Excel export with embedded code.
 * `Plant_Guide_EXPORT.pdf` – print-ready guide.
 * `pdf_images/` – extracted JPEG images.
@@ -111,10 +109,9 @@ pip install -r requirements.txt
 1. Run `PDFScraper.py` to extract data and images.
 2. Run `GetLinks.py` to search and assign links for all supported sites.
 3. Run `FillMissingData.py` to scrape additional data.
-4. Run `TestLinks.py` to validate all links.
-5. Run `Excelify2.py` to generate the Excel workbook.
-6. Run `GeneratePDF.py` to produce the final guide.
-7. Optionally, use `Launcher.py` for a GUI-driven experience.
+4. Run `Excelify2.py` to generate the Excel workbook.
+5. Run `GeneratePDF.py` to produce the final guide.
+6. Optionally, use `Launcher.py` for a GUI-driven experience.
 
 ---
 

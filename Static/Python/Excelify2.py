@@ -82,7 +82,6 @@ script_descriptions = {
     "PDFScraper.py": "Extracts plant data from the PDF guide",
     "GetLinks.py": "Finds official MBG & WF URLs for each plant",
     "FillMissingData.py": "Populates missing fields using those links",
-    "TestLinks.py": "Validates that all stored links return a live page",
     "Excelify2.py": "Creates formatted Excel output with filters & highlights",
 }
 row_start = readme.max_row + 2
