@@ -217,7 +217,7 @@ def extract_images(df: pd.DataFrame) -> None:
                 "Botanical Name": bot_name,
                 "Common Name": com_name,
             })
-    pd.DataFrame(image_rows).to_csv(MAP_CSV, index=False)
+    pd.DataFrame(image_rows).to_csv(MAP_CSV, index=False, na_rep="")
     safe_print(f"📸 Extracted {len(image_rows)} images to {IMG_DIR}")
     safe_print(f"🗂  Mapping written to {MAP_CSV}")
 
@@ -234,7 +234,7 @@ def extract_images(df: pd.DataFrame) -> None:
 # ─── Main ────────────────────────────────────────────────────────────────
 def main():
     df = pd.DataFrame(extract_rows(), columns=COLUMNS)
-    df.to_csv(OUT_CSV, index=False, quoting=csv.QUOTE_MINIMAL)
+    df.to_csv(OUT_CSV, index=False, quoting=csv.QUOTE_MINIMAL, na_rep="")
     safe_print(f"✅ Saved → {OUT_CSV.name} ({len(df)} rows)")
     extract_images(df)
 

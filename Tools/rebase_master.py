@@ -76,4 +76,4 @@ new["Link: Pleasantrunnursery.com"] = old.get("Link: Pleasant Run", "")
 new["Link: Newmoonnursery.com"] = old.get("Link: New Moon", "")
 new["Link: Pinelandsnursery.com"] = old.get("Link: Pinelands", "")
 
-new.to_csv(args.output, index=False)
+new.to_csv(args.output, index=False, na_rep="")
