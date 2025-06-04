@@ -1,27 +1,39 @@
 # FillMissingData.py
 # Description: Pull numeric, habitat, and other details from Missouri Botanical Garden and Wildflower.org pages and fill them into a CSV.
 
-from __future__ import annotations  # allow postponed evaluation of type hints for forward references
-import csv                        # built-in support for CSV operations (writing with quotes)
-import re                         # regular expressions for searching and cleaning text
-import time                       # to pause between HTTP requests for politeness
-from pathlib import Path          # easy file system path manipulations
-from typing import Dict, Optional# type hinting for dictionaries and optional return values
+from __future__ import (
+    annotations,
+)  # allow postponed evaluation of type hints for forward references
+import csv  # built-in support for CSV operations (writing with quotes)
+import re  # regular expressions for searching and cleaning text
+import time  # to pause between HTTP requests for politeness
+from pathlib import Path  # easy file system path manipulations
+from typing import (
+    Dict,
+    Optional,
+)  # type hinting for dictionaries and optional return values
 
-import pandas as pd               # data handling library for reading and writing CSVs as DataFrames
-import requests                   # HTTP library to fetch webpage content
-from bs4 import BeautifulSoup     # HTML parser to extract text from web pages
-from tqdm import tqdm             # progress bar utility when looping over many items
+import pandas as pd  # data handling library for reading and writing CSVs as DataFrames
+import requests  # HTTP library to fetch webpage content
+from bs4 import BeautifulSoup  # HTML parser to extract text from web pages
+from tqdm import tqdm  # progress bar utility when looping over many items
 import argparse
 
 parser = argparse.ArgumentParser(description="Fill missing plant fields using MBG/WF")
-parser.add_argument("--in_csv", default="Static/Outputs/Plants_Linked.csv", help="Input CSV file")
-parser.add_argument("--out_csv", default="Static/Outputs/Plants_Linked_Filled.csv", help="Output CSV file")
+parser.add_argument(
+    "--in_csv", default="Static/Outputs/Plants_Linked.csv", help="Input CSV file"
+)
+parser.add_argument(
+    "--out_csv",
+    default="Static/Outputs/Plants_Linked_Filled.csv",
+    help="Output CSV file",
+)
 args = parser.parse_args()
 
 # ─── File Paths & Configuration ───────────────────────────────────────────
 BASE = Path(__file__).resolve().parent
 REPO = BASE.parent.parent
+
 
 def repo_path(arg: str) -> Path:
     """Resolve CLI paths relative to the repo root or this script."""
@@ -33,12 +45,30 @@ def repo_path(arg: str) -> Path:
     cand = (BASE / p).resolve()
     return cand if cand.exists() else (REPO / p).resolve()
 
+
 IN_CSV = repo_path(args.in_csv)
 OUT_CSV = repo_path(args.out_csv)
 MASTER_CSV = repo_path("Static/Templates/Plants_Linked_Filled_Master.csv")
-SLEEP_BETWEEN = 0.7                                  # seconds to wait between each HTTP request
+SLEEP_BETWEEN = 0.7  # seconds to wait between each HTTP request
 # identify as a browser
-HEADERS       = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
+# fallback headers if a site blocks the main user agent
+HEADERS_ALT = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/119.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+}
 
 # columns pulled from each site so we know when to scrape
 MBG_COLS = {
@@ -67,9 +97,11 @@ PR_COLS = {
     "Attracts",
 }
 
+
 def missing(val: str | None) -> bool:
     """Return True if cell value is blank or only whitespace."""
     return not str(val or "").strip()
+
 
 # ─── Helper Function: Fetch HTML Safely ────────────────────────────────────
 def fetch(url: str) -> str | None:
@@ -79,11 +111,14 @@ def fetch(url: str) -> str | None:
     """
     try:
         r = requests.get(url, timeout=12, headers=HEADERS)  # attempt HTTP GET
+        if r.status_code == 403:
+            r = requests.get(url, timeout=12, headers=HEADERS_ALT)
         if r.ok:
             return r.text  # return the HTML body if status code is 200
     except requests.RequestException:
-        pass             # ignore network errors, timeouts, etc.
-    return None          # return None if anything goes wrong
+        pass  # ignore network errors, timeouts, etc.
+    return None  # return None if anything goes wrong
+
 
 # ─── Text Parsing Utilities ────────────────────────────────────────────────
 def grab(txt: str, label_pat: str) -> str | None:
@@ -103,8 +138,8 @@ def rng(s: str | None) -> str | None:
     """
     if not s:
         return None
-    s = s.replace("–", "-")                # unify dash characters
-    nums = re.findall(r"[\d.]+", s)          # extract all numbers
+    s = s.replace("–", "-")  # unify dash characters
+    nums = re.findall(r"[\d.]+", s)  # extract all numbers
     # convert floats that are whole ints into int strings
     nums = [str(int(float(n))) if float(n).is_integer() else n for n in nums]
     return " - ".join(nums) if nums else None
@@ -204,6 +239,7 @@ def gen_key(botanical: str, used: set[str]) -> str:
     used.add(base + suffix)
     return base + suffix
 
+
 # ─── HTML Parsers for Each Site ──────────────────────────────────────────
 def parse_mbg(html: str) -> Dict[str, Optional[str]]:
     """
@@ -213,6 +249,7 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
     soup = BeautifulSoup(html, "lxml")
     text = soup.get_text("\n", strip=True)
     return {
+
         "Height (ft)":      rng(grab(text, r"Height")),
         "Spread (ft)":      rng(grab(text, r"Spread")),
         "Sun":              sun_conditions(grab(text, r"Sun")),
@@ -233,19 +270,23 @@ def parse_wf(html: str, mbg_missing: bool = False) -> Dict[str, Optional[str]]:
     text = soup.get_text("\n", strip=True)
     data = {
         "Bloom Color": ", ".join(split_conditions(grab(text, r"Bloom Color"))),
-        "Bloom Time":  month_rng(grab(text, r"Bloom Time")),
-        "Habitats":    grab(text, r"Native Habitat"),
+        "Bloom Time": month_rng(grab(text, r"Bloom Time")),
+        "Habitats": grab(text, r"Native Habitat"),
         "Soil Description": grab(text, r"Soil Description"),
         "AGCP Regional Status": grab(text, r"(?:National Wetland Indicator Status|AGCP)"),
     }
     if mbg_missing:
         # fill core fields when MBG had no data
-        data.update({
-            "Sun":              sun_conditions(grab(text, r"Light Requirement")),
-            "Water":            water_conditions(grab(text, r"Soil Moisture")),
-            "Attracts":         grab(text, r"Benefit"),
-            "Characteristics":  wf_chars(grab(text, r"Leaf Retention"), grab(text, r"Fruit Type")),
-        })
+        data.update(
+            {
+                "Sun": sun_conditions(grab(text, r"Light Requirement")),
+                "Water": water_conditions(grab(text, r"Soil Moisture")),
+                "Attracts": grab(text, r"Benefit"),
+                "Characteristics": wf_chars(
+                    grab(text, r"Leaf Retention"), grab(text, r"Fruit Type")
+                ),
+            }
+        )
     return data
 
 
@@ -269,16 +310,19 @@ def parse_pr(html: str) -> Dict[str, Optional[str]]:
         "Tolerates": collect("Tolerance"),
     }
 
+
 # ─── Main Processing Loop ─────────────────────────────────────────────────
 def main() -> None:
     # load CSV into a DataFrame, ensuring all empty cells become blank strings
     df = pd.read_csv(IN_CSV, dtype=str).fillna("")
-    df = df.rename(columns={
-        "Link: Missouri Botanical Garden": "MBG Link",
-        "Link: Wildflower.org": "WF Link",
-        "Link: Pleasantrunnursery.com": "PR Link",
-        "Distribution": "Zone",
-    })
+    df = df.rename(
+        columns={
+            "Link: Missouri Botanical Garden": "MBG Link",
+            "Link: Wildflower.org": "WF Link",
+            "Link: Pleasantrunnursery.com": "PR Link",
+            "Distribution": "Zone",
+        }
+    )
     # ensure a Key column exists for identifying rows uniquely
     if "Key" not in df.columns:
         df["Key"] = ""
@@ -363,6 +407,7 @@ def main() -> None:
     # save out the newly filled CSV
     df.to_csv(OUT_CSV, index=False, quoting=csv.QUOTE_MINIMAL, na_rep="")
     print(f"Saved → {OUT_CSV}")
+
 
 if __name__ == "__main__":
     main()  # run when executed as a script
