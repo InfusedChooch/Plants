@@ -23,7 +23,8 @@ new_cols = [
     "Tolerates",
     "Maintenance",
     "Native Habitats",
-    "Wildlife Benefits",
+    "Attracts",
+    "Soil Description",
     "Distribution Zone",
     "AGCP Regional Status",
     "Link: Missouri Botanical Garden",
@@ -63,7 +64,8 @@ new["Tolerates"] = tols
 new["Maintenance"] = maint
 
 new["Native Habitats"] = old.get("Habitats", "")
-new["Wildlife Benefits"] = old.get("Wildlife Benefits", "")
+new["Attracts"] = old.get("Attracts", old.get("Wildlife Benefits", ""))
+new["Soil Description"] = old.get("Soil Description", "")
 new["Distribution Zone"] = old.get("Distribution", old.get("Zone", ""))
 new["AGCP Regional Status"] = old.get("AGCP Regional Status", "")
 new["Link: Missouri Botanical Garden"] = old.get(

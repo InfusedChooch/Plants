@@ -46,7 +46,7 @@ COLUMNS = [
     "Height (ft)", "Spread (ft)",
     "Bloom Color", "Bloom Time", "Sun", "Water",
     "Characteristics", "Habitats",
-    "Wildlife Benefits", "Zone",
+    "Attracts", "Soil Description", "Zone",
     "MBG Link", "WF Link",
 ]
 

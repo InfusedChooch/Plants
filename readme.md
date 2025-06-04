@@ -142,7 +142,8 @@ Every field is first scraped from the Rutgers PDF. Missing values are filled fro
 | Tolerates | PDF → MBG + Pleasant Run | comma-separated list |
 | Maintenance | PDF → MBG | `Low, Medium, High` |
 | Native Habitats | PDF → Wildflower | comma-separated list |
-| Wildlife Benefits | PDF → Attracts from Pleasant Run + WF + MBG; Soil Description from WF | |
+| Attracts | PDF → Pleasant Run + WF + MBG | |
+| Soil Description | PDF → Wildflower | |
 | Distribution Zone | PDF → MBG | |
 | AGCP Regional Status | PDF → Wildflower | |
 | Link: Missouri Botanical Garden | from GetLinks | |
