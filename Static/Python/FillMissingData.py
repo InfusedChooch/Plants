@@ -361,7 +361,7 @@ def main() -> None:
     template = list(pd.read_csv(MASTER_CSV, nrows=0).columns)
     df = df[template + [c for c in df.columns if c not in template]]
     # save out the newly filled CSV
-    df.to_csv(OUT_CSV, index=False, quoting=csv.QUOTE_MINIMAL)
+    df.to_csv(OUT_CSV, index=False, quoting=csv.QUOTE_MINIMAL, na_rep="")
     print(f"Saved → {OUT_CSV}")
 
 if __name__ == "__main__":
