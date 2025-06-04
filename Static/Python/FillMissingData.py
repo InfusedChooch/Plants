@@ -35,7 +35,7 @@ def repo_path(arg: str) -> Path:
 
 IN_CSV = repo_path(args.in_csv)
 OUT_CSV = repo_path(args.out_csv)
-MASTER_CSV = IN_CSV  # template file to match column order
+MASTER_CSV = repo_path("Static/Templates/Plants_Linked_Filled_Master.csv")
 SLEEP_BETWEEN = 0.7                                  # seconds to wait between each HTTP request
 HEADERS       = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}  # identify as a browser
 
@@ -187,7 +187,7 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
         "Water":            water_conditions(grab(text, r"Water")),
         "Characteristics":  mbg_chars(grab(text, r"Tolerate"), grab(text, r"Maintenance")),
         "Wildlife Benefits": grab(text, r"Attracts"),
-        "Distribution":     (f"USDA Hardiness Zone {grab(text, r'Zone')}" if grab(text, r"Zone") else None),
+        "Zone":             (f"USDA Hardiness Zone {grab(text, r'Zone')}" if grab(text, r"Zone") else None),
     }
 
 
@@ -217,6 +217,11 @@ def parse_wf(html: str, mbg_missing: bool = False) -> Dict[str, Optional[str]]:
 def main() -> None:
     # load CSV into a DataFrame, ensuring all empty cells become blank strings
     df = pd.read_csv(IN_CSV, dtype=str).fillna("")
+    df = df.rename(columns={
+        "Link: Missouri Botanical Garden": "MBG Link",
+        "Link: Wildflower.org": "WF Link",
+        "Distribution": "Zone",
+    })
     # ensure a Key column exists for identifying rows uniquely
     if "Key" not in df.columns:
         df["Key"] = ""
@@ -235,7 +240,7 @@ def main() -> None:
             df.at[idx, "Key"] = gen_key(row["Botanical Name"], used_keys)
 
         # ── Fetch and parse MBG if URL exists ──────────────────────────
-        mbg_url = row.get("Link: Missouri Botanical Garden", "").strip()
+        mbg_url = row.get("MBG Link", "").strip()
         mbg_data: Dict[str, Optional[str]] = {}
         if mbg_url.startswith("http"):
             html = fetch(mbg_url)
@@ -247,7 +252,7 @@ def main() -> None:
                 time.sleep(SLEEP_BETWEEN)
 
         # ── Fetch and parse WF, merging or filling missing ─────────────
-        wf_url = row.get("Link: Wildflower.org", "").strip()
+        wf_url = row.get("WF Link", "").strip()
         if wf_url.startswith("http"):
             html = fetch(wf_url)
             if html:

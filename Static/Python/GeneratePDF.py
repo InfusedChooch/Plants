@@ -28,6 +28,8 @@ logo_dir = IMG_DIR.parent if IMG_DIR.name == "jpeg" else IMG_DIR
 
 # ─── Load and Prepare Data ────────────────────────────────────────────────
 df = pd.read_csv(CSV_FILE, dtype=str).fillna("")            # Read CSV, empty cells → ""
+template_cols = list(pd.read_csv(Path("Static/Templates/Plants_Linked_Filled_Master.csv"), nrows=0).columns)
+df = df.reindex(columns=template_cols + [c for c in df.columns if c not in template_cols])
 df["Plant Type"] = df["Plant Type"].str.upper()             # Normalize plant types to uppercase
 df["Page in PDF"] = pd.to_numeric(df["Page in PDF"], errors="coerce")  # Ensure page numbers are numeric
 
@@ -160,8 +162,8 @@ class PlantPDF(FPDF):
         """Add a single plant page: title, images, and all details."""
         bot_name = safe_text(row.get("Botanical Name", ""))      # Clean botanical name
         base_name = name_slug(bot_name)                          # Slug for image filenames
-        mbg = row.get("Link: Missouri Botanical Garden", "").strip()
-        wf  = row.get("Link: Wildflower.org", "").strip()
+        mbg = row.get("MBG Link", "").strip()
+        wf  = row.get("WF Link", "").strip()
         self.current_plant_type = plant_type
         self.add_page()                                          # New PDF page
         self.footer_links = (mbg or None, wf or None)            # Links for footer
@@ -284,7 +286,7 @@ class PlantPDF(FPDF):
         site_parts = []
         sun   = safe_text(row.get("Sun", ""))
         water = safe_text(row.get("Water", ""))
-        zone  = safe_text(row.get("Distribution", ""))
+        zone  = safe_text(row.get("Zone", ""))
         if sun:
             site_parts.append(("Sun:", sun))
         if water:

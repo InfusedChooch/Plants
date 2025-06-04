@@ -42,13 +42,21 @@ OUTPUT = repo_path(args.out_csv)
 MASTER = repo_path(args.master_csv)
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
-MBG_COL, WF_COL = "Link: Missouri Botanical Garden", "Link: Wildflower.org"
+MBG_COL, WF_COL = "MBG Link", "WF Link"
 
 # ─── Step 1: load CSVs & prefill from master ────────────────────────────
 df = pd.read_csv(INPUT, dtype=str).fillna("")
+df = df.rename(columns={
+    "Link: Missouri Botanical Garden": MBG_COL,
+    "Link: Wildflower.org": WF_COL,
+})
 
 try:
     master = pd.read_csv(MASTER, dtype=str).fillna("")
+    master = master.rename(columns={
+        "Link: Missouri Botanical Garden": MBG_COL,
+        "Link: Wildflower.org": WF_COL,
+    })
 except FileNotFoundError:
     print(f"Master CSV not found at {MASTER} – skipping prefill.")
     master = pd.DataFrame(columns=["Botanical Name", MBG_COL, WF_COL])
@@ -75,6 +83,8 @@ needs = df[(~df[MBG_COL].str.startswith("http")) |
            (~df[WF_COL].str.startswith("http"))]
 
 if needs.empty:
+    template_cols = list(pd.read_csv(MASTER, nrows=0).columns)
+    df = df.reindex(columns=template_cols + [c for c in df.columns if c not in template_cols])
     df.to_csv(OUTPUT, index=False)
     print(f"All links present – written straight to {OUTPUT.relative_to(REPO)}")
     raise SystemExit
@@ -221,6 +231,8 @@ for i, row in needs.iterrows():
 
 # ─── Save & exit ────────────────────────────────────────────────────────
 driver.quit()
+template_cols = list(pd.read_csv(MASTER, nrows=0).columns)
+df = df.reindex(columns=template_cols + [c for c in df.columns if c not in template_cols])
 df.to_csv(OUTPUT, index=False)
 try:
     rel = OUTPUT.relative_to(REPO)

@@ -49,8 +49,8 @@ COLUMNS = [
     "Height (ft)", "Spread (ft)",
     "Bloom Color", "Bloom Time", "Sun", "Water",
     "Characteristics", "Habitats",
-    "Wildlife Benefits", "Distribution",
-    "Link: Missouri Botanical Garden", "Link: Wildflower.org",
+    "Wildlife Benefits", "Zone",
+    "MBG Link", "WF Link",
 ]
 
 # ─── Regex Patterns ──────────────────────────────────────────────────────
