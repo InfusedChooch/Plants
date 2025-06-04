@@ -135,7 +135,7 @@ if needs.empty:
     df = df.reindex(
         columns=template_cols + [c for c in df.columns if c not in template_cols]
     )
-    df.to_csv(OUTPUT, index=False)
+    df.to_csv(OUTPUT, index=False, na_rep="")
     print(f"All links present – written straight to {OUTPUT.relative_to(REPO)}")
     raise SystemExit
 
@@ -445,7 +445,7 @@ template_cols = list(pd.read_csv(MASTER, nrows=0).columns)
 df = df.reindex(
     columns=template_cols + [c for c in df.columns if c not in template_cols]
 )
-df.to_csv(OUTPUT, index=False)
+df.to_csv(OUTPUT, index=False, na_rep="")
 try:
     rel = OUTPUT.relative_to(REPO)
 except ValueError:  # outside the repo – show full path
