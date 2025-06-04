@@ -85,6 +85,12 @@ pip install -r requirements.txt
 * Auto-generates output paths using prefix/suffix.
 * Logs real-time script output.
 
+### `Tools/compare_site_data.py`
+
+* Given MBG, Wildflower, Pleasant Run, New Moon, and Pinelands URLs,
+  prints which fields each site provides.
+* Use `--json` to output the results as JSON instead of a table.
+
 ---
 
 ## 📂 Output Files
@@ -145,7 +151,7 @@ Every field is first scraped from the Rutgers PDF. Missing values are filled fro
 | Attracts | PDF → Pleasant Run + WF + MBG | |
 | Soil Description | PDF → Wildflower | |
 | Distribution Zone | PDF → MBG | |
-| AGCP Regional Status | PDF → Wildflower | |
+| AGCP Regional Status | PDF → Wildflower | from "National Wetland Indicator Status" |
 | Link: Missouri Botanical Garden | from GetLinks | |
 | Link: Wildflower.org | from GetLinks | |
 | Link: Pleasantrunnursery.com | from GetLinks | |

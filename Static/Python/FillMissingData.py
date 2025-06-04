@@ -76,7 +76,8 @@ MBG_COLS = {
     "Spread (ft)",
     "Sun",
     "Water",
-    "Characteristics",
+    "Tolerates",
+    "Maintenance",
     "Attracts",
     "Zone",
 }
@@ -89,6 +90,7 @@ WF_COLS = {
     "Water",
     "Attracts",
     "Characteristics",
+    "AGCP Regional Status",
 }
 PR_COLS = {
     "Tolerates",
@@ -247,19 +249,15 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
     soup = BeautifulSoup(html, "lxml")
     text = soup.get_text("\n", strip=True)
     return {
-        "Height (ft)": rng(grab(text, r"Height")),
-        "Spread (ft)": rng(grab(text, r"Spread")),
-        "Sun": sun_conditions(grab(text, r"Sun")),
-        "Water": water_conditions(grab(text, r"Water")),
-        "Characteristics": mbg_chars(
-            grab(text, r"Tolerate"), grab(text, r"Maintenance")
-        ),
-        "Attracts": grab(text, r"Attracts"),
-        "Zone": (
-            f"USDA Hardiness Zone {grab(text, r'Zone')}"
-            if grab(text, r"Zone")
-            else None
-        ),
+
+        "Height (ft)":      rng(grab(text, r"Height")),
+        "Spread (ft)":      rng(grab(text, r"Spread")),
+        "Sun":              sun_conditions(grab(text, r"Sun")),
+        "Water":            water_conditions(grab(text, r"Water")),
+        "Tolerates":        grab(text, r"Tolerate"),
+        "Maintenance":      grab(text, r"Maintenance"),
+        "Attracts":         grab(text, r"Attracts"),
+        "Zone":             (f"USDA Hardiness Zone {grab(text, r'Zone')}" if grab(text, r"Zone") else None),
     }
 
 
@@ -275,6 +273,7 @@ def parse_wf(html: str, mbg_missing: bool = False) -> Dict[str, Optional[str]]:
         "Bloom Time": month_rng(grab(text, r"Bloom Time")),
         "Habitats": grab(text, r"Native Habitat"),
         "Soil Description": grab(text, r"Soil Description"),
+        "AGCP Regional Status": grab(text, r"(?:National Wetland Indicator Status|AGCP)"),
     }
     if mbg_missing:
         # fill core fields when MBG had no data
@@ -350,7 +349,14 @@ def main() -> None:
             if html:
                 mbg_data = parse_mbg(html)
                 for col, val in mbg_data.items():
-                    if val and missing(df.at[idx, col]):
+                    if not val:
+                        continue
+                    if col in {"Attracts", "Tolerates"}:
+                        if df.at[idx, col]:
+                            df.at[idx, col] = merge_field(df.at[idx, col], val)
+                        else:
+                            df.at[idx, col] = val
+                    elif missing(df.at[idx, col]):
                         df.at[idx, col] = val
                 time.sleep(SLEEP_BETWEEN)
 
@@ -399,7 +405,7 @@ def main() -> None:
     template = list(pd.read_csv(MASTER_CSV, nrows=0).columns)
     df = df[template + [c for c in df.columns if c not in template]]
     # save out the newly filled CSV
-    df.to_csv(OUT_CSV, index=False, quoting=csv.QUOTE_MINIMAL)
+    df.to_csv(OUT_CSV, index=False, quoting=csv.QUOTE_MINIMAL, na_rep="")
     print(f"Saved → {OUT_CSV}")
 
 
