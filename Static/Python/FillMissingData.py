@@ -186,7 +186,7 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
         "Sun":              sun_conditions(grab(text, r"Sun")),
         "Water":            water_conditions(grab(text, r"Water")),
         "Characteristics":  mbg_chars(grab(text, r"Tolerate"), grab(text, r"Maintenance")),
-        "Wildlife Benefits": grab(text, r"Attracts"),
+        "Attracts":         grab(text, r"Attracts"),
         "Zone":             (f"USDA Hardiness Zone {grab(text, r'Zone')}" if grab(text, r"Zone") else None),
     }
 
@@ -202,13 +202,14 @@ def parse_wf(html: str, mbg_missing: bool = False) -> Dict[str, Optional[str]]:
         "Bloom Color": ", ".join(split_conditions(grab(text, r"Bloom Color"))),
         "Bloom Time":  month_rng(grab(text, r"Bloom Time")),
         "Habitats":    grab(text, r"Native Habitat"),
+        "Soil Description": grab(text, r"Soil Description"),
     }
     if mbg_missing:
         # fill core fields when MBG had no data
         data.update({
             "Sun":              sun_conditions(grab(text, r"Light Requirement")),
             "Water":            water_conditions(grab(text, r"Soil Moisture")),
-            "Wildlife Benefits": grab(text, r"Benefit"),
+            "Attracts":         grab(text, r"Benefit"),
             "Characteristics":  wf_chars(grab(text, r"Leaf Retention"), grab(text, r"Fruit Type")),
         })
     return data
@@ -260,7 +261,7 @@ def main() -> None:
                 for col, val in wf_data.items():
                     if val:
                         # merge additive fields vs overwrite others
-                        if col in {"Sun","Water","Wildlife Benefits","Characteristics"}:
+                        if col in {"Sun","Water","Attracts","Characteristics"}:
                             df.at[idx, col] = merge_field(df.at[idx, col], val)
                         else:
                             df.at[idx, col] = val
