@@ -27,7 +27,11 @@ from bs4 import BeautifulSoup
 
 # ─── Basic Fetch ───────────────────────────────────────────────────────────
 def fetch(url: str) -> str | None:
-    """Return the page HTML or ``None`` on errors."""
+    """Return the page HTML or ``None`` on errors.
+
+    A fallback via `r.jina.ai` is attempted for sites that block
+    direct requests (HTTP 403).
+    """
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -48,6 +52,9 @@ def fetch(url: str) -> str | None:
         r = requests.get(url, timeout=12, headers=headers)
         if r.status_code == 403:
             r = requests.get(url, timeout=12, headers=alt)
+        if r.status_code == 403:
+            # final fallback via text-only proxy
+            r = requests.get("https://r.jina.ai/" + url, timeout=12, headers=headers)
         if r.ok:
             return r.text
     except requests.RequestException:
@@ -241,8 +248,8 @@ def parse_pn(html: str) -> Dict[str, Optional[str]]:
 # ─── Helpers ───────────────────────────────────────────────────────────────
 def parse_site(
     url: str, parser: Callable[[str], Dict[str, Optional[str]]], name: str
-) -> Dict[str, bool]:
-    """Fetch ``url`` and return a dict of ``field -> True`` for found values."""
+) -> Dict[str, str]:
+    """Fetch ``url`` and return a dict of ``field -> value`` for found values."""
     if not url or not url.startswith("http"):
         return {}
     html = fetch(url)
@@ -254,7 +261,7 @@ def parse_site(
     except Exception as exc:  # pragma: no cover - just defensive
         print(f"Error parsing {name}: {exc}", file=sys.stderr)
         return {}
-    return {k: bool(v) for k, v in data.items()}
+    return {k: v for k, v in data.items() if v}
 
 
 # ─── CLI ───────────────────────────────────────────────────────────────────
@@ -266,6 +273,11 @@ parser.add_argument("--nm", default="", help="New Moon Nursery URL")
 parser.add_argument("--pn", default="", help="Pinelands Nursery URL")
 parser.add_argument(
     "--json", action="store_true", help="Output JSON instead of a table"
+)
+parser.add_argument(
+    "--output",
+    default="",
+    help="Save extracted field values to the given text file",
 )
 args = parser.parse_args()
 
@@ -283,11 +295,21 @@ if args.json:
     print(json.dumps(results, indent=2))
     raise SystemExit
 
+if args.output:
+    with open(args.output, "w", encoding="utf-8") as fh:
+        for site, data in results.items():
+            fh.write(f"[{site}]\n")
+            for field, value in data.items():
+                fh.write(f"{field}: {value}\n")
+            fh.write("\n")
+
 all_fields = sorted({f for d in results.values() for f in d})
 header = ["Field"] + list(results.keys())
 rows = []
 for field in all_fields:
-    row = [field] + ["✔" if results[site].get(field) else "" for site in results]
+    row = [field]
+    for site in results:
+        row.append("✔" if field in results[site] else "")
     rows.append(row)
 
 # compute column widths
@@ -299,4 +321,3 @@ print(line)
 print("-+-".join("-" * w for w in widths))
 for row in rows:
     print(" | ".join(str(c).ljust(w) for c, w in zip(row, widths)))
-
