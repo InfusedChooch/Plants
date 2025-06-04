@@ -126,33 +126,33 @@ pip install -r requirements.txt
 
 ---
 
-## 📃 Column Data Sources
+## 📃 Column Data Hierarchy
 
-| **Column**                | **PDF (Rutgers)** | **MBG** | **Wildflower.org** |
-| ------------------------- | ----------------- | ------- | ------------------ |
-| Page in PDF               | ✅                 |         |                    |
-| Plant Type                | ✅ (from headings) |         |                    |
-| Key                       | ✅ (generated)     |         |                    |
-| Botanical Name            | ✅                 |         |                    |
-| Common Name               | ✅                 |         |                    |
-| Height (ft)               | ✅                 | ✅       |                    |
-| Spread (ft)               | ✅                 | ✅       |                    |
-| Bloom Color               |                   | ✅       | ✅ (primary)        |
-| Bloom Time                |                   | ✅       | ✅ (primary)        |
-| Sun                       |                   | ✅       | ✅ (merged)         |
-| Water                     |                   | ✅       | ✅ (merged)         |
-| Tolerates                 |                   | ✅       |                    |
-| Maintenance               |                   | ✅       |                    |
-| Native Habitats           |                   |         | ✅                  |
-| Wildlife Benefits         |                   | ✅       | ✅ (merged)         |
-| Distribution Zone         |                   | ✅       |                    |
-| AGCP Regional Status      |                   |         |                    |
-| Link: MBG                 |                   | ✅       |                    |
-| Link: Wildflower.org      |                   |         | ✅                  |
-| Link: Pleasantrunnursery.com        |                   |         |                    |
-| Link: Newmoonnursery.com            |                   |         |                    |
-| Link: Pinelandsnursery.com           |                   |         |                    |
+Every field is first scraped from the Rutgers PDF. Missing values are filled from other sites in the priority order shown.
 
----
+| **Column** | **Data Hierarchy** | **Formatting / Notes** |
+| ---------- | ------------------ | ---------------------- |
+| Page in PDF | PDF only | |
+| Plant Type | PDF only | |
+| Key | generated from Botanical Name | |
+| Botanical Name | PDF only | |
+| Common Name | PDF only | stored in ALL CAPS |
+| Height (ft) | PDF → MBG → Wildflower | `X - Y` |
+| Spread (ft) | PDF → MBG → Wildflower | `X - Y` |
+| Bloom Color | PDF → Wildflower → MBG | `Color1, Color2, ...` |
+| Bloom Time | PDF → Wildflower → MBG | `Month1, Month2, ...` |
+| Sun | PDF → MBG → Wildflower | `Full sun, Part sun, Part Shade, Full Shade` |
+| Water | PDF → MBG → Wildflower | `Low, Medium, High` |
+| Tolerates | PDF → MBG + Pleasant Run | comma-separated list |
+| Maintenance | PDF → MBG | `Low, Medium, High` |
+| Native Habitats | PDF → Wildflower | comma-separated list |
+| Wildlife Benefits | PDF → Attracts from Pleasant Run + WF + MBG; Soil Description from WF | |
+| Distribution Zone | PDF → MBG | |
+| AGCP Regional Status | PDF → Wildflower | |
+| Link: Missouri Botanical Garden | from GetLinks | |
+| Link: Wildflower.org | from GetLinks | |
+| Link: Pleasantrunnursery.com | from GetLinks | |
+| Link: Newmoonnursery.com | from GetLinks | |
+| Link: Pinelandsnursery.com | from GetLinks | |
 
 Made with 💚 for ecological design and STEM education.
