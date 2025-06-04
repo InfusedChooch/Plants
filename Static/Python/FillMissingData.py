@@ -185,9 +185,10 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
         "Spread (ft)":      rng(grab(text, r"Spread")),
         "Sun":              sun_conditions(grab(text, r"Sun")),
         "Water":            water_conditions(grab(text, r"Water")),
-        "Characteristics":  mbg_chars(grab(text, r"Tolerate"), grab(text, r"Maintenance")),
+        "Tolerates":        grab(text, r"Tolerate"),
+        "Maintenance":      grab(text, r"Maintenance"),
         "Wildlife Benefits": grab(text, r"Attracts"),
-        "Distribution":     (f"USDA Hardiness Zone {grab(text, r'Zone')}" if grab(text, r"Zone") else None),
+        "Distribution Zone": (f"USDA Hardiness Zone {grab(text, r'Zone')}" if grab(text, r"Zone") else None),
     }
 
 
@@ -201,7 +202,7 @@ def parse_wf(html: str, mbg_missing: bool = False) -> Dict[str, Optional[str]]:
     data = {
         "Bloom Color": ", ".join(split_conditions(grab(text, r"Bloom Color"))),
         "Bloom Time":  month_rng(grab(text, r"Bloom Time")),
-        "Habitats":    grab(text, r"Native Habitat"),
+        "Native Habitats": grab(text, r"Native Habitat"),
     }
     if mbg_missing:
         # fill core fields when MBG had no data
@@ -209,7 +210,6 @@ def parse_wf(html: str, mbg_missing: bool = False) -> Dict[str, Optional[str]]:
             "Sun":              sun_conditions(grab(text, r"Light Requirement")),
             "Water":            water_conditions(grab(text, r"Soil Moisture")),
             "Wildlife Benefits": grab(text, r"Benefit"),
-            "Characteristics":  wf_chars(grab(text, r"Leaf Retention"), grab(text, r"Fruit Type")),
         })
     return data
 
@@ -255,7 +255,7 @@ def main() -> None:
                 for col, val in wf_data.items():
                     if val:
                         # merge additive fields vs overwrite others
-                        if col in {"Sun","Water","Wildlife Benefits","Characteristics"}:
+                        if col in {"Sun", "Water", "Wildlife Benefits"}:
                             df.at[idx, col] = merge_field(df.at[idx, col], val)
                         else:
                             df.at[idx, col] = val

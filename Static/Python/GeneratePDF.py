@@ -29,7 +29,8 @@ logo_dir = IMG_DIR.parent if IMG_DIR.name == "jpeg" else IMG_DIR
 # ─── Load and Prepare Data ────────────────────────────────────────────────
 df = pd.read_csv(CSV_FILE, dtype=str).fillna("")            # Read CSV, empty cells → ""
 df["Plant Type"] = df["Plant Type"].str.upper()             # Normalize plant types to uppercase
-df["Page in PDF"] = pd.to_numeric(df["Page in PDF"], errors="coerce")  # Ensure page numbers are numeric
+if "Page in PDF" in df.columns:
+    df["Page in PDF"] = pd.to_numeric(df["Page in PDF"], errors="coerce")  # legacy support
 
 PLANT_TYPE_ORDER = [                                        # Desired order of sections
     "HERBACEOUS, PERENNIAL",
@@ -216,17 +217,21 @@ class PlantPDF(FPDF):
         self.set_y(y0 + img_h_fixed + 6)
 
         # ── Characteristics section ──
-        chars = safe_text(row.get("Characteristics", ""))
-        if chars:
+        toler = safe_text(row.get("Tolerates", ""))
+        maint = safe_text(row.get("Maintenance", ""))
+        if toler or maint:
             self.set_font("Helvetica", "B", 13)
             self.cell(0, 8, "Characteristics", ln=1)
-            self.set_font("Helvetica", "", 12)
-            for part in chars.split("|"):
-                label, _, desc = part.strip().partition(":")
+            if toler:
                 self.set_font("Helvetica", "B", 12)
-                self.write(6, f"- {label.strip()}: ")
+                self.write(6, "- Tolerates: ")
                 self.set_font("Helvetica", "", 12)
-                self.multi_cell(0, 6, desc.strip())
+                self.multi_cell(0, 6, toler)
+            if maint:
+                self.set_font("Helvetica", "B", 12)
+                self.write(6, "- Maintenance: ")
+                self.set_font("Helvetica", "", 12)
+                self.multi_cell(0, 6, maint)
             self.ln(6)
 
         # ── Appearance ──
@@ -284,7 +289,7 @@ class PlantPDF(FPDF):
         site_parts = []
         sun   = safe_text(row.get("Sun", ""))
         water = safe_text(row.get("Water", ""))
-        zone  = safe_text(row.get("Distribution", ""))
+        zone  = safe_text(row.get("Distribution Zone", ""))
         if sun:
             site_parts.append(("Sun:", sun))
         if water:
@@ -310,7 +315,7 @@ class PlantPDF(FPDF):
             self.ln(6)
 
         # Habitats
-        habitats = safe_text(row.get("Habitats", ""))
+        habitats = safe_text(row.get("Native Habitats", ""))
         if habitats:
             self.set_font("Helvetica", "B", 12)
             self.write(6, "Habitats: ")
