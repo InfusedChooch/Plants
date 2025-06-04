@@ -128,25 +128,30 @@ pip install -r requirements.txt
 
 ## 📃 Column Data Sources
 
-| **Column**           | **PDF (Rutgers)** | **MBG** | **Wildflower.org** |
-| -------------------- | ----------------- | ------- | ------------------ |
-| Page in PDF          | ✅                 |         |                    |
-| Plant Type           | ✅ (from headings) |         |                    |
-| Key                  | ✅ (generated)     |         |                    |
-| Botanical Name       | ✅                 |         |                    |
-| Common Name          | ✅                 |         |                    |
-| Height (ft)          | ✅                 | ✅       |                    |
-| Spread (ft)          | ✅                 | ✅       |                    |
-| Bloom Color          |                   | ✅       | ✅ (primary)        |
-| Bloom Time           |                   | ✅       | ✅ (primary)        |
-| Sun                  |                   | ✅       | ✅ (merged)         |
-| Water                |                   | ✅       | ✅ (merged)         |
-| Characteristics      |                   | ✅       | ✅ (extended)       |
-| Habitats             |                   |         | ✅                  |
-| Wildlife Benefits    |                   | ✅       | ✅ (merged)         |
-| Distribution         |                   | ✅       |                    |
-| Link: MBG            |                   | ✅       |                    |
-| Link: Wildflower.org |                   |         | ✅                  |
+| **Column**                | **PDF (Rutgers)** | **MBG** | **Wildflower.org** |
+| ------------------------- | ----------------- | ------- | ------------------ |
+| Page in PDF               | ✅                 |         |                    |
+| Plant Type                | ✅ (from headings) |         |                    |
+| Key                       | ✅ (generated)     |         |                    |
+| Botanical Name            | ✅                 |         |                    |
+| Common Name               | ✅                 |         |                    |
+| Height (ft)               | ✅                 | ✅       |                    |
+| Spread (ft)               | ✅                 | ✅       |                    |
+| Bloom Color               |                   | ✅       | ✅ (primary)        |
+| Bloom Time                |                   | ✅       | ✅ (primary)        |
+| Sun                       |                   | ✅       | ✅ (merged)         |
+| Water                     |                   | ✅       | ✅ (merged)         |
+| Tolerates                 |                   | ✅       |                    |
+| Maintenance               |                   | ✅       |                    |
+| Native Habitats           |                   |         | ✅                  |
+| Wildlife Benefits         |                   | ✅       | ✅ (merged)         |
+| Distribution Zone         |                   | ✅       |                    |
+| AGCP Regional Status      |                   |         |                    |
+| Link: MBG                 |                   | ✅       |                    |
+| Link: Wildflower.org      |                   |         | ✅                  |
+| Link: Pleasant Run        |                   |         |                    |
+| Link: New Moon            |                   |         |                    |
+| Link: Pinelands           |                   |         |                    |
 
 ---
 
