@@ -38,11 +38,11 @@ OUTPUT = repo_path(args.out_csv)
 MASTER = repo_path(args.master_csv)
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
-MBG_COL = "MBG Link"
-WF_COL  = "WF Link"
-PR_COL  = "Pleasant Run Link"
-NM_COL  = "New Moon Link"
-PN_COL  = "Pinelands Link"
+MBG_COL = "Link: Missouri Botanical Garden"
+WF_COL  = "Link: Wildflower.org"
+PR_COL  = "Link: Pleasantrunnursery.com"
+NM_COL  = "Link: Newmoonnursery.com"
+PN_COL  = "Link: Pinelandsnursery.com"
 
 # ─── Step 1: Load CSVs & prefill from master ─────────────────────────────
 df = pd.read_csv(INPUT, dtype=str).fillna("")
