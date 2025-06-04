@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 # GetLinks.py – Prefill from master first, launch Chrome only if needed (rev-patched)
+"""Search web resources to populate missing plant links in the CSV.
+
+Existing links from the master sheet are reused. Any remaining gaps are
+queried against several plant databases and nursery sites, optionally
+spinning up a headless Chrome session when necessary.
+"""
 
 import argparse, io, re, shutil, subprocess, tempfile, time, zipfile, json
 from pathlib import Path

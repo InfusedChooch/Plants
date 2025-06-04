@@ -1,5 +1,9 @@
 # Static\Python\Excelify2.py
-# Description: Generate a styled Excel workbook from the filled plant CSV, with highlights, filters, and embedded script info (Black-styled)
+"""Create a styled Excel workbook from the fully populated plant CSV.
+
+Columns are formatted and highlighted for easier review and the script info is
+embedded for traceability.
+"""
 
 from pathlib import Path
 import pandas as pd

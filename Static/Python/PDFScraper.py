@@ -1,5 +1,5 @@
 # /Static/Python/PDFScraper.py
-# Description: Extracts plant data, hyperlinks, and images from a PDF plant guide.
+"""Extract plant data, hyperlinks and images from a source PDF."""
 
 import argparse
 import re

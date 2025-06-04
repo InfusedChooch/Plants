@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 # Launcher.py – CTk GUI for the plant-database tool-chain (2025-05-31, layout + prefix patch)
+"""Launch the plant data pipeline via a simple CustomTkinter GUI.
+
+The interface lets users run each processing script in order, choose input
+and output locations, and view live console logs of the subprocesses.
+"""
 
 import sys, subprocess, threading, queue, customtkinter as ctk
 from tkinter import filedialog
@@ -103,6 +108,8 @@ hdr.pack(fill="x", padx=15, pady=10)
 
 
 def refresh_out_labels():
+    """Update output labels to reflect current folder, prefix and suffix."""
+
     for _, lbl, stem, ext in out_widgets:
         lbl.configure(
             text=str(
@@ -112,6 +119,8 @@ def refresh_out_labels():
 
 
 def browse_output():
+    """Prompt for an output directory and refresh file previews."""
+
     folder = filedialog.askdirectory(initialdir=out_dir_var.get())
     if folder:
         out_dir_var.set(folder)
@@ -122,6 +131,8 @@ def browse_output():
 
 
 def browse_img():
+    """Prompt for a directory to store scraped images."""
+
     folder = filedialog.askdirectory(initialdir=img_dir_var.get())
     if folder:
         img_dir_var.set(folder)
@@ -159,12 +170,16 @@ body.pack(fill="both", padx=15, pady=6)
 
 
 def choose_input(var: ctk.StringVar, flag: str):
+    """Ask for an input file and update the provided variable."""
+
     f = filedialog.askopenfilename(initialdir=TEMPL, filetypes=ftypes(flag))
     if f:
         var.set(f)
 
 
 def run_tool(script, in_flag, out_flag, stem, ext):
+    """Execute one of the pipeline scripts in a background thread."""
+
     inp = in_vars[(script, in_flag)].get().strip()
     if not inp or not Path(inp).exists():
         status_lbl[script].configure(text="❌ input missing", text_color="red")
@@ -256,6 +271,8 @@ console.configure(yscrollcommand=scr.set)
 
 
 def feed_console():
+    """Continuously pull lines from the queue into the console widget."""
+
     while True:
         line = log_q.get()
         if "CropBox missing from /Page" in line:
