@@ -412,9 +412,13 @@ def main(in_csv: Path = IN_CSV, out_csv: Path = OUT_CSV) -> None:
             "Link: Pleasantrunnursery.com": "PR Link",
             "Link: Newmoonnursery.com": "NM Link",
             "Link: Pinelandsnursery.com": "PN Link",
-            "Distribution": "Zone",
+            "Distribution": "Distribution Zone",
+            "Distribution Zone": "Distribution Zone",
         }
     )
+
+    if "Distribution Zone" in df.columns:
+        df = df.rename(columns={"Distribution Zone": "Zone"})
 
     # ensure a Key column exists for identifying rows uniquely
     if "Key" not in df.columns:
@@ -533,6 +537,9 @@ def main(in_csv: Path = IN_CSV, out_csv: Path = OUT_CSV) -> None:
                     elif missing(df.at[idx, col]):
                         df.at[idx, col] = val
                 time.sleep(SLEEP_BETWEEN)
+
+    if "Zone" in df.columns:
+        df = df.rename(columns={"Zone": "Distribution Zone"})
 
     # reorder columns to match original template, keeping extras at end
     template = list(pd.read_csv(MASTER_CSV, nrows=0).columns)
