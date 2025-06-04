@@ -439,6 +439,9 @@ def main(in_csv: Path = IN_CSV, out_csv: Path = OUT_CSV) -> None:
         }
     )
 
+    if "Native Habitats" in df.columns and "Habitats" not in df.columns:
+        df = df.rename(columns={"Native Habitats": "Habitats"})
+
     if "Distribution Zone" in df.columns:
         df = df.rename(columns={"Distribution Zone": "Zone"})
 
@@ -562,6 +565,9 @@ def main(in_csv: Path = IN_CSV, out_csv: Path = OUT_CSV) -> None:
 
     if "Zone" in df.columns:
         df = df.rename(columns={"Zone": "Distribution Zone"})
+
+    if "Habitats" in df.columns and "Native Habitats" not in df.columns:
+        df = df.rename(columns={"Habitats": "Native Habitats"})
 
     # reorder columns to match original template, keeping extras at end
     template = list(pd.read_csv(MASTER_CSV, nrows=0).columns)
