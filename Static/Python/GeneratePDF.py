@@ -1,5 +1,9 @@
 # /mnt/data/GeneratePDF.py
-# Generates a styled PDF plant guide with title page, table of contents, and one page per plant including images and data.
+"""Produce a printable PDF guide from the consolidated plant dataset.
+
+The script lays out a title page, table of contents and a page per plant with
+images, using fpdf2 for PDF generation.
+"""
 
 from fpdf import FPDF  # PDF generation library
 from fpdf.enums import XPos, YPos  # Enums for text positioning
