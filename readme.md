@@ -64,8 +64,8 @@ pip install -r requirements.txt
 
 ### `FillMissingData.py`
 
-* Scrapes plant details from the MBG and WF links.
-* Adds missing attributes like bloom, sun, water, habitat, and characteristics.
+* Scrapes plant details from MBG, Wildflower.org, Pleasant Run, New Moon, and Pinelands links.
+* Adds missing attributes like bloom, sun, water, habitat, tolerances, and characteristics.
 * Outputs `Plants_Linked_Filled.csv`.
 
 
@@ -135,14 +135,14 @@ Every field is first scraped from the Rutgers PDF. Missing values are filled fro
 | Common Name | PDF only | stored in ALL CAPS |
 | Height (ft) | PDF → MBG → Wildflower | `X - Y` |
 | Spread (ft) | PDF → MBG → Wildflower | `X - Y` |
-| Bloom Color | PDF → Wildflower → MBG | `Color1, Color2, ...` |
-| Bloom Time | PDF → Wildflower → MBG | `Month1, Month2, ...` |
+| Bloom Color | PDF → Wildflower → MBG → Pinelands/New Moon | `Color1, Color2, ...` |
+| Bloom Time | PDF → Wildflower → MBG → Pinelands/New Moon | `Month1, Month2, ...` |
 | Sun | PDF → MBG → Wildflower | `Full sun, Part sun, Part Shade, Full Shade` |
 | Water | PDF → MBG → Wildflower | `Low, Medium, High` |
-| Tolerates | PDF → MBG + Pleasant Run | comma-separated list |
+| Tolerates | PDF → MBG + Pleasant Run + New Moon + Pinelands | comma-separated list |
 | Maintenance | PDF → MBG | `Low, Medium, High` |
 | Native Habitats | PDF → Wildflower | comma-separated list |
-| Attracts | PDF → Pleasant Run + WF + MBG | |
+| Attracts | PDF → Pleasant Run + WF + MBG + Pinelands | |
 | Soil Description | PDF → Wildflower | |
 | Distribution Zone | PDF → MBG | |
 | AGCP Regional Status | PDF → Wildflower | |

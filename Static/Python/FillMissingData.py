@@ -65,6 +65,23 @@ PR_COLS = {
     "Attracts",
 }
 
+NM_COLS = {
+    "Sun",
+    "Water",
+    "Bloom Color",
+    "Height (ft)",
+    "Tolerates",
+}
+
+PN_COLS = {
+    "Bloom Color",
+    "Bloom Time",
+    "Height (ft)",
+    "Spread (ft)",
+    "Attracts",
+    "Tolerates",
+}
+
 def missing(val: str | None) -> bool:
     """Return True if cell value is blank or only whitespace."""
     return not str(val or "").strip()
@@ -265,6 +282,65 @@ def parse_pr(html: str) -> Dict[str, Optional[str]]:
         "Tolerates": collect("Tolerance"),
     }
 
+
+def parse_nm(html: str) -> Dict[str, Optional[str]]:
+    """Extract sun/water and other details from New Moon Nursery."""
+    soup = BeautifulSoup(html, "lxml")
+    text = soup.get_text("\n", strip=True)
+    flat = text.replace("\n", " ")
+
+    def find_label(label: str) -> Optional[str]:
+        m = re.search(rf"{label}\s*:?\s*([^\n]+)", text, flags=re.I)
+        if m:
+            return m.group(1).strip()
+        return None
+
+    data = {
+        "Sun": sun_conditions(find_label("Exposure")),
+        "Water": water_conditions(find_label("Soil Moisture Preference")),
+        "Bloom Color": find_label("Bloom Colors"),
+        "Height (ft)": rng(re.search(r"Height\s*:\s*([\d\s-]+)\s*ft", flat, flags=re.I).group(1))
+        if re.search(r"Height\s*:\s*([\d\s-]+)\s*ft", flat, flags=re.I)
+        else None,
+    }
+
+    salts = find_label("Salt Tolerance")
+    walnut = find_label("Juglans nigra")
+    parts = []
+    if salts:
+        parts.append(f"Salt Tolerance: {salts}")
+    if walnut and walnut.lower().startswith("yes"):
+        parts.append("Black Walnut Tolerant")
+    if parts:
+        data["Tolerates"] = ", ".join(parts)
+
+    return {k: v for k, v in data.items() if v}
+
+
+def parse_pn(html: str) -> Dict[str, Optional[str]]:
+    """Extract details from Pinelands Nursery product pages."""
+    soup = BeautifulSoup(html, "lxml")
+    info = {}
+    for item in soup.select("div.item"):
+        label = item.find("span")
+        val = item.find("p")
+        if label and val:
+            info[label.get_text(strip=True)] = val.get_text(strip=True)
+
+    data = {
+        "Bloom Color": info.get("Bloom Color"),
+        "Bloom Time": month_rng(info.get("Bloom Period")),
+        "Height (ft)": rng(info.get("Max Mature Height") or info.get("Height")),
+        "Spread (ft)": rng(info.get("Spread")),
+    }
+
+    if info.get("Pollinator Attributes"):
+        data["Attracts"] = info["Pollinator Attributes"]
+    if info.get("Deer Resistant", "").lower() == "yes":
+        data["Tolerates"] = merge_field(data.get("Tolerates"), "Deer")
+
+    return {k: v for k, v in data.items() if v}
+
 # ─── Main Processing Loop ─────────────────────────────────────────────────
 def main() -> None:
     # load CSV into a DataFrame, ensuring all empty cells become blank strings
@@ -273,6 +349,8 @@ def main() -> None:
         "Link: Missouri Botanical Garden": "MBG Link",
         "Link: Wildflower.org": "WF Link",
         "Link: Pleasantrunnursery.com": "PR Link",
+        "Link: Newmoonnursery.com": "NM Link",
+        "Link: Pinelandsnursery.com": "PN Link",
         "Distribution": "Zone",
     })
     # ensure a Key column exists for identifying rows uniquely
@@ -337,6 +415,46 @@ def main() -> None:
                     if not val:
                         continue
                     # always merge for additive fields
+                    if col in {"Attracts", "Tolerates"}:
+                        if df.at[idx, col]:
+                            df.at[idx, col] = merge_field(df.at[idx, col], val)
+                        else:
+                            df.at[idx, col] = val
+                    elif missing(df.at[idx, col]):
+                        df.at[idx, col] = val
+                time.sleep(SLEEP_BETWEEN)
+
+        # ── Fetch and parse New Moon Nursery ──────────────────────────
+        row = df.loc[idx]
+        nm_url = row.get("NM Link", "").strip()
+        needs_nm = any(missing(row.get(c)) for c in NM_COLS)
+        if nm_url.startswith("http") and needs_nm:
+            html = fetch(nm_url)
+            if html:
+                nm_data = parse_nm(html)
+                for col, val in nm_data.items():
+                    if not val:
+                        continue
+                    if col in {"Attracts", "Tolerates"}:
+                        if df.at[idx, col]:
+                            df.at[idx, col] = merge_field(df.at[idx, col], val)
+                        else:
+                            df.at[idx, col] = val
+                    elif missing(df.at[idx, col]):
+                        df.at[idx, col] = val
+                time.sleep(SLEEP_BETWEEN)
+
+        # ── Fetch and parse Pinelands Nursery ─────────────────────────
+        row = df.loc[idx]
+        pn_url = row.get("PN Link", "").strip()
+        needs_pn = any(missing(row.get(c)) for c in PN_COLS)
+        if pn_url.startswith("http") and needs_pn:
+            html = fetch(pn_url)
+            if html:
+                pn_data = parse_pn(html)
+                for col, val in pn_data.items():
+                    if not val:
+                        continue
                     if col in {"Attracts", "Tolerates"}:
                         if df.at[idx, col]:
                             df.at[idx, col] = merge_field(df.at[idx, col], val)
