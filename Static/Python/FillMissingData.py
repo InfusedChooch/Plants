@@ -20,10 +20,22 @@ parser.add_argument("--out_csv", default="Static/Outputs/Plants_Linked_Filled.cs
 args = parser.parse_args()
 
 # ─── File Paths & Configuration ───────────────────────────────────────────
-BASE          = Path(__file__).resolve().parent
-IN_CSV     = BASE / args.in_csv
-OUT_CSV    = BASE / args.out_csv
-MASTER_CSV    = IN_CSV                               # template file to match column order
+BASE = Path(__file__).resolve().parent
+REPO = BASE.parent.parent
+
+def repo_path(arg: str) -> Path:
+    """Resolve CLI paths relative to the repo root or this script."""
+    p = Path(arg).expanduser()
+    if p.is_absolute():
+        return p
+    if p.parts and p.parts[0].lower() == "static":
+        return (REPO / p).resolve()
+    cand = (BASE / p).resolve()
+    return cand if cand.exists() else (REPO / p).resolve()
+
+IN_CSV = repo_path(args.in_csv)
+OUT_CSV = repo_path(args.out_csv)
+MASTER_CSV = IN_CSV  # template file to match column order
 SLEEP_BETWEEN = 0.7                                  # seconds to wait between each HTTP request
 HEADERS       = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}  # identify as a browser
 
