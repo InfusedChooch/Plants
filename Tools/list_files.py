@@ -2,10 +2,16 @@ import os
 
 # Folders to ignore (by full normalized relative path from base)
 EXCLUDED_DIRS = {
-    ".venv", "__pycache__", ".git", ".idea", ".vscode", "vendor",
+    ".venv",
+    "__pycache__",
+    ".git",
+    ".idea",
+    ".vscode",
+    "vendor",
     os.path.normpath("Static/Outputs/pdf_images"),
     os.path.normpath("Static/GoogleChromePortable"),
 }
+
 
 def should_skip(path, base_dir):
     # Convert absolute path to normalized relative for comparison
@@ -15,6 +21,7 @@ def should_skip(path, base_dir):
         if norm_path == excluded or norm_path.startswith(excluded + os.sep):
             return True
     return False
+
 
 def list_all_files(base_dir):
     base_dir = os.path.abspath(base_dir)
@@ -29,8 +36,9 @@ def list_all_files(base_dir):
             path = os.path.relpath(os.path.join(root, file), base_dir)
             print(path)
 
+
 if __name__ == "__main__":
     list_all_files(".")
 
 
-#python list_files.py > file_paths.md
+# python list_files.py > file_paths.md

@@ -11,8 +11,16 @@ import black  # New: for Black-style formatting
 import argparse
 
 parser = argparse.ArgumentParser(description="Export formatted Excel from CSV")
-parser.add_argument("--in_csv", default="Static/Templates/Plants_Linked_Filled_Master.csv", help="Input CSV file")
-parser.add_argument("--out_xlsx", default="Static/Outputs/Plants_Linked_Filled_Review.xlsx", help="Output Excel file")
+parser.add_argument(
+    "--in_csv",
+    default="Static/Templates/Plants_Linked_Filled_Master.csv",
+    help="Input CSV file",
+)
+parser.add_argument(
+    "--out_xlsx",
+    default="Static/Outputs/Plants_Linked_Filled_Review.xlsx",
+    help="Output Excel file",
+)
 args = parser.parse_args()
 
 # ─── File Paths ───────────────────────────────────────────────────────────
@@ -24,8 +32,14 @@ XLSX_FILE = (REPO / args.out_xlsx).resolve()
 
 # ─── Step 1: Load CSV and write it to a basic Excel file ────────────────
 df = pd.read_csv(CSV_FILE, dtype=str).fillna("")
-template_cols = list(pd.read_csv(Path("Static/Templates/Plants_Linked_Filled_Master.csv"), nrows=0).columns)
-df = df.reindex(columns=template_cols + [c for c in df.columns if c not in template_cols])
+template_cols = list(
+    pd.read_csv(
+        Path("Static/Templates/Plants_Linked_Filled_Master.csv"), nrows=0
+    ).columns
+)
+df = df.reindex(
+    columns=template_cols + [c for c in df.columns if c not in template_cols]
+)
 df.to_excel(XLSX_FILE, index=False)
 wb = load_workbook(XLSX_FILE)
 ws = wb.active
@@ -43,7 +57,14 @@ for i, column_cells in enumerate(ws.columns, start=1):
     ws.column_dimensions[get_column_letter(i)].width = min(max_length + 2, 50)
 
 # ─── Step 3: Apply filters to specific columns ──────────────────────────────
-filter_cols = ["Page in PDF", "Plant Type", "Bloom Color", "Sun", "Water", "Characteristics"]
+filter_cols = [
+    "Page in PDF",
+    "Plant Type",
+    "Bloom Color",
+    "Sun",
+    "Water",
+    "Characteristics",
+]
 header = [cell.value for cell in ws[1]]
 filter_indices = [i + 1 for i, val in enumerate(header) if val in filter_cols]
 if filter_indices:
@@ -68,13 +89,19 @@ readme["A4"] = "🔴 Red: Missing value (empty cell)"
 readme["A6"] = "Filters applied only to these columns:"
 readme["A7"] = ", ".join(filter_cols)
 readme["A9"] = "🛠 How to filter by partial match in Excel:"
-readme["A10"] = "1. Click the filter dropdown on the column header (e.g., Sun or Characteristics)."
+readme["A10"] = (
+    "1. Click the filter dropdown on the column header (e.g., Sun or Characteristics)."
+)
 readme["A11"] = "2. Choose 'Text Filters' > 'Contains...'"
 readme["A12"] = "3. Type a partial term (e.g., 'shade', 'yellow') and click OK."
 readme["A13"] = "💡 Use this to find plants matching conditions across categories."
 readme["A15"] = "📄 https://github.com/InfusedChooch/Plants"
-readme["A16"] = "This Excel was generated from the filled CSV using the script Excelify2.py"
-readme["A17"] = "Downlaod https://portableapps.com/apps/internet/google_chrome_portable and place it in the /Static folder"
+readme["A16"] = (
+    "This Excel was generated from the filled CSV using the script Excelify2.py"
+)
+readme["A17"] = (
+    "Downlaod https://portableapps.com/apps/internet/google_chrome_portable and place it in the /Static folder"
+)
 readme["A18"] = "Static/GoogleChromePortable"
 
 # ─── Step 6: Script Version Info ──────────────────────────────────────────
@@ -86,10 +113,14 @@ script_descriptions = {
 }
 row_start = readme.max_row + 2
 readme[f"A{row_start}"] = "📁 Script Version Info (Last Modified):"
-for i, (filename, description) in enumerate(script_descriptions.items(), start=row_start + 1):
+for i, (filename, description) in enumerate(
+    script_descriptions.items(), start=row_start + 1
+):
     path = BASE / filename
     if path.exists():
-        modified = datetime.fromtimestamp(path.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
+        modified = datetime.fromtimestamp(path.stat().st_mtime).strftime(
+            "%Y-%m-%d %H:%M"
+        )
         readme[f"A{i}"] = f"{filename:<24} → {modified}    {description}"
     else:
         readme[f"A{i}"] = f"{filename:<24} → MISSING        {description}"
@@ -137,6 +168,7 @@ if readme_md_path.exists():
             readme_full[f"A{i}"] = line.rstrip("\n")
 else:
     print("[WARN] readme.md not found. Skipping README_full tab.")
+
 
 def safe_print(*objs, **kw):
     try:

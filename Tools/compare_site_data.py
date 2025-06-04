@@ -36,16 +36,21 @@ parse_pn = getattr(fill, "parse_pn", None)
 
 # fallback stubs if new parsers are not yet present
 if parse_nm is None:
+
     def parse_nm(html: str) -> Dict[str, Optional[str]]:
         return {}
 
+
 if parse_pn is None:
+
     def parse_pn(html: str) -> Dict[str, Optional[str]]:
         return {}
 
 
 # ─── Helpers ───────────────────────────────────────────────────────────────
-def parse_site(url: str, parser: Callable[[str], Dict[str, Optional[str]]], name: str) -> Dict[str, bool]:
+def parse_site(
+    url: str, parser: Callable[[str], Dict[str, Optional[str]]], name: str
+) -> Dict[str, bool]:
     """Fetch ``url`` and return a dict of ``field -> True`` for found values."""
     if not url or not url.startswith("http"):
         return {}
