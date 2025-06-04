@@ -18,6 +18,7 @@ Pillow
 lxml==5.2.1
 selenium==4.20.0
 PyPDF2==3.0.1
+PyMuPDF
 Customtkinter
 tkinter
 black
@@ -28,6 +29,9 @@ To install all dependencies:
 ```bash
 pip install -r requirements.txt
 ```
+
+PyMuPDF (``fitz``) handles PDF image extraction and installs automatically with
+the command above.
 
 > **Chrome Note**: To use Selenium, you must install [Google Chrome Portable](https://portableapps.com/apps/internet/google_chrome_portable) and place it inside the `Static/GoogleChromePortable/` folder. Also ensure `chromedriver.exe` is in `Static/Python/`.
 

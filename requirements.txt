@@ -5,6 +5,7 @@ fpdf2
 pdfplumber
 Pillow
 PyPDF2
+PyMuPDF
 lxml
 tqdm
 requests
