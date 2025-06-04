@@ -68,10 +68,6 @@ pip install -r requirements.txt
 * Adds missing attributes like bloom, sun, water, habitat, and characteristics.
 * Outputs `Plants_Linked_Filled.csv`.
 
-### `TestLinks.py`
-
-* Validates all stored URLs.
-* Flags broken links in a new CSV and logs them to `broken_links.txt`.
 
 ### `Excelify2.py`
 
