@@ -24,6 +24,8 @@ XLSX_FILE = (REPO / args.out_xlsx).resolve()
 
 # ─── Step 1: Load CSV and write it to a basic Excel file ────────────────
 df = pd.read_csv(CSV_FILE, dtype=str).fillna("")
+template_cols = list(pd.read_csv(Path("Static/Templates/Plants_Linked_Filled_Master.csv"), nrows=0).columns)
+df = df.reindex(columns=template_cols + [c for c in df.columns if c not in template_cols])
 df.to_excel(XLSX_FILE, index=False)
 wb = load_workbook(XLSX_FILE)
 ws = wb.active

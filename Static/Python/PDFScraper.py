@@ -16,30 +16,19 @@ from PIL import Image
 
 # ─── CLI Arguments ────────────────────────────────────────────────────────
 parser = argparse.ArgumentParser(description="Extract plant data from a PDF guide.")
-parser.add_argument(
-    "--in_pdf",
-    default="Static/Templates/Plant Guide 2025 Update.pdf",
-    help="PDF input file",
-)
-parser.add_argument(
-    "--out_csv", default="Static/Outputs/Plants_NeedLinks.csv", help="CSV output file"
-)
-parser.add_argument(
-    "--img_dir", default="Static/Outputs/pdf_images", help="Directory for PNG dump"
-)
-parser.add_argument(
-    "--map_csv", default="Static/Outputs/image_map.csv", help="Image → plant map CSV"
-)
+parser.add_argument("--in_pdf", default="Static/Templates/Plant Guide 2025 Update.pdf", help="PDF input file")
+parser.add_argument("--out_csv", default="Static/Outputs/Plants_NeedLinks.csv", help="CSV output file")
+parser.add_argument("--img_dir", default="Static/Outputs/pdf_images", help="Directory for PNG dump")
+parser.add_argument("--map_csv", default="Static/Outputs/image_map.csv", help="Image → plant map CSV")
 args = parser.parse_args()
 
 # ─── Paths ───────────────────────────────────────────────────────────────
-BASE = Path(__file__).resolve().parent
+BASE     = Path(__file__).resolve().parent
 PDF_PATH = Path(args.in_pdf).resolve()
-OUT_CSV = Path(args.out_csv).resolve()
-IMG_DIR = Path(args.img_dir).resolve()
-MAP_CSV = Path(args.map_csv).resolve()
+OUT_CSV  = Path(args.out_csv).resolve()
+IMG_DIR  = Path(args.img_dir).resolve()
+MAP_CSV  = Path(args.map_csv).resolve()
 IMG_DIR.mkdir(exist_ok=True)
-
 
 # ─── Safe Print ──────────────────────────────────────────────────────────
 def safe_print(*objs, **kw):
@@ -50,78 +39,40 @@ def safe_print(*objs, **kw):
         fallback = txt.encode(sys.stdout.encoding or "ascii", "ignore").decode()
         print(fallback, **kw)
 
-
 # ─── CSV Columns ─────────────────────────────────────────────────────────
 COLUMNS = [
-    "Plant Type",
-    "Key",
-    "Botanical Name",
-    "Common Name",
-    "Height (ft)",
-    "Spread (ft)",
-    "Bloom Color",
-    "Bloom Time",
-    "Sun",
-    "Water",
-    "Tolerates",
-    "Maintenance",
-    "Native Habitats",
-    "Wildlife Benefits",
-    "Distribution Zone",
-    "AGCP Regional Status",
-    "Link: Missouri Botanical Garden",
-    "Link: Wildflower.org",
-    "Link: Pleasant Run",
-    "Link: New Moon",
-    "Link: Pinelands",
+    "Page in PDF", "Plant Type", "Key",
+    "Botanical Name", "Common Name",
+    "Height (ft)", "Spread (ft)",
+    "Bloom Color", "Bloom Time", "Sun", "Water",
+    "Characteristics", "Habitats",
+    "Wildlife Benefits", "Zone",
+    "MBG Link", "WF Link",
 ]
 
 # ─── Regex Patterns ──────────────────────────────────────────────────────
-BOT_LINE_RE = re.compile(
-    r"^[A-Z][A-Za-z×\-]+\s+[A-Za-z×\-]*[a-z][A-Za-z×\-]*(?:\s+[A-Za-z×\-]+){0,3}$"
-)
-BOT_ANY_RE = re.compile(
-    r"\b([A-Z][A-Za-z×\-]+ [A-Za-z×\-]*[a-z][A-Za-z×\-]*(?: [A-Za-z×\-]+){0,3})\b"
-)
-STOPWORDS = {
-    "Plant Fact",
-    "Plant Fact Sheet",
-    "Plant Symbol",
-    "Plant Materials",
-    "Plant Materials Programs",
-    "Contributed by",
-}
-HEIGHT_RE = re.compile(
-    r"height[^:;\n]*?(?:up to\s*)?([\d.]+)(?:\s*(?:[-–]|to)\s*([\d.]+))?\s*ft", re.I
-)
-SPREAD_RE = re.compile(
-    r"(?:spread|aerial spread)[^:;\n]*?(?:up to\s*)?([\d.]+)(?:\s*(?:[-–]|to)\s*([\d.]+))?\s*ft",
-    re.I,
-)
-
+BOT_LINE_RE = re.compile(r"^[A-Z][A-Za-z×\-]+\s+[A-Za-z×\-]*[a-z][A-Za-z×\-]*(?:\s+[A-Za-z×\-]+){0,3}$")
+BOT_ANY_RE  = re.compile(r"\b([A-Z][A-Za-z×\-]+ [A-Za-z×\-]*[a-z][A-Za-z×\-]*(?: [A-Za-z×\-]+){0,3})\b")
+STOPWORDS   = {"Plant Fact", "Plant Fact Sheet", "Plant Symbol", "Plant Materials", "Plant Materials Programs", "Contributed by"}
+HEIGHT_RE   = re.compile(r"height[^:;\n]*?(?:up to\s*)?([\d.]+)(?:\s*(?:[-–]|to)\s*([\d.]+))?\s*ft", re.I)
+SPREAD_RE   = re.compile(r"(?:spread|aerial spread)[^:;\n]*?(?:up to\s*)?([\d.]+)(?:\s*(?:[-–]|to)\s*([\d.]+))?\s*ft", re.I)
 
 # ─── Utility Functions ───────────────────────────────────────────────────
 def clean(line: str) -> str:
     return re.split(r"[,(–-]", line, 1)[0].strip()
 
-
 def is_all_caps_common(l: str) -> bool:
     return bool(re.fullmatch(r"[A-Z][A-Z0-9\s\-]{1,}$", l)) and 1 <= len(l.split()) <= 5
-
 
 def guess_common(lines: List[str], bot_idx: int) -> str:
     for i in range(bot_idx - 1, max(-1, bot_idx - 6), -1):
         ln = lines[i]
         if is_all_caps_common(ln) and all(sw not in ln for sw in STOPWORDS):
             return ln
-    for ln in lines[bot_idx + 1 :]:
-        if not any(
-            tag in ln.lower()
-            for tag in ["plant symbol", "description", "contributed by"]
-        ):
+    for ln in lines[bot_idx + 1:]:
+        if not any(tag in ln.lower() for tag in ["plant symbol", "description", "contributed by"]):
             return ln
     return ""
-
 
 def gen_key(bot_name: str, used: Set[str]) -> str:
     parts = bot_name.split()
@@ -136,10 +87,8 @@ def gen_key(bot_name: str, used: Set[str]) -> str:
     used.add(base + suffix)
     return base + suffix
 
-
 def name_slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
-
 
 # ─── Link & Type Mapping ─────────────────────────────────────────────────
 def extract_links_by_page(pdf_path: Path) -> Dict[int, List[str]]:
@@ -154,7 +103,6 @@ def extract_links_by_page(pdf_path: Path) -> Dict[int, List[str]]:
         if links:
             page_links[page_num] = list(set(links))
     return page_links
-
 
 def build_page_type_map(pdf_path: Path) -> Dict[int, str]:
     valid_types = {
@@ -213,58 +161,33 @@ def extract_rows() -> List[Dict[str, str]]:
                 continue
 
             body = "\n".join(lines)
-            height = (
-                f"{m.group(1)} - {m.group(2)}"
-                if (m := HEIGHT_RE.search(body)) and m.group(2)
-                else (m.group(1) if m else "")
-            )
-            spread = (
-                f"{m.group(1)} - {m.group(2)}"
-                if (m := SPREAD_RE.search(body)) and m.group(2)
-                else (m.group(1) if m else "")
-            )
+            height = f"{m.group(1)} - {m.group(2)}" if (m := HEIGHT_RE.search(body)) and m.group(2) else (m.group(1) if m else "")
+            spread = f"{m.group(1)} - {m.group(2)}" if (m := SPREAD_RE.search(body)) and m.group(2) else (m.group(1) if m else "")
             links = link_map.get(page_num, [])
             mbg = next((l for l in links if "missouribotanicalgarden" in l.lower()), "")
-            wf = next((l for l in links if "wildflower.org" in l.lower()), "")
+            wf  = next((l for l in links if "wildflower.org" in l.lower()), "")
 
-            rows.append(
-                {
-                    "Page in PDF": str(page_num),
-                    "Plant Type": page_type_map.get(page_num, ""),
-                    "Key": gen_key(bot_name, used_keys),
-                    "Botanical Name": bot_name,
-                    "Common Name": com_name,
-                    "Height (ft)": height,
-                    "Spread (ft)": spread,
-                    **{
-                        c: ""
-                        for c in COLUMNS
-                        if c
-                        not in {
-                            "Plant Type",
-                            "Key",
-                            "Botanical Name",
-                            "Common Name",
-                            "Height (ft)",
-                            "Spread (ft)",
-                            "Link: Missouri Botanical Garden",
-                            "Link: Wildflower.org",
-                        }
-                    },
-                    "Link: Missouri Botanical Garden": mbg,
-                    "Link: Wildflower.org": wf,
-                }
-            )
+            rows.append({
+                "Page in PDF": str(page_num),
+                "Plant Type": page_type_map.get(page_num, ""),
+                "Key": gen_key(bot_name, used_keys),
+                "Botanical Name": bot_name,
+                "Common Name": com_name,
+                "Height (ft)": height,
+                "Spread (ft)": spread,
+                **{c: "" for c in COLUMNS if c not in {
+                    "Page in PDF", "Plant Type", "Key", "Botanical Name", "Common Name", "Height (ft)", "Spread (ft)", "Link: Missouri Botanical Garden", "Link: Wildflower.org"}},
+                "Link: Missouri Botanical Garden": mbg,
+                "Link: Wildflower.org": wf,
+            })
     return rows
-
 
 def extract_images(df: pd.DataFrame) -> None:
     doc = fitz.open(PDF_PATH)
     image_rows = []
     page_to_name = {
         int(r["Page in PDF"]): (r["Botanical Name"], r.get("Common Name", ""))
-        for _, r in df.iterrows()
-        if r.get("Page in PDF", "").isdigit()
+        for _, r in df.iterrows() if r.get("Page in PDF", "").isdigit()
     }
     page_image_count = {}
     for page_index, page in enumerate(doc, start=1):
@@ -288,14 +211,12 @@ def extract_images(df: pd.DataFrame) -> None:
                 pix_rgb = None
             pix = None
             page_image_count[base_name] += 1
-            image_rows.append(
-                {
-                    "Image Filename": filename,
-                    "Page Number": page_index,
-                    "Botanical Name": bot_name,
-                    "Common Name": com_name,
-                }
-            )
+            image_rows.append({
+                "Image Filename": filename,
+                "Page Number": page_index,
+                "Botanical Name": bot_name,
+                "Common Name": com_name,
+            })
     pd.DataFrame(image_rows).to_csv(MAP_CSV, index=False)
     safe_print(f"📸 Extracted {len(image_rows)} images to {IMG_DIR}")
     safe_print(f"🗂  Mapping written to {MAP_CSV}")
@@ -310,15 +231,12 @@ def extract_images(df: pd.DataFrame) -> None:
         converted += 1
     safe_print(f"📸 Converted {converted} PNG images to JPEGs in {jpeg_dir}")
 
-
 # ─── Main ────────────────────────────────────────────────────────────────
 def main():
-    rows = extract_rows()
-    df = pd.DataFrame(rows)
-    df[COLUMNS].to_csv(OUT_CSV, index=False, quoting=csv.QUOTE_MINIMAL)
+    df = pd.DataFrame(extract_rows(), columns=COLUMNS)
+    df.to_csv(OUT_CSV, index=False, quoting=csv.QUOTE_MINIMAL)
     safe_print(f"✅ Saved → {OUT_CSV.name} ({len(df)} rows)")
     extract_images(df)
-
 
 if __name__ == "__main__":
     main()
