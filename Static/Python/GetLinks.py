@@ -47,7 +47,23 @@ INPUT = repo_path(args.in_csv)
 OUTPUT = repo_path(args.out_csv)
 MASTER = repo_path(args.master_csv)
 
-HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
+HEADERS_ALT = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/119.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+}
 MBG_COL = "Link: Missouri Botanical Garden"
 WF_COL = "Link: Wildflower.org"
 PR_COL = "Link: Pleasantrunnursery.com"
@@ -224,6 +240,8 @@ def safe_get(url: str, retries=2, delay=2):
     for _ in range(retries + 1):
         try:
             r = requests.get(url, headers=HEADERS, timeout=10)
+            if r.status_code == 403:
+                r = requests.get(url, headers=HEADERS_ALT, timeout=10)
             if r.ok:
                 return r
         except Exception:
