@@ -571,6 +571,13 @@ def main(in_csv: Path = IN_CSV, out_csv: Path = OUT_CSV) -> None:
 
     # reorder columns to match original template, keeping extras at end
     template = list(pd.read_csv(MASTER_CSV, nrows=0).columns)
+    df = df.rename(columns={
+    "MBG Link": "Link: Missouri Botanical Garden",
+    "WF Link": "Link: Wildflower.org",
+    "PR Link": "Link: Pleasantrunnursery.com",
+    "NM Link": "Link: Newmoonnursery.com",
+    "PN Link": "Link: Pinelandsnursery.com",
+})
     df = df[template + [c for c in df.columns if c not in template]]
     # save out the newly filled CSV
     df.to_csv(out_csv, index=False, quoting=csv.QUOTE_MINIMAL, na_rep="")
