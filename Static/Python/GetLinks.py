@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-# GetLinks.py – Prefill from master first, launch Chrome only if needed
-# (rev-2025-06-01)
+# GetLinks.py – Prefill from master first, launch Chrome only if needed (rev-patched)
 
 import argparse, io, re, shutil, subprocess, tempfile, time, zipfile, json
 from pathlib import Path
@@ -16,25 +15,22 @@ parser = argparse.ArgumentParser(description="Fill missing plant site links")
 parser.add_argument("--in_csv",      default="Static/Outputs/Plants_NeedLinks.csv")
 parser.add_argument("--out_csv",     default="Static/Outputs/Plants_Linked.csv")
 parser.add_argument("--master_csv",  default="Static/Templates/Plants_Linked_Filled_Master.csv")
-parser.add_argument("--chromedriver", default="",
-                    help="Path to chromedriver.exe (file OR folder)")
-parser.add_argument("--chrome_binary", default="",
-                    help="Path to chrome.exe (leave blank to auto-detect)")
+parser.add_argument("--chromedriver", default="", help="Path to chromedriver.exe (file OR folder)")
+parser.add_argument("--chrome_binary", default="", help="Path to chrome.exe (leave blank to auto-detect)")
 args = parser.parse_args()
 
-# ─── Repo layout helpers ────────────────────────────────────────────────
-BASE   = Path(__file__).resolve().parent          # Static/Python/
-STATIC = BASE.parent                              # Static/
-REPO   = STATIC.parent                            # repo root
+# ─── Repo layout ────────────────────────────────────────────────────────
+BASE   = Path(__file__).resolve().parent
+STATIC = BASE.parent
+REPO   = STATIC.parent
 
 def repo_path(arg: str) -> Path:
-    """Resolve relative paths so we never get Static/Static/… on Windows."""
     p = Path(arg).expanduser()
-    if p.is_absolute():               # user gave explicit path
+    if p.is_absolute():
         return p
     if p.parts and p.parts[0].lower() == "static":
-        return (REPO / p).resolve()   # anchor at repo root
-    cand = (BASE / p).resolve()       # try under Static/Python/
+        return (REPO / p).resolve()
+    cand = (BASE / p).resolve()
     return cand if cand.exists() else (REPO / p).resolve()
 
 INPUT  = repo_path(args.in_csv)
@@ -42,57 +38,59 @@ OUTPUT = repo_path(args.out_csv)
 MASTER = repo_path(args.master_csv)
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
-MBG_COL, WF_COL = "MBG Link", "WF Link"
+MBG_COL = "MBG Link"
+WF_COL  = "WF Link"
 PR_COL  = "Pleasant Run Link"
 NM_COL  = "New Moon Link"
 PN_COL  = "Pinelands Link"
 
-# ─── Step 1: load CSVs & prefill from master ────────────────────────────
+# ─── Step 1: Load CSVs & prefill from master ─────────────────────────────
 df = pd.read_csv(INPUT, dtype=str).fillna("")
-df = df.rename(columns={
+
+rename_map = {
     "Link: Missouri Botanical Garden": MBG_COL,
     "Link: Wildflower.org": WF_COL,
     "Link: Pleasant Run": PR_COL,
     "Link: New Moon": NM_COL,
     "Link: Pinelands": PN_COL,
-})
+}
+df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns}, inplace=True)
 
 try:
     master = pd.read_csv(MASTER, dtype=str).fillna("")
-    master = master.rename(columns={
-        "Link: Missouri Botanical Garden": MBG_COL,
-        "Link: Wildflower.org": WF_COL,
-        "Link: Pleasant Run": PR_COL,
-        "Link: New Moon": NM_COL,
-        "Link: Pinelands": PN_COL,
-    })
+    master.rename(columns={k: v for k, v in rename_map.items() if k in master.columns}, inplace=True)
 except FileNotFoundError:
     print(f"Master CSV not found at {MASTER} – skipping prefill.")
     master = pd.DataFrame(columns=["Botanical Name", MBG_COL, WF_COL])
 
 m_idx = master.set_index("Botanical Name")
 
+# Ensure columns exist
 for col in (MBG_COL, WF_COL, PR_COL, NM_COL, PN_COL):
     if col not in df.columns:
         df[col] = ""
 
+# Prefill from master
 pref = 0
 for i, row in df.iterrows():
     b = row["Botanical Name"]
     if b in m_idx.index:
         for col in (MBG_COL, WF_COL, PR_COL, NM_COL, PN_COL):
             val = m_idx.at[b, col] if col in m_idx.columns else ""
-            if val.startswith("http") and not df.at[i, col]:
+            if val.startswith("http") and not str(df.at[i, col]).strip():
                 df.at[i, col] = val
                 pref += 1
 print(f"Prefilled {pref} links from master.")
 
-# ─── Step 2: if nothing missing, save & quit ────────────────────────────
-needs = df[(~df[MBG_COL].str.startswith("http")) |
-           (~df[WF_COL].str.startswith("http")) |
-           (~df[PR_COL].str.startswith("http")) |
-           (~df[NM_COL].str.startswith("http")) |
-           (~df[PN_COL].str.startswith("http"))]
+# ─── Step 2: Check for needs ─────────────────────────────────────────────
+def safe_starts(col):
+    return df[col].astype(str).str.startswith("http") if col in df.columns else pd.Series([False] * len(df))
+
+needs = df[~safe_starts(MBG_COL) |
+           ~safe_starts(WF_COL)  |
+           ~safe_starts(PR_COL)  |
+           ~safe_starts(NM_COL)  |
+           ~safe_starts(PN_COL)]
 
 if needs.empty:
     template_cols = list(pd.read_csv(MASTER, nrows=0).columns)
