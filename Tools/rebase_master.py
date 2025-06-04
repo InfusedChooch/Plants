@@ -10,13 +10,27 @@ args = parser.parse_args()
 old = pd.read_csv(args.input, dtype=str).fillna("")
 
 new_cols = [
-    "Plant Type", "Key", "Botanical Name", "Common Name",
-    "Height (ft)", "Spread (ft)", "Bloom Color", "Bloom Time",
-    "Sun", "Water", "Tolerates", "Maintenance",
-    "Native Habitats", "Wildlife Benefits", "Distribution Zone",
-    "AGCP Regional Status", "Link: Missouri Botanical Garden",
-    "Link: Wildflower.org", "Link: Pleasant Run",
-    "Link: New Moon", "Link: Pinelands",
+    "Plant Type",
+    "Key",
+    "Botanical Name",
+    "Common Name",
+    "Height (ft)",
+    "Spread (ft)",
+    "Bloom Color",
+    "Bloom Time",
+    "Sun",
+    "Water",
+    "Tolerates",
+    "Maintenance",
+    "Native Habitats",
+    "Wildlife Benefits",
+    "Distribution Zone",
+    "AGCP Regional Status",
+    "Link: Missouri Botanical Garden",
+    "Link: Wildflower.org",
+    "Link: Pleasantrunnursery.com",
+    "Link: Newmoonnursery.com",
+    "Link: Pinelandsnursery.com",
 ]
 
 new = pd.DataFrame(columns=new_cols)
@@ -52,10 +66,12 @@ new["Native Habitats"] = old.get("Habitats", "")
 new["Wildlife Benefits"] = old.get("Wildlife Benefits", "")
 new["Distribution Zone"] = old.get("Distribution", old.get("Zone", ""))
 new["AGCP Regional Status"] = old.get("AGCP Regional Status", "")
-new["Link: Missouri Botanical Garden"] = old.get("Link: Missouri Botanical Garden", old.get("MBG Link", ""))
+new["Link: Missouri Botanical Garden"] = old.get(
+    "Link: Missouri Botanical Garden", old.get("MBG Link", "")
+)
 new["Link: Wildflower.org"] = old.get("Link: Wildflower.org", old.get("WF Link", ""))
-new["Link: Pleasant Run"] = old.get("Link: Pleasant Run", "")
-new["Link: New Moon"] = old.get("Link: New Moon", "")
-new["Link: Pinelands"] = old.get("Link: Pinelands", "")
+new["Link: Pleasantrunnursery.com"] = old.get("Link: Pleasant Run", "")
+new["Link: Newmoonnursery.com"] = old.get("Link: New Moon", "")
+new["Link: Pinelandsnursery.com"] = old.get("Link: Pinelands", "")
 
 new.to_csv(args.output, index=False)

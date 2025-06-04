@@ -38,7 +38,7 @@ pip install -r requirements.txt
 | Step | Script               | Purpose                                                                                |
 | ---- | -------------------- | -------------------------------------------------------------------------------------- |
 | 1    | `PDFScraper.py`      | Extracts plant data from the Rutgers PDF and saves a partially filled CSV and images.  |
-| 2    | `GetLinks.py`        | Locates links for MBG, Wildflower.org, Pleasant Run, New Moon, and Pinelands sites. |
+| 2    | `GetLinks.py`        | Locates links for MBG, Wildflower.org, Pleasantrunnursery.com, Newmoonnursery.com, and Pinelandsnursery.com sites. |
 | 3    | `FillMissingData.py` | Pulls additional plant info from those links to complete the dataset.                  |
 | 4    | `TestLinks.py`       | Checks all links to flag and log any broken entries.                                   |
 | 5    | `Excelify2.py`       | Produces a styled Excel file with filters, highlights, and embedded source code.       |
@@ -149,9 +149,9 @@ pip install -r requirements.txt
 | AGCP Regional Status      |                   |         |                    |
 | Link: MBG                 |                   | ✅       |                    |
 | Link: Wildflower.org      |                   |         | ✅                  |
-| Link: Pleasant Run        |                   |         |                    |
-| Link: New Moon            |                   |         |                    |
-| Link: Pinelands           |                   |         |                    |
+| Link: Pleasantrunnursery.com        |                   |         |                    |
+| Link: Newmoonnursery.com            |                   |         |                    |
+| Link: Pinelandsnursery.com           |                   |         |                    |
 
 ---
 
