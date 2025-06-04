@@ -2,7 +2,7 @@
 # GetLinks.py – Prefill from master first, launch Chrome only if needed
 # (rev-2025-06-01)
 
-import argparse, io, re, shutil, subprocess, tempfile, time, zipfile
+import argparse, io, re, shutil, subprocess, tempfile, time, zipfile, json
 from pathlib import Path
 from typing import Optional
 
@@ -231,11 +231,24 @@ def query_pn_html(name: str) -> Optional[str]:
     url = f"https://www.pinelandsnursery.com/search?query={quote_plus(name)}"
     if r := safe_get(url):
         soup = BeautifulSoup(r.text, "lxml")
-        a = soup.select_one("a[href*='/plant-material/']")
+
+        # try direct anchor in the product grid
+        a = soup.select_one("div.product-name a[href^='https://www.pinelandsnursery.com/']")
         if a and a.get("href"):
-            href = a["href"]
-            return href if href.startswith("http") else \
-                   "https://www.pinelandsnursery.com" + href
+            return a["href"]
+
+        # fallback to JSON-LD product data
+        for script in soup.select("script[type='application/ld+json']"):
+            try:
+                data = json.loads(script.string)
+            except Exception:
+                continue
+            if isinstance(data, dict) and data.get("@type") == "Product" and data.get("url"):
+                return data["url"]
+            if isinstance(data, list):
+                for item in data:
+                    if isinstance(item, dict) and item.get("@type") == "Product" and item.get("url"):
+                        return item["url"]
 
 # ─── Search only rows that still need links ─────────────────────────────
 for i, row in needs.iterrows():
