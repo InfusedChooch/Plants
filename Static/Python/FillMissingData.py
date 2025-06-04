@@ -247,6 +247,29 @@ def merge_field(primary: str | None, secondary: str | None) -> str | None:
     return ", ".join(parts) if parts else None
 
 
+def wf_wetland_status(soup: BeautifulSoup, region: str = "AGCP") -> Optional[str]:
+    """Return the wetland indicator status for *region* from WF table."""
+    h4 = soup.find(
+        "h4", string=lambda x: x and "National Wetland Indicator Status" in x
+    )
+    if not h4:
+        return None
+    table = h4.find_next("table")
+    if not table:
+        return None
+    rows = table.find_all("tr")
+    if len(rows) < 2:
+        return None
+    regions = [td.get_text(strip=True) for td in rows[0].find_all("td")]
+    statuses = [td.get_text(strip=True) for td in rows[1].find_all("td")]
+    if regions and regions[0].lower().startswith("region"):
+        regions = regions[1:]
+    if statuses and statuses[0].lower().startswith("status"):
+        statuses = statuses[1:]
+    mapping = {r: s for r, s in zip(regions, statuses) if r}
+    return mapping.get(region)
+
+
 def gen_key(botanical: str, used: set[str]) -> str:
     """
     Create a simple unique key from the first letters of genus and species,
@@ -293,15 +316,14 @@ def parse_wf(html: str, mbg_missing: bool = False) -> Dict[str, Optional[str]]:
     If MBG data is missing, also pull sun, water, benefits, and characteristics from WF.
     """
     soup = BeautifulSoup(html, "lxml")
+    status = wf_wetland_status(soup)
     text = soup.get_text("\n", strip=True)
     data = {
         "Bloom Color": ", ".join(split_conditions(grab(text, r"Bloom Color"))),
         "Bloom Time": month_rng(grab(text, r"Bloom Time")),
         "Habitats": grab(text, r"Native Habitat"),
         "Soil Description": grab(text, r"Soil Description"),
-        "AGCP Regional Status": grab(
-            text, r"(?:National Wetland Indicator Status|AGCP)"
-        ),
+        "AGCP Regional Status": status,
     }
     if mbg_missing:
         # fill core fields when MBG had no data
