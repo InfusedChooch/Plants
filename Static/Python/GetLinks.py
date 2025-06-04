@@ -250,6 +250,9 @@ def query_pn_html(name: str) -> Optional[str]:
                     if isinstance(item, dict) and item.get("@type") == "Product" and item.get("url"):
                         return item["url"]
 
+        # if no direct product link found, return the search page itself
+        return url
+
 # ─── Search only rows that still need links ─────────────────────────────
 for i, row in needs.iterrows():
     bname = row["Botanical Name"]
