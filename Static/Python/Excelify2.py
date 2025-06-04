@@ -100,7 +100,7 @@ readme["A16"] = (
     "This Excel was generated from the filled CSV using the script Excelify2.py"
 )
 readme["A17"] = (
-    "Downlaod https://portableapps.com/apps/internet/google_chrome_portable and place it in the /Static folder"
+    "Download https://portableapps.com/apps/internet/google_chrome_portable and place it in the /Static folder"
 )
 readme["A18"] = "Static/GoogleChromePortable"
 
