@@ -37,7 +37,37 @@ IN_CSV = repo_path(args.in_csv)
 OUT_CSV = repo_path(args.out_csv)
 MASTER_CSV = repo_path("Static/Templates/Plants_Linked_Filled_Master.csv")
 SLEEP_BETWEEN = 0.7                                  # seconds to wait between each HTTP request
-HEADERS       = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}  # identify as a browser
+# identify as a browser
+HEADERS       = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
+
+# columns pulled from each site so we know when to scrape
+MBG_COLS = {
+    "Height (ft)",
+    "Spread (ft)",
+    "Sun",
+    "Water",
+    "Characteristics",
+    "Attracts",
+    "Zone",
+}
+WF_COLS = {
+    "Bloom Color",
+    "Bloom Time",
+    "Habitats",
+    "Soil Description",
+    "Sun",
+    "Water",
+    "Attracts",
+    "Characteristics",
+}
+PR_COLS = {
+    "Tolerates",
+    "Attracts",
+}
+
+def missing(val: str | None) -> bool:
+    """Return True if cell value is blank or only whitespace."""
+    return not str(val or "").strip()
 
 # ─── Helper Function: Fetch HTML Safely ────────────────────────────────────
 def fetch(url: str) -> str | None:
@@ -214,6 +244,27 @@ def parse_wf(html: str, mbg_missing: bool = False) -> Dict[str, Optional[str]]:
         })
     return data
 
+
+def parse_pr(html: str) -> Dict[str, Optional[str]]:
+    """Extract wildlife attractions and tolerances from Pleasant Run."""
+    soup = BeautifulSoup(html, "lxml")
+
+    def collect(title: str) -> str | None:
+        h = soup.find("h5", string=lambda x: x and title.lower() in x.lower())
+        if not h:
+            return None
+        box = h.find_parent("div")
+        if not box:
+            return None
+        vals = [a.get_text(strip=True) for a in box.find_all("a")]
+        cleaned = [re.sub(r"^Attracts\s+", "", v) for v in vals]
+        return ", ".join(cleaned) if cleaned else None
+
+    return {
+        "Attracts": collect("Attracts Wildlife"),
+        "Tolerates": collect("Tolerance"),
+    }
+
 # ─── Main Processing Loop ─────────────────────────────────────────────────
 def main() -> None:
     # load CSV into a DataFrame, ensuring all empty cells become blank strings
@@ -221,6 +272,7 @@ def main() -> None:
     df = df.rename(columns={
         "Link: Missouri Botanical Garden": "MBG Link",
         "Link: Wildflower.org": "WF Link",
+        "Link: Pleasantrunnursery.com": "PR Link",
         "Distribution": "Zone",
     })
     # ensure a Key column exists for identifying rows uniquely
@@ -240,31 +292,58 @@ def main() -> None:
         if not row.get("Key"):
             df.at[idx, "Key"] = gen_key(row["Botanical Name"], used_keys)
 
-        # ── Fetch and parse MBG if URL exists ──────────────────────────
+        # ── Fetch and parse MBG only for missing columns ───────────────
         mbg_url = row.get("MBG Link", "").strip()
         mbg_data: Dict[str, Optional[str]] = {}
-        if mbg_url.startswith("http"):
+        needs_mbg = any(missing(row.get(c)) for c in MBG_COLS)
+        if needs_mbg and mbg_url.startswith("http"):
             html = fetch(mbg_url)
             if html:
                 mbg_data = parse_mbg(html)
                 for col, val in mbg_data.items():
-                    if val:
+                    if val and missing(df.at[idx, col]):
                         df.at[idx, col] = val
                 time.sleep(SLEEP_BETWEEN)
 
         # ── Fetch and parse WF, merging or filling missing ─────────────
+        row = df.loc[idx]
         wf_url = row.get("WF Link", "").strip()
-        if wf_url.startswith("http"):
+        needs_wf = any(missing(row.get(c)) for c in WF_COLS)
+        if needs_wf and wf_url.startswith("http"):
             html = fetch(wf_url)
             if html:
                 wf_data = parse_wf(html, mbg_missing=not bool(mbg_data))
                 for col, val in wf_data.items():
-                    if val:
-                        # merge additive fields vs overwrite others
-                        if col in {"Sun","Water","Attracts","Characteristics"}:
+                    if not val:
+                        continue
+                    if col in {"Sun", "Water", "Attracts", "Characteristics"}:
+                        if df.at[idx, col]:
                             df.at[idx, col] = merge_field(df.at[idx, col], val)
                         else:
                             df.at[idx, col] = val
+                    elif missing(df.at[idx, col]):
+                        df.at[idx, col] = val
+                time.sleep(SLEEP_BETWEEN)
+
+        # ── Fetch and parse Pleasant Run for tolerances/attracts ───────
+        row = df.loc[idx]
+        pr_url = row.get("PR Link", "").strip()
+        needs_pr = any(missing(row.get(c)) for c in PR_COLS)
+        if pr_url.startswith("http") and needs_pr:
+            html = fetch(pr_url)
+            if html:
+                pr_data = parse_pr(html)
+                for col, val in pr_data.items():
+                    if not val:
+                        continue
+                    # always merge for additive fields
+                    if col in {"Attracts", "Tolerates"}:
+                        if df.at[idx, col]:
+                            df.at[idx, col] = merge_field(df.at[idx, col], val)
+                        else:
+                            df.at[idx, col] = val
+                    elif missing(df.at[idx, col]):
+                        df.at[idx, col] = val
                 time.sleep(SLEEP_BETWEEN)
 
     # reorder columns to match original template, keeping extras at end
