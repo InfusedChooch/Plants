@@ -305,13 +305,22 @@ class PlantPDF(FPDF):
                 self.write(6, "   |   ")
         self.ln(8)
 
-        # Wildlife Benefits
-        wb = safe_text(row.get("Wildlife Benefits", ""))
-        if wb:
+        # Attracts
+        attracts = safe_text(row.get("Attracts", ""))
+        if attracts:
             self.set_font("Helvetica", "B", 12)
-            self.write(6, "Wildlife Benefits: ")
+            self.write(6, "Attracts: ")
             self.set_font("Helvetica", "", 12)
-            self.multi_cell(0, 6, wb)
+            self.multi_cell(0, 6, attracts)
+            self.ln(6)
+
+        # Soil Description
+        soil = safe_text(row.get("Soil Description", ""))
+        if soil:
+            self.set_font("Helvetica", "B", 12)
+            self.write(6, "Soil Description: ")
+            self.set_font("Helvetica", "", 12)
+            self.multi_cell(0, 6, soil)
             self.ln(6)
 
         # Habitats
