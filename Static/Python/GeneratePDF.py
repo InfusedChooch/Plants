@@ -86,6 +86,15 @@ LINK_LEGEND = {
     "PNL": "Pinelandsnursery.com",
 }
 
+# Colors assigned to each link abbreviation for legend and footers
+LINK_COLORS = {
+    "MBG": (0, 70, 120),
+    "WF": (200, 0, 0),
+    "PRN": (128, 0, 128),
+    "NMN": (255, 140, 0),
+    "PNL": (34, 139, 34),
+}
+
 
 # ─── Helpers ──────────────────────────────────────────────────────────────
 def safe_text(text: str) -> str:
@@ -135,7 +144,6 @@ class PlantPDF(FPDF):
 
         self.set_y(-12)
         self.set_font("Helvetica", "I", 9)
-        self.set_text_color(0, 0, 200)
 
         links = self.footer_links
         page_str = str(self.page_no() - getattr(self, "_ghost_pages", 0))
@@ -145,9 +153,13 @@ class PlantPDF(FPDF):
         self.set_x(self.l_margin)
         for i, (label, url) in enumerate(links):
             text = f"[{label}]"
+            color = LINK_COLORS.get(label, (0, 0, 200))
+            self.set_text_color(*color)
             self.cell(self.get_string_width(text) + 2, 6, text, link=url)
             if i < len(links) - 1:
+                self.set_text_color(0, 0, 0)
                 self.cell(4, 6, "")
+        self.set_text_color(0, 0, 0)
 
         # CENTER: Plant type
         if self.current_plant_type:
@@ -206,7 +218,8 @@ class PlantPDF(FPDF):
                 # Plant name (clickable)
                 self.cell(self.get_string_width(name) + 2, 6, name, link=link)
                 for label, url in links:
-                    self.set_text_color(0, 0, 200)
+                    color = LINK_COLORS.get(label, (0, 0, 200))
+                    self.set_text_color(*color)
                     abbrev = f" [{label}]"
                     self.cell(self.get_string_width(abbrev) + 1, 6, abbrev, link=url)
                 self.set_text_color(0, 0, 0)
@@ -323,10 +336,10 @@ class PlantPDF(FPDF):
                     self.set_font("Helvetica", "B", 12)
                     self.write(6, f"{label} ")
                     self.set_font("Helvetica", "", 12)
-                    self.write(6, val)
+                    self.multi_cell(0, 6, val)
                     if i < len(char_parts) - 1:
-                        self.write(6, "   |   ")
-                self.ln(6)
+                        self.ln(0)
+                self.ln(2)
 
             # ── Appearance ──
             self.set_font("Helvetica", "B", 13)
@@ -369,15 +382,14 @@ class PlantPDF(FPDF):
             bloom_time = safe_text(row.get("Bloom Time", ""))
             if bloom_time:
                 appearance_parts.append(("Bloom Time:", bloom_time))
-            # Print height/spread/bloom time separated by bars
             for i, (label, val) in enumerate(appearance_parts):
                 self.set_font("Helvetica", "B", 12)
                 self.write(6, f"{label} ")
                 self.set_font("Helvetica", "", 12)
-                self.write(6, val)
+                self.multi_cell(0, 6, val)
                 if i < len(appearance_parts) - 1:
-                    self.write(6, "   |   ")
-            self.ln(10)
+                    self.ln(0)
+            self.ln(6)
 
             # ── Site & Wildlife Details ──
             self.set_font("Helvetica", "B", 13)
@@ -386,21 +398,29 @@ class PlantPDF(FPDF):
             site_parts = []
             sun = safe_text(row.get("Sun", ""))
             water = safe_text(row.get("Water", ""))
-            zone = safe_text(row.get("Distribution Zone", "") or row.get("Zone", ""))
+            zone_raw = safe_text(
+                row.get("Distribution Zone", "") or row.get("Zone", "")
+            )
+            zone_match = re.search(r"(\d+)\s*(?:-|to)\s*(\d+)", zone_raw)
+            zone = (
+                f"{zone_match.group(1)} to {zone_match.group(2)}"
+                if zone_match
+                else zone_raw.replace("USDA Hardiness Zone", "").strip()
+            )
             if sun:
                 site_parts.append(("Sun:", sun))
             if water:
                 site_parts.append(("Water:", water))
             if zone:
-                site_parts.append(("Zone:", zone))
+                site_parts.append(("USDA Hardiness Zone:", zone))
             for i, (label, val) in enumerate(site_parts):
                 self.set_font("Helvetica", "B", 12)
                 self.write(6, f"{label} ")
                 self.set_font("Helvetica", "", 12)
-                self.write(6, val)
+                self.multi_cell(0, 6, val)
                 if i < len(site_parts) - 1:
-                    self.write(6, "   |   ")
-            self.ln(8)
+                    self.ln(0)
+            self.ln(4)
 
             # Attracts
             attracts = truncate_text(
@@ -450,8 +470,9 @@ class PlantPDF(FPDF):
                 logging.warning(
                     "Truncating content for %s to fit on one page", bot_name
                 )
-                self.pages.pop()
-                self.page -= 1
+                if self.page in self.pages:
+                    del self.pages[self.page]
+                    self.page -= 1
                 max_len = max(50, max_len - 50)
                 continue
             display_page = self.page_no() - getattr(self, "_ghost_pages", 0)
@@ -525,8 +546,16 @@ pdf.cell(
 pdf.set_text_color(0, 0, 0)
 pdf.ln(4)
 pdf.set_font("Helvetica", "", 11)
-legend_line = "   |   ".join(f"[{abbr}] {name}" for abbr, name in LINK_LEGEND.items())
-pdf.multi_cell(0, 6, legend_line, align="C")
+legend_parts = list(LINK_LEGEND.items())
+for i, (abbr, name) in enumerate(legend_parts):
+    color = LINK_COLORS.get(abbr, (0, 0, 200))
+    pdf.set_text_color(*color)
+    text = f"[{abbr}] {name}"
+    pdf.write(6, text)
+    pdf.set_text_color(0, 0, 0)
+    if i < len(legend_parts) - 1:
+        pdf.write(6, "   |   ")
+pdf.ln(6)
 
 # ─── Reserve TOC pages (2–4) ─────────────────────────────────────────────
 pdf.skip_footer = False
