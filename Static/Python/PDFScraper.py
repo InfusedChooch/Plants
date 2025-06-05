@@ -56,6 +56,9 @@ def safe_print(*objs, **kw):
 MASTER_CSV = Path("Static/Templates/Plants_Linked_Filled_Master.csv").resolve()
 template_cols = list(pd.read_csv(MASTER_CSV, nrows=0).columns)
 
+master_df = pd.read_csv(MASTER_CSV, dtype=str).fillna("")
+master_idx = master_df.set_index("Botanical Name")
+
 COLUMNS = ["Page in PDF"] + template_cols
 
 # ─── Regex Patterns ──────────────────────────────────────────────────────
@@ -175,7 +178,8 @@ def build_page_type_map(pdf_path: Path) -> Dict[int, str]:
 
 # ─── Row & Image Extraction ──────────────────────────────────────────────
 def extract_rows() -> List[Dict[str, str]]:
-    rows, used_keys = [], set()
+    rows = []
+    used_keys = set(master_df.get("Key", []))
     page_type_map = build_page_type_map(PDF_PATH)
     skip_pages = {p for p, t in page_type_map.items() if not t}
     link_map = extract_links_by_page(PDF_PATH)
@@ -239,19 +243,29 @@ def extract_rows() -> List[Dict[str, str]]:
                     bot_name = guessed
             mbg = next((l for l in links if "missouribotanicalgarden" in l.lower()), "")
             wf = next((l for l in links if "wildflower.org" in l.lower()), "")
+            pr = next((l for l in links if "pleasantrunnursery.com" in l.lower()), "")
+            nm = next((l for l in links if "newmoonnursery.com" in l.lower()), "")
+            pn = next((l for l in links if "pinelandsnursery.com" in l.lower()), "")
 
-            row_data = {c: "" for c in COLUMNS}
+            if bot_name in master_idx.index:
+                row_data = master_idx.loc[bot_name].to_dict()
+                used_keys.add(row_data.get("Key", ""))
+            else:
+                row_data = {c: "" for c in template_cols}
+                row_data["Key"] = gen_key(bot_name, used_keys)
             row_data.update(
                 {
                     "Page in PDF": str(page_num),
                     "Plant Type": page_type_map.get(page_num, ""),
-                    "Key": gen_key(bot_name, used_keys),
                     "Botanical Name": bot_name,
                     "Common Name": com_name,
                     "Height (ft)": height,
                     "Spread (ft)": spread,
                     "Link: Missouri Botanical Garden": mbg,
                     "Link: Wildflower.org": wf,
+                    "Link: Pleasantrunnursery.com": pr,
+                    "Link: Newmoonnursery.com": nm,
+                    "Link: Pinelandsnursery.com": pn,
                 }
             )
             rows.append(row_data)
