@@ -31,3 +31,6 @@ def list_all_files(base_dir):
 
 if __name__ == "__main__":
     list_all_files(".")
+
+
+#python list_files.py > file_paths.md

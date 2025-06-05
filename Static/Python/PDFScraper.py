@@ -200,8 +200,8 @@ def extract_images(df: pd.DataFrame) -> None:
         for img_index, img in enumerate(images, start=1):
             xref = img[0]
             pix = fitz.Pixmap(doc, xref)
-            count = page_image_count[base_name]
-            filename = f"{base_name}_{count}.png"
+            count = page_image_count[base_name] + 1
+            filename = f"{page_index:03d}_{base_name}_{count}.png"
             output_path = IMG_DIR / filename
             if pix.n < 5:
                 pix.save(output_path)
