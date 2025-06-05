@@ -77,6 +77,15 @@ LINK_LABELS = [
     ("Link: Pinelandsnursery.com", "PNL"),
 ]
 
+# Mapping of link abbreviations to their full names for the legend
+LINK_LEGEND = {
+    "MBG": "Missouri Botanical Garden",
+    "WF": "Wildflower.org",
+    "PRN": "Pleasantrunnursery.com",
+    "NMN": "Newmoonnursery.com",
+    "PNL": "Pinelandsnursery.com",
+}
+
 
 # ─── Helpers ──────────────────────────────────────────────────────────────
 def safe_text(text: str) -> str:
@@ -176,7 +185,8 @@ class PlantPDF(FPDF):
     def add_table_of_contents(self):
         """Generate the TOC pages, listing each plant with page links."""
         self.footer_links = []
-        self.skip_footer = True
+        self.skip_footer = False
+        self.current_plant_type = "Table of Contents"
         self.set_y(20)
         self.set_font("Helvetica", "B", 16)
         self.cell(0, 12, "Table of Contents", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
@@ -302,15 +312,20 @@ class PlantPDF(FPDF):
                 self.set_font("Helvetica", "B", 13)
                 self.cell(0, 8, "Characteristics", ln=1)
                 self.set_font("Helvetica", "", 12)
+                char_parts = []
                 if tolerates:
-                    self.multi_cell(0, 6, f"- Tolerates: {tolerates}")
-                    self.set_x(self.l_margin)
+                    char_parts.append(("Tolerates:", tolerates))
                 if maintenance:
-                    self.multi_cell(0, 6, f"- Maintenance: {maintenance}")
-                    self.set_x(self.l_margin)
+                    char_parts.append(("Maintenance:", maintenance))
                 if agcp:
-                    self.multi_cell(0, 6, f"- AGCP Status: {agcp}")
-                    self.set_x(self.l_margin)
+                    char_parts.append(("AGCP Status:", agcp))
+                for i, (label, val) in enumerate(char_parts):
+                    self.set_font("Helvetica", "B", 12)
+                    self.write(6, f"{label} ")
+                    self.set_font("Helvetica", "", 12)
+                    self.write(6, val)
+                    if i < len(char_parts) - 1:
+                        self.write(6, "   |   ")
                 self.ln(6)
 
             # ── Appearance ──
@@ -508,6 +523,10 @@ pdf.cell(
     0, 10, f"{datetime.today():%B %Y}", align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT
 )
 pdf.set_text_color(0, 0, 0)
+pdf.ln(4)
+pdf.set_font("Helvetica", "", 11)
+legend_line = "   |   ".join(f"[{abbr}] {name}" for abbr, name in LINK_LEGEND.items())
+pdf.multi_cell(0, 6, legend_line, align="C")
 
 # ─── Reserve TOC pages (2–4) ─────────────────────────────────────────────
 pdf.skip_footer = False
