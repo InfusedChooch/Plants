@@ -170,6 +170,61 @@ def draw_wrapped_legend(pdf) -> None:
     pdf.set_text_color(0, 0, 0)
 
 
+def draw_labeled_parts(pdf, parts, sep=" | ") -> None:
+    """Write (label, value) tuples with wrapping and optional colored segments."""
+    max_w = pdf.w - pdf.l_margin - pdf.r_margin
+    line_parts = []
+    line_width = 0
+
+    def to_segments(val):
+        if isinstance(val, list):
+            segs = []
+            for seg in val:
+                if isinstance(seg, tuple):
+                    segs.append(seg)
+                else:
+                    segs.append((str(seg), None))
+            return segs
+        return [(str(val), None)]
+
+    def flush_line():
+        nonlocal line_parts, line_width
+        if not line_parts:
+            return
+        pdf.set_x(pdf.l_margin)
+        for i, (label, segs) in enumerate(line_parts):
+            pdf.set_font("Helvetica", "B", 12)
+            pdf.write(6, f"{label} ")
+            pdf.set_font("Helvetica", "", 12)
+            for text, color in segs:
+                if color:
+                    pdf.set_text_color(*color)
+                else:
+                    pdf.set_text_color(0, 0, 0)
+                pdf.write(6, text)
+            pdf.set_text_color(0, 0, 0)
+            if i < len(line_parts) - 1:
+                pdf.write(6, sep)
+        pdf.ln(6)
+        line_parts = []
+        line_width = 0
+
+    for label, value in parts:
+        segs = to_segments(value)
+        seg_width = pdf.get_string_width(f"{label} ") + sum(
+            pdf.get_string_width(text) for text, _ in segs
+        )
+        sep_w = pdf.get_string_width(sep) if line_parts else 0
+        if line_width + sep_w + seg_width > max_w:
+            flush_line()
+        if line_parts:
+            line_width += pdf.get_string_width(sep)
+        line_parts.append((label, segs))
+        line_width += seg_width
+
+    flush_line()
+
+
 # ─── PDF Class ────────────────────────────────────────────────────────────
 class PlantPDF(FPDF):
     def __init__(self):
@@ -375,13 +430,7 @@ class PlantPDF(FPDF):
                     char_parts.append(("Maintenance:", maintenance))
                 if agcp:
                     char_parts.append(("AGCP Status:", agcp))
-                for i, (label, val) in enumerate(char_parts):
-                    self.set_font("Helvetica", "B", 12)
-                    self.write(6, f"{label} ")
-                    self.set_font("Helvetica", "", 12)
-                    self.multi_cell(0, 6, val)
-                    if i < len(char_parts) - 1:
-                        self.ln(0)
+                draw_labeled_parts(self, char_parts)
                 self.ln(2)
 
             # ── Appearance ──
@@ -389,22 +438,13 @@ class PlantPDF(FPDF):
             self.cell(0, 8, "Appearance", ln=1)
             self.set_font("Helvetica", "", 12)
             appearance_parts = []
-            ht = safe_text(row.get("Height (ft)", ""))
-            if ht:
-                appearance_parts.append(("Height:", f"{ht} ft"))
-            sp = safe_text(row.get("Spread (ft)", ""))
-            if sp:
-                appearance_parts.append(("Spread:", f"{sp} ft"))
-            # Bloom color with colored text
             color_text = safe_text(row.get("Bloom Color", ""))
             if color_text:
-                self.set_font("Helvetica", "B", 12)
-                self.write(6, "Bloom Color: ")
-                self.set_font("Helvetica", "", 12)
-                for i, color in enumerate(color_text.split(",")):
-                    color = color.strip()
-                    if color.lower() != "white":
-                        hex_color = {
+                segments = []
+                colors = [c.strip() for c in color_text.split(",")]
+                for i, color in enumerate(colors):
+                    rgb = (
+                        {
                             "red": (200, 0, 0),
                             "pink": (255, 105, 180),
                             "purple": (128, 0, 128),
@@ -413,25 +453,23 @@ class PlantPDF(FPDF):
                             "orange": (255, 140, 0),
                             "green": (34, 139, 34),
                         }.get(color.lower(), (0, 0, 0))
-                        self.set_text_color(*hex_color)
-                    else:
-                        self.set_text_color(0, 0, 0)
-                    self.write(6, color)
-                    if i < len(color_text.split(",")) - 1:
-                        self.write(6, ", ")
-                self.set_text_color(0, 0, 0)
-                self.ln(6)
-            # Bloom time
+                        if color.lower() != "white"
+                        else (0, 0, 0)
+                    )
+                    segments.append((color, rgb))
+                    if i < len(colors) - 1:
+                        segments.append((", ", None))
+                appearance_parts.append(("Bloom Color:", segments))
+            ht = safe_text(row.get("Height (ft)", ""))
+            if ht:
+                appearance_parts.append(("Height:", f"{ht} ft"))
+            sp = safe_text(row.get("Spread (ft)", ""))
+            if sp:
+                appearance_parts.append(("Spread:", f"{sp} ft"))
             bloom_time = safe_text(row.get("Bloom Time", ""))
             if bloom_time:
                 appearance_parts.append(("Bloom Time:", bloom_time))
-            for i, (label, val) in enumerate(appearance_parts):
-                self.set_font("Helvetica", "B", 12)
-                self.write(6, f"{label} ")
-                self.set_font("Helvetica", "", 12)
-                self.multi_cell(0, 6, val)
-                if i < len(appearance_parts) - 1:
-                    self.ln(0)
+            draw_labeled_parts(self, appearance_parts)
             self.ln(6)
 
             # ── Site & Wildlife Details ──
@@ -456,13 +494,7 @@ class PlantPDF(FPDF):
                 site_parts.append(("Water:", water))
             if zone:
                 site_parts.append(("USDA Hardiness Zone:", zone))
-            for i, (label, val) in enumerate(site_parts):
-                self.set_font("Helvetica", "B", 12)
-                self.write(6, f"{label} ")
-                self.set_font("Helvetica", "", 12)
-                self.multi_cell(0, 6, val)
-                if i < len(site_parts) - 1:
-                    self.ln(0)
+            draw_labeled_parts(self, site_parts)
             self.ln(4)
 
             # Attracts
