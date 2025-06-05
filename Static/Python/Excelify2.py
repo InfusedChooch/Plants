@@ -68,12 +68,11 @@ for cell in ws[1]:
 
 
 def autofit_columns(ws: Worksheet) -> None:
-    """Resize each column based on the maximum cell length."""
+    """Resize each column based solely on its header label."""
 
-    for column_cells in ws.columns:
-        max_length = max(len(str(cell.value or "")) for cell in column_cells)
-        letter = get_column_letter(column_cells[0].column)
-        ws.column_dimensions[letter].width = max_length + 2
+    for cell in ws[1]:
+        letter = get_column_letter(cell.column)
+        ws.column_dimensions[letter].width = len(str(cell.value or "")) + 2
 
 
 autofit_columns(ws)
