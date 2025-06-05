@@ -35,9 +35,13 @@ XLSX_FILE = (REPO / args.out_xlsx).resolve()
 # ─── Step 1: Load CSV and write it to a basic Excel file ──────────────────
 df = pd.read_csv(CSV_FILE, dtype=str).fillna("")
 template_cols = list(
-    pd.read_csv(REPO / "Static/Templates/Plants_Linked_Filled_Master.csv", nrows=0).columns
+    pd.read_csv(
+        REPO / "Static/Templates/Plants_Linked_Filled_Master.csv", nrows=0
+    ).columns
 )
-df = df.reindex(columns=template_cols + [c for c in df.columns if c not in template_cols])
+df = df.reindex(
+    columns=template_cols + [c for c in df.columns if c not in template_cols]
+)
 
 # Format Common and Botanical Name
 if "Common Name" in df.columns:
@@ -83,13 +87,14 @@ link_map = {
     "Link: Pinelandsnursery.com": "[PN]",
 }
 
+
 def style_sheet(ws: Worksheet, df: pd.DataFrame, header: list[str]) -> None:
     red_fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
 
-    for row_idx, row in enumerate(df.itertuples(index=False), start=2):
-        for col_idx, col_name in enumerate(header, start=1):
+    for row_idx, row in enumerate(df.itertuples(index=False, name=None), start=2):
+        for col_idx, (col_name, value) in enumerate(zip(header, row), start=1):
             cell: Cell = ws.cell(row=row_idx, column=col_idx)
-            value = str(getattr(row, col_name.replace(" ", "_"), "")).strip()
+            value = str(value).strip()
 
             if col_name in link_map and value.startswith("http"):
                 cell.value = link_map[col_name]
@@ -103,6 +108,7 @@ def style_sheet(ws: Worksheet, df: pd.DataFrame, header: list[str]) -> None:
             if not value:
                 cell.fill = red_fill
 
+
 style_sheet(ws, df, header)
 
 # ─── Step 4B: Add raw export sheet with full link data ─────────────────────
@@ -112,9 +118,9 @@ for col_idx, col_name in enumerate(df.columns, start=1):
     cell.value = col_name
     cell.font = BOLD_FONT
 
-for row_idx, row in enumerate(df.itertuples(index=False), start=2):
-    for col_idx, col_name in enumerate(df.columns, start=1):
-        raw_sheet.cell(row=row_idx, column=col_idx).value = getattr(row, col_name.replace(" ", "_"), "")
+for row_idx, row in enumerate(df.itertuples(index=False, name=None), start=2):
+    for col_idx, value in enumerate(row, start=1):
+        raw_sheet.cell(row=row_idx, column=col_idx).value = value
 
 # ─── Step 5: README Sheet ─────────────────────────────────────────────────
 readme = wb.create_sheet("README")
@@ -126,13 +132,19 @@ readme["A4"] = "🔴 Red: Missing value (empty cell)"
 readme["A6"] = "Filters applied only to these columns:"
 readme["A7"] = ", ".join(filter_cols)
 readme["A9"] = "🛠 How to filter by partial match in Excel:"
-readme["A10"] = "1. Click the filter dropdown on the column header (e.g., Sun or Characteristics)."
+readme["A10"] = (
+    "1. Click the filter dropdown on the column header (e.g., Sun or Characteristics)."
+)
 readme["A11"] = "2. Choose 'Text Filters' > 'Contains...'"
 readme["A12"] = "3. Type a partial term (e.g., 'shade', 'yellow') and click OK."
 readme["A13"] = "💡 Use this to find plants matching conditions across categories."
 readme["A15"] = "📄 https://github.com/InfusedChooch/Plants"
-readme["A16"] = "This Excel was generated from the filled CSV using the script Excelify2.py"
-readme["A17"] = "Download https://portableapps.com/apps/internet/google_chrome_portable and place it in the /Static folder"
+readme["A16"] = (
+    "This Excel was generated from the filled CSV using the script Excelify2.py"
+)
+readme["A17"] = (
+    "Download https://portableapps.com/apps/internet/google_chrome_portable and place it in the /Static folder"
+)
 readme["A18"] = "Static/GoogleChromePortable"
 
 # ─── Step 6: Script Version Info ──────────────────────────────────────────
@@ -145,10 +157,14 @@ script_descriptions = {
 }
 row_start = readme.max_row + 2
 readme[f"A{row_start}"] = "📁 Script Version Info (Last Modified):"
-for i, (script_path, description) in enumerate(script_descriptions.items(), start=row_start + 1):
+for i, (script_path, description) in enumerate(
+    script_descriptions.items(), start=row_start + 1
+):
     full_path = REPO / script_path
     if full_path.exists():
-        modified = datetime.fromtimestamp(full_path.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
+        modified = datetime.fromtimestamp(full_path.stat().st_mtime).strftime(
+            "%Y-%m-%d %H:%M"
+        )
         readme[f"A{i}"] = f"{script_path:<40} → {modified}    {description}"
     else:
         readme[f"A{i}"] = f"{script_path:<40} → MISSING        {description}"
