@@ -119,7 +119,7 @@ pip install -r requirements.txt
 ## 🔧 Notes
 
 * Chrome/Selenium requires a portable installation of Chrome.
-* Image filenames use: `page#_botanical_slug_count.jpg`.
+* Image filenames use: `botanical_slug_index.jpg`.
 * PDF sections auto-group by type (Herbaceous, Ferns, Shrubs, etc).
 * `Excelify2.py` sets filters on select columns and highlights missing values.
 * Scripts are designed to be rerun with override support.
