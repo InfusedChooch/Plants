@@ -66,9 +66,17 @@ for cell in ws[1]:
     cell.fill = HEADER_FILL
     cell.font = BOLD_FONT
 
-for i, column_cells in enumerate(ws.columns, start=1):
-    max_length = max(len(str(cell.value or "")) for cell in column_cells)
-    ws.column_dimensions[get_column_letter(i)].width = min(max_length + 2, 50)
+
+def autofit_columns(ws: Worksheet) -> None:
+    """Resize each column based on the maximum cell length."""
+
+    for column_cells in ws.columns:
+        max_length = max(len(str(cell.value or "")) for cell in column_cells)
+        letter = get_column_letter(column_cells[0].column)
+        ws.column_dimensions[letter].width = max_length + 2
+
+
+autofit_columns(ws)
 
 # ─── Step 3: Apply Filters ────────────────────────────────────────────────
 filter_cols = ["Plant Type", "Bloom Color", "Sun", "Water", "Attracts"]
