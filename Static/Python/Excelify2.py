@@ -61,7 +61,7 @@ for i, column_cells in enumerate(ws.columns, start=1):
     ws.column_dimensions[get_column_letter(i)].width = min(max_length + 2, 50)
 
 # ─── Step 3: Apply filters to specific columns ──────────────────────────────
-filter_cols = [
+desired_filters = [
     "Page in PDF",
     "Plant Type",
     "Bloom Color",
@@ -69,6 +69,7 @@ filter_cols = [
     "Water",
 ]
 header = [cell.value for cell in ws[1]]
+filter_cols = [c for c in desired_filters if c in header]
 filter_indices = [i + 1 for i, val in enumerate(header) if val in filter_cols]
 if filter_indices:
     col_range = f"{get_column_letter(min(filter_indices))}1:{get_column_letter(max(filter_indices))}1"

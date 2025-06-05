@@ -137,7 +137,6 @@ Every field is first scraped from the Rutgers PDF. Missing values are filled fro
 
 | **Column** | **Data Hierarchy** | **Formatting / Notes** |
 | ---------- | ------------------ | ---------------------- |
-| Page in PDF | PDF only | |
 | Plant Type | PDF only | |
 | Key | generated from Botanical Name | |
 | Botanical Name | PDF only | |

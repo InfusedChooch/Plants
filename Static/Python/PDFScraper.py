@@ -328,9 +328,10 @@ def extract_images(df: pd.DataFrame) -> None:
 # ─── Main ────────────────────────────────────────────────────────────────
 def main():
     df = pd.DataFrame(extract_rows(), columns=COLUMNS)
+    extract_images(df)
+    df.drop(columns=["Page in PDF"], inplace=True, errors="ignore")
     df.to_csv(OUT_CSV, index=False, quoting=csv.QUOTE_MINIMAL, na_rep="")
     safe_print(f"✅ Saved → {OUT_CSV.name} ({len(df)} rows)")
-    extract_images(df)
 
 
 if __name__ == "__main__":
