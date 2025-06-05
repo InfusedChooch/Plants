@@ -13,6 +13,7 @@ import pandas as pd  # DataFrame handling for CSV
 import re  # Regular expressions for text cleaning
 from PIL import Image  # Image handling for JPEGs
 from datetime import datetime  # To display current date on title page
+import logging
 import argparse
 
 parser = argparse.ArgumentParser(description="Generate plant guide PDF")
@@ -28,6 +29,8 @@ parser.add_argument(
     "--img_dir", default="Static/Outputs/pdf_images/jpeg", help="Image directory"
 )
 args = parser.parse_args()
+
+logging.basicConfig(level=logging.INFO)
 
 # ─── Constants ────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent
@@ -91,6 +94,14 @@ def primary_common_name(name):
     elif " or " in name:
         return name.split(" or ")[0].strip()
     return name
+
+
+def truncate_text(text: str, max_len: int, plant_name: str, field: str) -> str:
+    """Truncate overly long sections to keep each plant on a single page."""
+    if len(text) > max_len:
+        logging.warning("Truncating %s for %s", field, plant_name)
+        return text[: max_len - 3] + "..."
+    return text
 
 
 def name_slug(text: str) -> str:
@@ -217,7 +228,12 @@ class PlantPDF(FPDF):
             if url:
                 links.append((label, url))
         self.current_plant_type = plant_type
+        # One-page constraint: disable auto page breaks during rendering so
+        # long sections don't spill onto a new page inadvertently
+        self.set_auto_page_break(auto=False)
         self.add_page()  # New PDF page
+        start_page = self.page_no()
+        start_y = self.get_y()
         self.footer_links = links  # Links for footer
 
         # Add internal TOC entry
@@ -273,9 +289,15 @@ class PlantPDF(FPDF):
         self.set_y(y0 + img_h_fixed + 6)
 
         # ── Characteristics section ──
-        tolerates = safe_text(row.get("Tolerates", ""))
-        maintenance = safe_text(row.get("Maintenance", ""))
-        agcp = safe_text(row.get("AGCP Regional Status", ""))
+        tolerates = truncate_text(
+            safe_text(row.get("Tolerates", "")), 300, bot_name, "Tolerates"
+        )
+        maintenance = truncate_text(
+            safe_text(row.get("Maintenance", "")), 300, bot_name, "Maintenance"
+        )
+        agcp = truncate_text(
+            safe_text(row.get("AGCP Regional Status", "")), 300, bot_name, "AGCP"
+        )
         if any([tolerates, maintenance, agcp]):
             self.set_font("Helvetica", "B", 13)
             self.cell(0, 8, "Characteristics", ln=1)
@@ -366,7 +388,9 @@ class PlantPDF(FPDF):
         self.ln(8)
 
         # Attracts
-        attracts = safe_text(row.get("Attracts", ""))
+        attracts = truncate_text(
+            safe_text(row.get("Attracts", "")), 300, bot_name, "Attracts"
+        )
         if attracts:
             self.set_font("Helvetica", "B", 12)
             self.write(6, "Attracts: ")
@@ -375,7 +399,12 @@ class PlantPDF(FPDF):
             self.ln(6)
 
         # Soil Description
-        soil = safe_text(row.get("Soil Description", ""))
+        soil = truncate_text(
+            safe_text(row.get("Soil Description", "")),
+            300,
+            bot_name,
+            "Soil Description",
+        )
         if soil:
             self.set_font("Helvetica", "B", 12)
             self.write(6, "Soil Description: ")
@@ -384,12 +413,26 @@ class PlantPDF(FPDF):
             self.ln(6)
 
         # Habitats
-        habitats = safe_text(row.get("Native Habitats", "") or row.get("Habitats", ""))
+        habitats = truncate_text(
+            safe_text(row.get("Native Habitats", "") or row.get("Habitats", "")),
+            300,
+            bot_name,
+            "Habitats",
+        )
         if habitats:
             self.set_font("Helvetica", "B", 12)
             self.write(6, "Habitats: ")
             self.set_font("Helvetica", "", 12)
             self.multi_cell(0, 6, habitats)
+
+        # Verify single-page layout
+        end_page = self.page_no()
+        end_y = self.get_y()
+        allowed_height = self.h - self.b_margin
+        overflow = end_page != start_page or end_y > allowed_height
+        self.set_auto_page_break(auto=True, margin=20)
+        if overflow:
+            logging.warning("Truncating content for %s to fit on one page", bot_name)
 
 
 # ─── Build PDF ────────────────────────────────────────────────────────────
