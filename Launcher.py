@@ -10,6 +10,7 @@ final outputs.
 
 import sys, subprocess, threading, queue, customtkinter as ctk
 from tkinter import filedialog
+import webbrowser
 from pathlib import Path
 from datetime import datetime
 
@@ -107,6 +108,8 @@ out_dir_var = ctk.StringVar(value=str(OUTDEF))
 pre_var = ctk.StringVar(value=f"{today}_")
 suf_var = ctk.StringVar(value="")
 img_dir_var = ctk.StringVar(value=str(OUTDEF / "pdf_images"))
+guide_pdf_var = ctk.StringVar(value=str(TEMPL / "Plant Guide 2025 Update.pdf"))
+master_csv_var = ctk.StringVar(value=str(TEMPL / "MASTER_MASTER_20250605.csv"))
 _img_user_set = False
 
 log_q: queue.Queue[str] = queue.Queue(maxsize=500)
@@ -152,6 +155,33 @@ def browse_img():
         _img_user_set = True
 
 
+def browse_pdf():
+    """Prompt for the guide PDF file."""
+
+    f = filedialog.askopenfilename(
+        initialdir=Path(guide_pdf_var.get()).parent, filetypes=[("PDF", "*.pdf")]
+    )
+    if f:
+        guide_pdf_var.set(f)
+
+
+def browse_master():
+    """Prompt for the master CSV file."""
+
+    f = filedialog.askopenfilename(
+        initialdir=Path(master_csv_var.get()).parent, filetypes=[("CSV", "*.csv")]
+    )
+    if f:
+        master_csv_var.set(f)
+
+
+def open_chrome_portable():
+    webbrowser.open(
+        "https://portableapps.com/apps/internet/google_chrome_portable",
+        new=1,
+    )
+
+
 # Output folder
 ctk.CTkLabel(hdr, text="Output folder:").grid(
     row=0, column=0, sticky="e", padx=4, pady=4
@@ -175,6 +205,24 @@ ctk.CTkLabel(hdr, text="Image folder:").grid(
 )
 ctk.CTkEntry(hdr, textvariable=img_dir_var, width=430).grid(row=2, column=1, padx=4)
 ctk.CTkButton(hdr, text="Browse", command=browse_img).grid(row=2, column=2)
+
+# Guide PDF
+ctk.CTkLabel(hdr, text="Guide PDF:").grid(row=3, column=0, sticky="e", padx=4, pady=4)
+ctk.CTkEntry(hdr, textvariable=guide_pdf_var, width=430).grid(row=3, column=1, padx=4)
+ctk.CTkButton(hdr, text="Browse", command=browse_pdf).grid(row=3, column=2)
+
+# Master CSV
+ctk.CTkLabel(hdr, text="Master CSV:").grid(row=4, column=0, sticky="e", padx=4, pady=4)
+ctk.CTkEntry(hdr, textvariable=master_csv_var, width=430).grid(row=4, column=1, padx=4)
+ctk.CTkButton(hdr, text="Browse", command=browse_master).grid(row=4, column=2)
+
+# Chrome Portable link
+ctk.CTkButton(
+    hdr,
+    text="Get Chrome Portable",
+    width=160,
+    command=open_chrome_portable,
+).grid(row=5, column=1, padx=4, pady=4, sticky="w")
 
 # ─── Tabs & Tool Rows ───────────────────────────────────────────────────
 tabs = ctk.CTkTabview(app)
@@ -200,7 +248,10 @@ def choose_input(var: ctk.StringVar, flag: str):
 def run_tool(script, in_flag, out_flag, stem, ext):
     """Execute one of the pipeline scripts in a background thread."""
 
-    inp = in_vars[(script, in_flag)].get().strip()
+    if script == "PDFScraper.py":
+        inp = guide_pdf_var.get().strip()
+    else:
+        inp = in_vars[(script, in_flag)].get().strip()
     if not inp or not Path(inp).exists():
         status_lbl[script].configure(text="❌ input missing", text_color="red")
         return
@@ -208,6 +259,11 @@ def run_tool(script, in_flag, out_flag, stem, ext):
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     cmd = [sys.executable, str(SCRIPTS / script), in_flag, inp, out_flag, str(out_path)]
+
+    if script == "GetLinks.py":
+        cmd += ["--master_csv", master_csv_var.get()]
+    if script == "FillMissingData.py":
+        cmd += ["--master_csv", master_csv_var.get()]
 
     if script in {"GeneratePDF.py", "PDFScraper.py"}:
         cmd += ["--img_dir", img_dir_var.get()]
@@ -266,7 +322,11 @@ for script, in_flag, out_flag, def_in, stem, ext in TOOLS:
     in_row = ctk.CTkFrame(fr)
     in_row.pack(fill="x", padx=12, pady=2)
     ctk.CTkLabel(in_row, text=pretty(in_flag), width=120).pack(side="left")
-    var = in_vars.setdefault((script, in_flag), ctk.StringVar(value=str(BASE / def_in)))
+    if script == "PDFScraper.py":
+        var = guide_pdf_var
+    else:
+        var = ctk.StringVar(value=str(BASE / def_in))
+    in_vars[(script, in_flag)] = var
     ctk.CTkEntry(in_row, textvariable=var, width=380).pack(side="left", padx=4)
     ctk.CTkButton(
         in_row, text="Browse…", command=lambda v=var, f=in_flag: choose_input(v, f)
