@@ -189,7 +189,11 @@ def extract_rows() -> List[Dict[str, str]]:
             if page_num in skip_pages:
                 continue
             text = pg.extract_text() or ""
+            if re.search(r"table of contents", text, re.I):
+                continue
             lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+            if sum("..." in ln for ln in lines) >= 3:
+                continue
             bot_idx = None
             bot_name = com_name = ""
 
