@@ -68,7 +68,7 @@ the command above.
 ### `FillMissingData.py`
 
 * Scrapes plant details from MBG, Wildflower.org, Pleasant Run, New Moon, and Pinelands links.
-* Adds missing attributes like bloom, sun, water, habitat, tolerances, and characteristics.
+* Adds missing attributes like bloom, sun, water, habitat, and tolerances.
 * Outputs `Plants_Linked_Filled.csv`.
 
 

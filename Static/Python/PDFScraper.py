@@ -53,32 +53,10 @@ def safe_print(*objs, **kw):
 
 
 # ─── CSV Columns ─────────────────────────────────────────────────────────
-COLUMNS = [
-    "Page in PDF",
-    "Plant Type",
-    "Key",
-    "Botanical Name",
-    "Common Name",
-    "Height (ft)",
-    "Spread (ft)",
-    "Bloom Color",
-    "Bloom Time",
-    "Sun",
-    "Water",
-    "Tolerates",
-    "Maintenance",
-    "Native Habitats",
-    "Attracts",
-    "Soil Description",
-    "Distribution Zone",
-    "AGCP Regional Status",
-    "Link: Missouri Botanical Garden",
-    "Link: Wildflower.org",
-    "Link: Pleasantrunnursery.com",
-    "Link: Newmoonnursery.com",
-    "Link: Pinelandsnursery.com",
-    "Characteristics",
-]
+MASTER_CSV = Path("Static/Templates/Plants_Linked_Filled_Master.csv").resolve()
+template_cols = list(pd.read_csv(MASTER_CSV, nrows=0).columns)
+
+COLUMNS = ["Page in PDF"] + template_cols
 
 # ─── Regex Patterns ──────────────────────────────────────────────────────
 BOT_LINE_RE = re.compile(
@@ -262,7 +240,8 @@ def extract_rows() -> List[Dict[str, str]]:
             mbg = next((l for l in links if "missouribotanicalgarden" in l.lower()), "")
             wf = next((l for l in links if "wildflower.org" in l.lower()), "")
 
-            rows.append(
+            row_data = {c: "" for c in COLUMNS}
+            row_data.update(
                 {
                     "Page in PDF": str(page_num),
                     "Plant Type": page_type_map.get(page_num, ""),
@@ -271,26 +250,11 @@ def extract_rows() -> List[Dict[str, str]]:
                     "Common Name": com_name,
                     "Height (ft)": height,
                     "Spread (ft)": spread,
-                    **{
-                        c: ""
-                        for c in COLUMNS
-                        if c
-                        not in {
-                            "Page in PDF",
-                            "Plant Type",
-                            "Key",
-                            "Botanical Name",
-                            "Common Name",
-                            "Height (ft)",
-                            "Spread (ft)",
-                            "Link: Missouri Botanical Garden",
-                            "Link: Wildflower.org",
-                        }
-                    },
                     "Link: Missouri Botanical Garden": mbg,
                     "Link: Wildflower.org": wf,
                 }
             )
+            rows.append(row_data)
     return rows
 
 

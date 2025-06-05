@@ -67,7 +67,6 @@ filter_cols = [
     "Bloom Color",
     "Sun",
     "Water",
-    "Characteristics",
 ]
 header = [cell.value for cell in ws[1]]
 filter_indices = [i + 1 for i, val in enumerate(header) if val in filter_cols]
@@ -94,7 +93,7 @@ readme["A6"] = "Filters applied only to these columns:"
 readme["A7"] = ", ".join(filter_cols)
 readme["A9"] = "🛠 How to filter by partial match in Excel:"
 readme["A10"] = (
-    "1. Click the filter dropdown on the column header (e.g., Sun or Characteristics)."
+    "1. Click the filter dropdown on the column header (e.g., Sun or Water)."
 )
 readme["A11"] = "2. Choose 'Text Filters' > 'Contains...'"
 readme["A12"] = "3. Type a partial term (e.g., 'shade', 'yellow') and click OK."
