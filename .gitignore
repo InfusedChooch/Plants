@@ -1,6 +1,6 @@
 # Ignore output files
 Static/Outputs/Plants_Nolinks_example.csv
-
+Static/Outputs/png_images/
 # Ignore local Chrome install
 Static/GoogleChromePortable/
 
