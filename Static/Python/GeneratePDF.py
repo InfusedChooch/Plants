@@ -28,6 +28,11 @@ parser.add_argument(
 parser.add_argument(
     "--img_dir", default="Static/Outputs/pdf_images/jpeg", help="Image directory"
 )
+parser.add_argument(
+    "--template_csv",
+    default="Static/Templates/Plants_Linked_Filled_Master.csv",
+    help="CSV file containing column template",
+)
 args = parser.parse_args()
 
 logging.basicConfig(level=logging.INFO)
@@ -42,15 +47,12 @@ CSV_FILE = (
 IMG_DIR = Path(args.img_dir) if args.img_dir else BASE_DIR / "Static/Outputs/pdf_images"
 OUTPUT = Path(args.out_pdf)
 logo_dir = IMG_DIR.parent if IMG_DIR.name == "jpeg" else IMG_DIR
+TEMPLATE_CSV = Path(args.template_csv)
 
 
 # ─── Load and Prepare Data ────────────────────────────────────────────────
 df = pd.read_csv(CSV_FILE, dtype=str).fillna("")  # Read CSV, empty cells → ""
-template_cols = list(
-    pd.read_csv(
-        Path("Static/Templates/Plants_Linked_Filled_Master.csv"), nrows=0
-    ).columns
-)
+template_cols = list(pd.read_csv(TEMPLATE_CSV, nrows=0).columns)
 df = df.reindex(
     columns=template_cols + [c for c in df.columns if c not in template_cols]
 )
