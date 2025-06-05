@@ -71,7 +71,7 @@ def autofit_columns(ws: Worksheet) -> None:
     """Resize each column based solely on its header label."""
 
     for cell in ws[1]:
-        letter = get_column_letter(cell.column)
+        letter = get_column_letter(cell.col_idx)
         ws.column_dimensions[letter].width = len(str(cell.value or "")) + 2
 
 
