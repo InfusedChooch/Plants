@@ -117,6 +117,25 @@ the command above.
 5. Run `GeneratePDF.py` to produce the final guide.
 6. Optionally, use `Launcher.py` for a GUI-driven experience.
 
+## 🖥️ Building a Windows Executable
+
+Create a standalone `Launcher.exe` using [PyInstaller](https://pyinstaller.org/):
+
+```bash
+pip install pyinstaller
+pyinstaller Launcher.py --onefile
+```
+
+The generated binary is placed in `dist/`. Keep these folders next to the
+executable so Selenium and the scripts can run:
+
+* `Static/GoogleChromePortable/` – portable Chrome for Selenium
+* `Static/Python/chromedriver.exe`
+* all other data folders under `Static/` (`Templates/`, `themes/`, etc.)
+
+Run `dist/Launcher.exe` on Windows and verify each button processes the sample
+data in `Static/Templates`.
+
 ---
 
 ## 🔧 Notes
