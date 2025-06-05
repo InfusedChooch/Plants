@@ -75,7 +75,40 @@ def autofit_columns(ws: Worksheet) -> None:
         ws.column_dimensions[letter].width = len(str(cell.value or "")) + 2
 
 
+def set_fixed_column_widths(ws: Worksheet) -> None:
+    """Apply hard-coded column widths for consistent layout."""
+
+    widths = {
+        "A": 150.0,
+        "B": 60.0,
+        "C": 180.0,
+        "D": 160.0,
+        "E": 90.0,
+        "G": 90.0,
+        "H": 150.0,
+        "I": 150.0,
+        "J": 100.0,
+        "K": 125.0,
+        "L": 120.0,
+        "M": 300.0,
+        "N": 180.0,
+        "O": 175.0,
+        "P": 175.0,
+        "Q": 150.0,
+        "R": 100.0,
+        "S": 100.0,
+        "T": 100.0,
+        "U": 100.0,
+        "V": 100.0,
+        "W": 100.0,
+    }
+
+    for col, width in widths.items():
+        ws.column_dimensions[col].width = width
+
+
 autofit_columns(ws)
+set_fixed_column_widths(ws)
 
 # ─── Step 3: Apply Filters ────────────────────────────────────────────────
 filter_cols = ["Plant Type", "Bloom Color", "Sun", "Water", "Attracts"]
@@ -128,6 +161,8 @@ for col_idx, col_name in enumerate(df.columns, start=1):
 for row_idx, row in enumerate(df.itertuples(index=False, name=None), start=2):
     for col_idx, value in enumerate(row, start=1):
         raw_sheet.cell(row=row_idx, column=col_idx).value = value
+
+set_fixed_column_widths(raw_sheet)
 
 # ─── Step 5: README Sheet ─────────────────────────────────────────────────
 readme = wb.create_sheet("README")
