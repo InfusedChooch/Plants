@@ -65,6 +65,15 @@ PLANT_TYPE_ORDER = [  # Desired order of sections
     "TREES",
 ]
 
+# Mapping of link columns to short footer labels
+LINK_LABELS = [
+    ("Link: Missouri Botanical Garden", "MBG"),
+    ("Link: Wildflower.org", "WF"),
+    ("Link: Pleasantrunnursery.com", "PRN"),
+    ("Link: Newmoonnursery.com", "NMN"),
+    ("Link: Pinelandsnursery.com", "PNL"),
+]
+
 
 # ─── Helpers ──────────────────────────────────────────────────────────────
 def safe_text(text: str) -> str:
@@ -98,7 +107,7 @@ class PlantPDF(FPDF):
         self.toc = {ptype: [] for ptype in PLANT_TYPE_ORDER}  # TOC entries per section
         self.set_auto_page_break(auto=True, margin=20)  # Auto page breaks with margin
         self.skip_footer = False  # Flag to disable footer temporarily
-        self.footer_links = (None, None)  # Store MBG/WF links for footer
+        self.footer_links = []  # list of (label, url) for footer
 
     def footer(self):
         if self.skip_footer:
@@ -108,19 +117,17 @@ class PlantPDF(FPDF):
         self.set_font("Helvetica", "I", 9)
         self.set_text_color(0, 0, 200)
 
-        mbg, wf = self.footer_links
+        links = self.footer_links
         page_str = str(self.page_no() - getattr(self, "_ghost_pages", 0))
         self.set_y(-12)
 
-        # LEFT: MBG / WF
+        # LEFT: source links
         self.set_x(self.l_margin)
-        if mbg:
-            label = "[Missouri Botanical Garden]"
-            self.cell(self.get_string_width(label) + 2, 6, label, link=mbg)
-            self.cell(4, 6, "")
-        if wf:
-            label = "[Wildflower.org]"
-            self.cell(self.get_string_width(label) + 2, 6, label, link=wf)
+        for i, (label, url) in enumerate(links):
+            text = f"[{label}]"
+            self.cell(self.get_string_width(text) + 2, 6, text, link=url)
+            if i < len(links) - 1:
+                self.cell(4, 6, "")
 
         # CENTER: Plant type
         if self.current_plant_type:
@@ -142,7 +149,7 @@ class PlantPDF(FPDF):
 
     def add_type_divider(self, plant_type):
         """Insert a full-page section divider with title and link anchor."""
-        self.footer_links = (None, None)  # No links on divider page
+        self.footer_links = []  # No links on divider page
         self.skip_footer = True  # Temporarily hide footer
         self.add_page()  # New page
         self.skip_footer = False  # Re-enable footer for subsequent pages
@@ -157,7 +164,7 @@ class PlantPDF(FPDF):
 
     def add_table_of_contents(self):
         """Generate the TOC pages, listing each plant with page links."""
-        self.footer_links = (None, None)
+        self.footer_links = []
         self.skip_footer = True
         self.set_y(20)
         self.set_font("Helvetica", "B", 16)
@@ -173,18 +180,15 @@ class PlantPDF(FPDF):
                 self.cell(0, 8, ptype.title(), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
                 self.set_font("Helvetica", "", 11)
                 self.set_text_color(0, 0, 0)
-            for name, page, link, mbg, wf in entries:
+            for name, page, link, links in entries:
                 self.set_x(self.l_margin)
                 # Plant name (clickable)
                 self.cell(self.get_string_width(name) + 2, 6, name, link=link)
-                # Inline MBG/WF
-                if mbg:
+                for label, url in links:
                     self.set_text_color(0, 0, 200)
-                    self.cell(
-                        self.get_string_width(" [MBG]") + 1, 6, " [MBG]", link=mbg
-                    )
-                if wf:
-                    self.cell(self.get_string_width(" [WF]") + 1, 6, " [WF]", link=wf)
+                    abbrev = f" [{label}]"
+                    self.cell(self.get_string_width(abbrev) + 1, 6, abbrev, link=url)
+                self.set_text_color(0, 0, 0)
                 # Dots and right-aligned page number
                 dot_x = self.get_x()
                 page_str = str(page)
@@ -207,19 +211,20 @@ class PlantPDF(FPDF):
         """Add a single plant page: title, images, and all details."""
         bot_name = safe_text(row.get("Botanical Name", ""))  # Clean botanical name
         base_name = name_slug(bot_name)  # Slug for image filenames
-        mbg = row.get("Link: Missouri Botanical Garden", "").strip()
-        wf = row.get("Link: Wildflower.org", "").strip()
+        links = []
+        for col, label in LINK_LABELS:
+            url = row.get(col, "").strip()
+            if url:
+                links.append((label, url))
         self.current_plant_type = plant_type
         self.add_page()  # New PDF page
-        self.footer_links = (mbg or None, wf or None)  # Links for footer
+        self.footer_links = links  # Links for footer
 
         # Add internal TOC entry
         display_page = self.page_no() - getattr(self, "_ghost_pages", 0)
         link = self.add_link()
         self.set_link(link)
-        self.toc[plant_type].append(
-            (bot_name, display_page, link, mbg or None, wf or None)
-        )
+        self.toc[plant_type].append((bot_name, display_page, link, links))
 
         # Botanical name
         self.set_font("Helvetica", "I", 18)
