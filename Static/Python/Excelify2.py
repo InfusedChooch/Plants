@@ -129,6 +129,36 @@ for row_idx, row in enumerate(df.itertuples(index=False, name=None), start=2):
     for col_idx, value in enumerate(row, start=1):
         raw_sheet.cell(row=row_idx, column=col_idx).value = value
 
+# ─── Step 4C: Set Column Widths ───────────────────────────────────────────
+excel_widths = {
+    "A": 22,
+    "B": 9,
+    "C": 26,
+    "D": 23,
+    "E": 13,
+    "G": 13,
+    "H": 22,
+    "I": 22,
+    "J": 15,
+    "K": 18,
+    "L": 18,
+    "M": 43,
+    "N": 26,
+    "O": 25,
+    "P": 25,
+    "Q": 22,
+    "R": 15,
+    "S": 15,
+    "T": 15,
+    "U": 15,
+    "V": 15,
+    "W": 15,
+}
+
+for sheet in (ws, raw_sheet):
+    for letter, width in excel_widths.items():
+        sheet.column_dimensions[letter].width = width
+
 # ─── Step 5: README Sheet ─────────────────────────────────────────────────
 readme = wb.create_sheet("README")
 readme.sheet_properties.tabColor = "A9A9A9"
