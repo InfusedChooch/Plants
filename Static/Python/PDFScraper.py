@@ -5,6 +5,7 @@ import argparse
 import re
 import csv
 from pathlib import Path
+from urllib.parse import urlparse, unquote
 from typing import Set, List, Dict
 import sys
 
@@ -143,6 +144,21 @@ def name_slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
 
 
+def guess_botanical_from_links(links: List[str]) -> str:
+    """Try to infer the botanical name from embedded hyperlinks."""
+    for url in links:
+        parsed = urlparse(url)
+        slug = unquote(parsed.path.rsplit("/", 1)[-1])
+        words = [w for w in re.split(r"[-_]", slug) if w]
+        cand = " ".join(words[:3])
+        if BOT_ANY_RE.match(cand.title()):
+            parts = cand.split()
+            return parts[0].capitalize() + (
+                " " + " ".join(parts[1:]) if len(parts) > 1 else ""
+            )
+    return ""
+
+
 # ─── Link & Type Mapping ─────────────────────────────────────────────────
 def extract_links_by_page(pdf_path: Path) -> Dict[int, List[str]]:
     doc = fitz.open(pdf_path)
@@ -219,7 +235,12 @@ def extract_rows() -> List[Dict[str, str]]:
                     lines.insert(0, cand)
                     break
             if not bot_name:
-                continue
+                bot_name = guess_botanical_from_links(link_map.get(page_num, []))
+                if bot_name:
+                    lines.insert(0, bot_name)
+                    com_name = guess_common(lines, 0)
+                else:
+                    continue
 
             body = "\n".join(lines)
             height = (
@@ -233,6 +254,10 @@ def extract_rows() -> List[Dict[str, str]]:
                 else (m.group(1) if m else "")
             )
             links = link_map.get(page_num, [])
+            if len(bot_name.split()) == 2:
+                guessed = guess_botanical_from_links(links)
+                if guessed.lower().startswith(bot_name.lower()):
+                    bot_name = guessed
             mbg = next((l for l in links if "missouribotanicalgarden" in l.lower()), "")
             wf = next((l for l in links if "wildflower.org" in l.lower()), "")
 
