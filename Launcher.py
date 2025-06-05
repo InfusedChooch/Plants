@@ -13,7 +13,9 @@ from datetime import datetime
 
 # ─── Appearance ──────────────────────────────────────────────────────────
 ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("green")
+# use Rutgers scarlet color scheme for buttons and accents
+THEME = Path(__file__).resolve().parent / "Static/themes/rutgers.json"
+ctk.set_default_color_theme(str(THEME))
 
 BASE = Path(__file__).resolve().parent
 SCRIPTS = BASE / "Static/Python"
@@ -87,7 +89,7 @@ def ftypes(flag: str):
 
 # ─── GUI ROOT ────────────────────────────────────────────────────────────
 app = ctk.CTk()
-app.title("🌿 Plant Tool-chain Launcher")
+app.title("🌿 Rutgers Plant Launcher")
 app.geometry("860x760")
 
 # ─── Global Vars ─────────────────────────────────────────────────────────
