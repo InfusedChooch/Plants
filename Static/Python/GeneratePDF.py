@@ -574,11 +574,11 @@ def try_image_path(base_dir, filenames):
 
 left_logo = try_image_path(
     logo_dir,
-    ["rutgers_cooperative_extension_0.jpg", "rutgers_cooperative_extension_0.png"],
+    ["page_1_0.jpg", "page_1_0.png"],
 )
 right_logo = try_image_path(
     logo_dir,
-    ["rutgers_cooperative_extension_1.jpg", "rutgers_cooperative_extension_1.png"],
+    ["page_1_1.jpg", "page_1_1.png"],
 )
 if left_logo:
     pdf.image(str(left_logo), x=pdf.l_margin, y=20, h=30)

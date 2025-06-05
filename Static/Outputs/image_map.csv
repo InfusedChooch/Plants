@@ -8,19 +8,19 @@ aquilegia_canadensis_0.png,7,Aquilegia canadensis,RED COLUMBINE
 aquilegia_canadensis_1.png,7,Aquilegia canadensis,RED COLUMBINE
 arisaema_triphyllum_0.png,8,Arisaema triphyllum,JACK-IN-THE-PULPIT
 arisaema_triphyllum_1.png,8,Arisaema triphyllum,JACK-IN-THE-PULPIT
-asclepias_incarnata_0.png,9,Asclepias incarnata,SWAMP MILKWEED
-asclepias_incarnata_1.png,9,Asclepias incarnata,SWAMP MILKWEED
+asclepias_incarnata_pulchra_0.png,9,Asclepias incarnata pulchra,SWAMP MILKWEED
+asclepias_incarnata_pulchra_1.png,9,Asclepias incarnata pulchra,SWAMP MILKWEED
 asclepias_syriaca_0.png,10,Asclepias syriaca,COMMON MILKWEED
 asclepias_syriaca_1.png,10,Asclepias syriaca,COMMON MILKWEED
 asclepias_tuberosa_0.png,11,Asclepias tuberosa,BUTTERFLY MILKWEED
 asclepias_tuberosa_1.png,11,Asclepias tuberosa,BUTTERFLY MILKWEED
-baptisia_australis_0.png,12,Baptisia australis,BLUE WILD INDIGO
-baptisia_australis_1.png,12,Baptisia australis,BLUE WILD INDIGO
+baptisia_australis_blue_0.png,12,Baptisia australis blue,BLUE WILD INDIGO
+baptisia_australis_blue_1.png,12,Baptisia australis blue,BLUE WILD INDIGO
 caltha_palustris_0.png,13,Caltha palustris,MARSH MARIGOLD
 chelone_glabra_0.png,14,Chelone glabra,TURTLEHEAD
 chelone_glabra_1.png,14,Chelone glabra,TURTLEHEAD
-coreopsis_lanceolata_0.png,15,Coreopsis lanceolata,LANCELEAF TICKSEED
-coreopsis_lanceolata_1.png,15,Coreopsis lanceolata,LANCELEAF TICKSEED
+coreopsis_lanceolata_lanceleaf_0.png,15,Coreopsis lanceolata lanceleaf,LANCELEAF TICKSEED
+coreopsis_lanceolata_lanceleaf_1.png,15,Coreopsis lanceolata lanceleaf,LANCELEAF TICKSEED
 echinacea_purpurea_0.png,16,Echinacea purpurea,PURPLE CONEFLOWER
 echinacea_purpurea_1.png,16,Echinacea purpurea,PURPLE CONEFLOWER
 eupatorium_coelestinum_0.png,17,Eupatorium coelestinum,BLUE MISTFLOWER
@@ -29,24 +29,24 @@ eupatorium_dubium_0.png,18,Eupatorium dubium,LITTLE JOE PYE WEED
 eupatorium_dubium_1.png,18,Eupatorium dubium,LITTLE JOE PYE WEED
 eupatorium_maculatum_0.png,19,Eupatorium maculatum,SPOTTED JOE PYE WEED
 eupatorium_maculatum_1.png,19,Eupatorium maculatum,SPOTTED JOE PYE WEED
-eupatorium_perfoliatum_0.png,20,Eupatorium perfoliatum,COMMON BONESET
-eupatorium_perfoliatum_1.png,20,Eupatorium perfoliatum,COMMON BONESET
+eupatorium_perfoliatum_boneset_0.png,20,Eupatorium perfoliatum boneset,COMMON BONESET
+eupatorium_perfoliatum_boneset_1.png,20,Eupatorium perfoliatum boneset,COMMON BONESET
 eupatorium_purpureum_0.png,21,Eupatorium purpureum,JOE PYE WEED
 eupatorium_purpureum_1.png,21,Eupatorium purpureum,JOE PYE WEED
 eurybia_divaricata_0.png,22,Eurybia divaricata,WHITE WOOD ASTER
 eurybia_divaricata_1.png,22,Eurybia divaricata,WHITE WOOD ASTER
-helenium_autumnale_0.png,23,Helenium autumnale,COMMON SNEEZEWEED
-helenium_autumnale_1.png,23,Helenium autumnale,COMMON SNEEZEWEED
+helenium_autumnale_mariachi_0.png,23,Helenium autumnale Mariachi,COMMON SNEEZEWEED
+helenium_autumnale_mariachi_1.png,23,Helenium autumnale Mariachi,COMMON SNEEZEWEED
 heliopsis_helianthoides_0.png,24,Heliopsis helianthoides,SMOOTH OXEYE
-hibiscus_moscheutos_0.png,25,Hibiscus moscheutos,SWAMP ROSEMALLOW
-hibiscus_moscheutos_1.png,25,Hibiscus moscheutos,SWAMP ROSEMALLOW
+hibiscus_moscheutos_swamp_0.png,25,Hibiscus moscheutos swamp,SWAMP ROSEMALLOW
+hibiscus_moscheutos_swamp_1.png,25,Hibiscus moscheutos swamp,SWAMP ROSEMALLOW
 iris_versicolor_0.png,26,Iris versicolor,"BLUE FLAG, BLUE WATER IRIS"
 iris_versicolor_1.png,26,Iris versicolor,"BLUE FLAG, BLUE WATER IRIS"
-liatris_spicata_0.png,27,Liatris spicata,DENSE BLAZING STAR
-liatris_spicata_1.png,27,Liatris spicata,DENSE BLAZING STAR
+liatris_spicata_dense_0.png,27,Liatris spicata dense,DENSE BLAZING STAR
+liatris_spicata_dense_1.png,27,Liatris spicata dense,DENSE BLAZING STAR
 lilium_superbum_0.png,28,Lilium superbum,TURK'S CAP LILY
 lilium_superbum_1.png,28,Lilium superbum,TURK'S CAP LILY
-lobelia_cardinalis_0.png,29,Lobelia cardinalis,CARDINAL FLOWER
+lobelia_cardinalis_cardinal_0.png,29,Lobelia cardinalis cardinal,CARDINAL FLOWER
 lobelia_siphilitica_0.png,30,Lobelia siphilitica,BLUE LOBELIA
 lobelia_siphilitica_1.png,30,Lobelia siphilitica,BLUE LOBELIA
 mimulus_ringens_0.png,31,Mimulus ringens,MONKEY FLOWER
@@ -55,19 +55,19 @@ monarda_didyma_0.png,32,Monarda didyma,BEE-BALM
 monarda_didyma_1.png,32,Monarda didyma,BEE-BALM
 monarda_fistulosa_0.png,33,Monarda fistulosa,WILD BERGAMOT
 monarda_fistulosa_1.png,33,Monarda fistulosa,WILD BERGAMOT
-penstemon_digitalis_0.png,34,Penstemon digitalis,FOXGLOVE BEARDTONGUE
-penstemon_digitalis_1.png,34,Penstemon digitalis,FOXGLOVE BEARDTONGUE
+penstemon_digitalis_foxglove_0.png,34,Penstemon digitalis foxglove,FOXGLOVE BEARDTONGUE
+penstemon_digitalis_foxglove_1.png,34,Penstemon digitalis foxglove,FOXGLOVE BEARDTONGUE
 phlox_divaricta_0.png,35,Phlox divaricta,WOODLAND PHLOX
-phlox_paniculata_0.png,36,Phlox paniculata,GARDEN PHLOX
-phlox_paniculata_1.png,36,Phlox paniculata,GARDEN PHLOX
-phlox_stolonifera_0.png,37,Phlox stolonifera,CREEPING PHLOX
-phlox_stolonifera_1.png,37,Phlox stolonifera,CREEPING PHLOX
+phlox_paniculata_blue_0.png,36,Phlox paniculata Blue,GARDEN PHLOX
+phlox_paniculata_blue_1.png,36,Phlox paniculata Blue,GARDEN PHLOX
+phlox_stolonifera_blue_0.png,37,Phlox stolonifera Blue,CREEPING PHLOX
+phlox_stolonifera_blue_1.png,37,Phlox stolonifera Blue,CREEPING PHLOX
 physostegia_virginiana_0.png,38,Physostegia virginiana,FALSE DRAGONHEAD
 physostegia_virginiana_1.png,38,Physostegia virginiana,FALSE DRAGONHEAD
 pycnanthemum_virginianum_0.png,39,Pycnanthemum virginianum,VIRGINIA MOUNTAIN-MINT
 pycnanthemum_virginianum_1.png,39,Pycnanthemum virginianum,VIRGINIA MOUNTAIN-MINT
-rudbeckia_fulgida_0.png,40,Rudbeckia fulgida,ORANGE CONEFLOWER
-rudbeckia_fulgida_1.png,40,Rudbeckia fulgida,ORANGE CONEFLOWER
+rudbeckia_fulgida_var_0.png,40,Rudbeckia fulgida var,ORANGE CONEFLOWER
+rudbeckia_fulgida_var_1.png,40,Rudbeckia fulgida var,ORANGE CONEFLOWER
 rudbeckia_hirta_0.png,41,Rudbeckia hirta,BLACK-EYED SUSAN
 rudbeckia_hirta_1.png,41,Rudbeckia hirta,BLACK-EYED SUSAN
 rudbeckia_laciniata_0.png,42,Rudbeckia laciniata,CUTLEAF CONEFLOWER
@@ -77,107 +77,107 @@ siphium_perfoliatum_1.png,43,Siphium perfoliatum,CUP-PLANT
 smilacina_raceoscum_0.png,44,Smilacina raceoscum,FALSE SOLOMONS SEA
 smilacina_raceoscum_1.png,44,Smilacina raceoscum,FALSE SOLOMONS SEA
 smilacina_raceoscum_2.png,44,Smilacina raceoscum,FALSE SOLOMONS SEA
-solidago_nemoralis_0.png,45,Solidago nemoralis,GRAY GOLDENROD
+solidago_nemoralis_gray_0.png,45,Solidago nemoralis gray,GRAY GOLDENROD
 solidago_sempervirens_0.png,46,Solidago sempervirens,GOLDENROD
 solidago_sempervirens_1.png,46,Solidago sempervirens,GOLDENROD
-stokesia_laevis_0.png,47,Stokesia laevis,STOKES ASTER
-stokesia_laevis_1.png,47,Stokesia laevis,STOKES ASTER
-symphyotrichum_laeve_0.png,48,Symphyotrichum laeve,SMOOTH ASTER
-symphyotrichum_laeve_1.png,48,Symphyotrichum laeve,SMOOTH ASTER
-symphyotrichum_laeve_2.png,48,Symphyotrichum laeve,SMOOTH ASTER
-symphyotrichum_novae_0.png,49,Symphyotrichum novae,NEW ENGLAND ASTER
-symphyotrichum_novae_1.png,49,Symphyotrichum novae,NEW ENGLAND ASTER
-symphyotrichum_novi_0.png,50,Symphyotrichum novi,NEW YORK ASTER
+stokesia_laevis_peachie_0.png,47,Stokesia laevis Peachie,STOKES ASTER
+stokesia_laevis_peachie_1.png,47,Stokesia laevis Peachie,STOKES ASTER
+symphyotrichum_laeve_smooth_0.png,48,Symphyotrichum laeve smooth,SMOOTH ASTER
+symphyotrichum_laeve_smooth_1.png,48,Symphyotrichum laeve smooth,SMOOTH ASTER
+symphyotrichum_laeve_smooth_2.png,48,Symphyotrichum laeve smooth,SMOOTH ASTER
+symphyotrichum_novae_angliae_0.png,49,Symphyotrichum novae angliae,NEW ENGLAND ASTER
+symphyotrichum_novae_angliae_1.png,49,Symphyotrichum novae angliae,NEW ENGLAND ASTER
+symphyotrichum_novi_belgii_0.png,50,Symphyotrichum novi belgii,NEW YORK ASTER
 tiarella_cordifolia_0.png,51,Tiarella cordifolia,FOAM FLOWER
 verbena_hastata_0.png,52,Verbena hastata,BLUE VERVAIN
 verbena_hastata_1.png,52,Verbena hastata,BLUE VERVAIN
 verbena_hastata_2.png,52,Verbena hastata,BLUE VERVAIN
-vernonia_noveboracensis_0.png,53,Vernonia noveboracensis,NEW YORK IRONWEED
-vernonia_noveboracensis_1.png,53,Vernonia noveboracensis,NEW YORK IRONWEED
-page_54_0.png,54,Page_54,
-page_54_1.png,54,Page_54,
-athyrium_filix_0.png,56,Athyrium filix,LADY FERN
+vernonia_noveboracensis_new_0.png,53,Vernonia noveboracensis new,NEW YORK IRONWEED
+vernonia_noveboracensis_new_1.png,53,Vernonia noveboracensis new,NEW YORK IRONWEED
+veronicastrum_virginicum_0.png,54,Veronicastrum virginicum,CULVERS ROOT
+veronicastrum_virginicum_1.png,54,Veronicastrum virginicum,CULVERS ROOT
+athyrium_filix_femina_0.png,56,Athyrium filix femina,LADY FERN
 dryopteris_marginalis_0.png,57,Dryopteris marginalis,MARGINAL WOODLAND FERN
 dryopteris_marginalis_1.png,57,Dryopteris marginalis,MARGINAL WOODLAND FERN
-matteuccia_struthiopteris_0.png,58,Matteuccia struthiopteris,OSTRICH FERN
-matteuccia_struthiopteris_1.png,58,Matteuccia struthiopteris,OSTRICH FERN
-onoclea_sensibilis_0.png,59,Onoclea Sensibilis,SENSITIVE FERN
-onoclea_sensibilis_1.png,59,Onoclea Sensibilis,SENSITIVE FERN
-osmunda_cinnamomea_0.png,60,Osmunda cinnamomea,CINNAMON FERN
-osmunda_cinnamomea_1.png,60,Osmunda cinnamomea,CINNAMON FERN
-osmunda_regalis_0.png,61,Osmunda regalis,ROYAL FERN
-osmunda_regalis_1.png,61,Osmunda regalis,ROYAL FERN
-page_62_0.png,62,Page_62,
-andropogon_gerardii_0.png,64,Andropogon gerardii,BIG BLUESTEM
-andropogon_gerardii_1.png,64,Andropogon gerardii,BIG BLUESTEM
-andropogon_gerardii_2.png,64,Andropogon gerardii,BIG BLUESTEM
+matteuccia_struthiopteris_ostrich_0.png,58,Matteuccia struthiopteris ostrich,OSTRICH FERN
+matteuccia_struthiopteris_ostrich_1.png,58,Matteuccia struthiopteris ostrich,OSTRICH FERN
+onoclea_sensibilis_0.png,59,Onoclea sensibilis,SENSITIVE FERN
+onoclea_sensibilis_1.png,59,Onoclea sensibilis,SENSITIVE FERN
+osmunda_cinnamomea_cinnamon_0.png,60,Osmunda cinnamomea cinnamon,CINNAMON FERN
+osmunda_cinnamomea_cinnamon_1.png,60,Osmunda cinnamomea cinnamon,CINNAMON FERN
+osmunda_regalis_royal_0.png,61,Osmunda regalis royal,ROYAL FERN
+osmunda_regalis_royal_1.png,61,Osmunda regalis royal,ROYAL FERN
+polystichum_acrostichoides_0.png,62,Polystichum acrostichoides,CHRISTMAS FERN
+andropogon_gerardii_blackhawks_0.png,64,Andropogon gerardii Blackhawks,BIG BLUESTEM
+andropogon_gerardii_blackhawks_1.png,64,Andropogon gerardii Blackhawks,BIG BLUESTEM
+andropogon_gerardii_blackhawks_2.png,64,Andropogon gerardii Blackhawks,BIG BLUESTEM
 carex_amphibola_0.png,65,Carex amphibola,CREEK SEDGE
 carex_amphibola_1.png,65,Carex amphibola,CREEK SEDGE
-carex_crinita_0.png,66,Carex crinita,FRINGED SEDGE
-carex_crinita_1.png,66,Carex crinita,FRINGED SEDGE
+carex_crinita_fringed_0.png,66,Carex crinita fringed,FRINGED SEDGE
+carex_crinita_fringed_1.png,66,Carex crinita fringed,FRINGED SEDGE
 carex_grayi_0.png,67,Carex grayi,GRAY SEDGE
 carex_grayi_1.png,67,Carex grayi,GRAY SEDGE
 carex_laxiculmis_0.png,68,Carex laxiculmis,CREEPING SEDGE
-carex_pensylvanica_0.png,69,Carex pensylvanica,PENNSYLVANIA SEDGE
-carex_pensylvanica_1.png,69,Carex pensylvanica,PENNSYLVANIA SEDGE
-carex_pensylvanica_2.png,69,Carex pensylvanica,PENNSYLVANIA SEDGE
-carex_plantaginea_0.png,70,Carex plantaginea,SEERSUCKER SEDGE
-carex_plantaginea_1.png,70,Carex plantaginea,SEERSUCKER SEDGE
-carex_stipata_0.png,71,Carex stipata,AWL-FRUITED SEDGE
-carex_stipata_1.png,71,Carex stipata,AWL-FRUITED SEDGE
+carex_pensylvanica_pennsylvania_0.png,69,Carex pensylvanica pennsylvania,PENNSYLVANIA SEDGE
+carex_pensylvanica_pennsylvania_1.png,69,Carex pensylvanica pennsylvania,PENNSYLVANIA SEDGE
+carex_pensylvanica_pennsylvania_2.png,69,Carex pensylvanica pennsylvania,PENNSYLVANIA SEDGE
+carex_plantaginea_1_0.png,70,Carex plantaginea 1,SEERSUCKER SEDGE
+carex_plantaginea_1_1.png,70,Carex plantaginea 1,SEERSUCKER SEDGE
+carex_stipata_awl_0.png,71,Carex stipata awl,AWL-FRUITED SEDGE
+carex_stipata_awl_1.png,71,Carex stipata awl,AWL-FRUITED SEDGE
 carex_stricta_0.png,72,Carex stricta,TUSSOCK SEDGE
-carex_vulpinoidea_0.png,73,Carex vulpinoidea,FOX SEDGE
-carex_vulpinoidea_1.png,73,Carex vulpinoidea,FOX SEDGE
+carex_vulpinoidea_fox_0.png,73,Carex vulpinoidea fox,FOX SEDGE
+carex_vulpinoidea_fox_1.png,73,Carex vulpinoidea fox,FOX SEDGE
 chasmanthium_latifolium_0.png,74,Chasmanthium latifolium,NORTHERN SEA OATS
 chasmanthium_latifolium_1.png,74,Chasmanthium latifolium,NORTHERN SEA OATS
 deshampsia_cespitosa_0.png,75,Deshampsia cespitosa,TUFTED HAIRGRASS
 deshampsia_cespitosa_1.png,75,Deshampsia cespitosa,TUFTED HAIRGRASS
-elymus_virginicus_0.png,76,Elymus virginicus,VIRGINIA WILD RYE
-elymus_virginicus_1.png,76,Elymus virginicus,VIRGINIA WILD RYE
-eragrostis_spectabilis_0.png,77,Eragrostis spectabilis,PURPLE LOVEGRASS
-eragrostis_spectabilis_1.png,77,Eragrostis spectabilis,PURPLE LOVEGRASS
+elymus_virginicus_virginia_0.png,76,Elymus virginicus virginia,VIRGINIA WILD RYE
+elymus_virginicus_virginia_1.png,76,Elymus virginicus virginia,VIRGINIA WILD RYE
+eragrostis_spectabilis_1_0.png,77,Eragrostis spectabilis 1,PURPLE LOVEGRASS
+eragrostis_spectabilis_1_1.png,77,Eragrostis spectabilis 1,PURPLE LOVEGRASS
 juncus_effusus_0.png,78,Juncus effusus,SOFT RUSH
 juncus_effusus_1.png,78,Juncus effusus,SOFT RUSH
 panicum_virgatum_0.png,79,Panicum virgatum,SWITCHGRASS
 panicum_virgatum_1.png,79,Panicum virgatum,SWITCHGRASS
-schizachyrium_scoparium_0.png,80,Schizachyrium scoparium,LITTLE BLUESTEM
-schizachyrium_scoparium_1.png,80,Schizachyrium scoparium,LITTLE BLUESTEM
+schizachyrium_scoparium_little_0.png,80,Schizachyrium scoparium little,LITTLE BLUESTEM
+schizachyrium_scoparium_little_1.png,80,Schizachyrium scoparium little,LITTLE BLUESTEM
 sorghastrum_nutans_0.png,81,Sorghastrum nutans,INDIANGRASS
 sorghastrum_nutans_1.png,81,Sorghastrum nutans,INDIANGRASS
-page_82_0.png,82,Page_82,
-page_82_1.png,82,Page_82,
+sporobolus_heterolepis_0.png,82,Sporobolus heterolepis,PRAIRIE DROPSEED
+sporobolus_heterolepis_1.png,82,Sporobolus heterolepis,PRAIRIE DROPSEED
 andromeda_polifolia_0.png,84,Andromeda polifolia,BOG ROSEMARY
-aronia_arbutifolia_0.png,85,Aronia arbutifolia,RED CHOKEBERRY
-aronia_arbutifolia_1.png,85,Aronia arbutifolia,RED CHOKEBERRY
-aronia_melanocarpa_0.png,86,Aronia melanocarpa,BLACK CHOKEBERRY
-aronia_melanocarpa_1.png,86,Aronia melanocarpa,BLACK CHOKEBERRY
-aronia_melanocarpa_2.png,86,Aronia melanocarpa,BLACK CHOKEBERRY
-cephalanthus_occidentalis_0.png,87,Cephalanthus occidentalis,BUTTONBUSH
-cephalanthus_occidentalis_1.png,87,Cephalanthus occidentalis,BUTTONBUSH
-cephalanthus_occidentalis_2.png,87,Cephalanthus occidentalis,BUTTONBUSH
-clethra_alnifolia_0.png,88,Clethra alnifolia,SWEET PEPPERBUSH
-clethra_alnifolia_1.png,88,Clethra alnifolia,SWEET PEPPERBUSH
-clethra_alnifolia_2.png,88,Clethra alnifolia,SWEET PEPPERBUSH
+aronia_arbutifolia_brilliantissima_0.png,85,Aronia arbutifolia Brilliantissima,RED CHOKEBERRY
+aronia_arbutifolia_brilliantissima_1.png,85,Aronia arbutifolia Brilliantissima,RED CHOKEBERRY
+aronia_melanocarpa_ground_0.png,86,Aronia melanocarpa Ground,BLACK CHOKEBERRY
+aronia_melanocarpa_ground_1.png,86,Aronia melanocarpa Ground,BLACK CHOKEBERRY
+aronia_melanocarpa_ground_2.png,86,Aronia melanocarpa Ground,BLACK CHOKEBERRY
+cephalanthus_occidentalis_buttonbush_0.png,87,Cephalanthus occidentalis buttonbush,BUTTONBUSH
+cephalanthus_occidentalis_buttonbush_1.png,87,Cephalanthus occidentalis buttonbush,BUTTONBUSH
+cephalanthus_occidentalis_buttonbush_2.png,87,Cephalanthus occidentalis buttonbush,BUTTONBUSH
+clethra_alnifolia_compacta_0.png,88,Clethra alnifolia Compacta,SWEET PEPPERBUSH
+clethra_alnifolia_compacta_1.png,88,Clethra alnifolia Compacta,SWEET PEPPERBUSH
+clethra_alnifolia_compacta_2.png,88,Clethra alnifolia Compacta,SWEET PEPPERBUSH
 cornus_amomum_0.png,89,Cornus amomum,SILKY DOGWOOD
 cornus_amomum_1.png,89,Cornus amomum,SILKY DOGWOOD
 cornus_amomum_2.png,89,Cornus amomum,SILKY DOGWOOD
 cornus_racemosa_0.png,90,Cornus racemosa,GRAYSTEM DOGWOOD
 cornus_racemosa_1.png,90,Cornus racemosa,GRAYSTEM DOGWOOD
 cornus_racemosa_2.png,90,Cornus racemosa,GRAYSTEM DOGWOOD
-cornus_sericea_0.png,91,Cornus sericea,RED-TWIG DOGWOOD
-cornus_sericea_1.png,91,Cornus sericea,RED-TWIG DOGWOOD
-cornus_sericea_2.png,91,Cornus sericea,RED-TWIG DOGWOOD
-hamamelis_virginiana_0.png,92,Hamamelis Virginiana,WITCHHAZEL
-hamamelis_virginiana_1.png,92,Hamamelis Virginiana,WITCHHAZEL
-hamamelis_virginiana_2.png,92,Hamamelis Virginiana,WITCHHAZEL
-hydrangea_quercifolia_0.png,93,Hydrangea quercifolia,OAKLEAF HYDRANGEA
-ilex_glabra_0.png,94,Ilex glabra,INKBERRY
-ilex_glabra_1.png,94,Ilex glabra,INKBERRY
-ilex_verticillata_0.png,95,Ilex verticillata,COMMON WINTERBERRY
-ilex_verticillata_1.png,95,Ilex verticillata,COMMON WINTERBERRY
-ilex_verticillata_2.png,95,Ilex verticillata,COMMON WINTERBERRY
-itea_virginica_0.png,96,Itea virginica,VIRGINIA SWEETSPIRE
-itea_virginica_1.png,96,Itea virginica,VIRGINIA SWEETSPIRE
+cornus_sericea_redosier_0.png,91,Cornus sericea redosier,RED-TWIG DOGWOOD
+cornus_sericea_redosier_1.png,91,Cornus sericea redosier,RED-TWIG DOGWOOD
+cornus_sericea_redosier_2.png,91,Cornus sericea redosier,RED-TWIG DOGWOOD
+hamamelis_virginiana_american_0.png,92,Hamamelis virginiana american,WITCHHAZEL
+hamamelis_virginiana_american_1.png,92,Hamamelis virginiana american,WITCHHAZEL
+hamamelis_virginiana_american_2.png,92,Hamamelis virginiana american,WITCHHAZEL
+hydrangea_quercifolia_gatsby_0.png,93,Hydrangea quercifolia Gatsby,OAKLEAF HYDRANGEA
+ilex_glabra_inkberry_0.png,94,Ilex glabra inkberry,INKBERRY
+ilex_glabra_inkberry_1.png,94,Ilex glabra inkberry,INKBERRY
+ilex_verticillata_winterberry_0.png,95,Ilex verticillata winterberry,COMMON WINTERBERRY
+ilex_verticillata_winterberry_1.png,95,Ilex verticillata winterberry,COMMON WINTERBERRY
+ilex_verticillata_winterberry_2.png,95,Ilex verticillata winterberry,COMMON WINTERBERRY
+itea_virginica_fizzy_0.png,96,Itea virginica Fizzy,VIRGINIA SWEETSPIRE
+itea_virginica_fizzy_1.png,96,Itea virginica Fizzy,VIRGINIA SWEETSPIRE
 kalmia_latifolia_0.png,97,Kalmia latifolia,MOUNTAIN LAUREL
 kalmia_latifolia_1.png,97,Kalmia latifolia,MOUNTAIN LAUREL
 leucothoe_racemosa_0.png,98,Leucothoe racemosa,FETTERBUSH
@@ -189,45 +189,45 @@ rhododendron_viscosum_0.png,101,Rhododendron viscosum,SWAMP AZALEA
 rhus_aromatica_0.png,102,Rhus aromatica,FRAGRANT SUMAC
 rhus_aromatica_1.png,102,Rhus aromatica,FRAGRANT SUMAC
 rhus_aromatica_2.png,102,Rhus aromatica,FRAGRANT SUMAC
-rosa_carolina_0.png,103,Rosa carolina,CAROLINA ROSE
-rosa_carolina_1.png,103,Rosa carolina,CAROLINA ROSE
-sambucus_canadensis_0.png,104,Sambucus canadensis,ELDERBERRY
-sambucus_canadensis_1.png,104,Sambucus canadensis,ELDERBERRY
-sambucus_canadensis_2.png,104,Sambucus canadensis,ELDERBERRY
-spiraea_latifolia_0.png,105,Spiraea latifolia,MEADOWSWEET
-spiraea_latifolia_1.png,105,Spiraea latifolia,MEADOWSWEET
+rosa_carolina_carolina_0.png,103,Rosa carolina carolina,CAROLINA ROSE
+rosa_carolina_carolina_1.png,103,Rosa carolina carolina,CAROLINA ROSE
+sambucus_canadensis_adams_0.png,104,Sambucus canadensis Adams,ELDERBERRY
+sambucus_canadensis_adams_1.png,104,Sambucus canadensis Adams,ELDERBERRY
+sambucus_canadensis_adams_2.png,104,Sambucus canadensis Adams,ELDERBERRY
+spiraea_latifolia_meadowsweet_0.png,105,Spiraea latifolia meadowsweet,MEADOWSWEET
+spiraea_latifolia_meadowsweet_1.png,105,Spiraea latifolia meadowsweet,MEADOWSWEET
 spiraea_tomentosa_0.png,106,Spiraea tomentosa,STEEPLEBUSH
 spiraea_tomentosa_1.png,106,Spiraea tomentosa,STEEPLEBUSH
-vaccinium_corymbosum_0.png,107,Vaccinium corymbosum,HIGHBUSH BLUEBERRY
-vaccinium_corymbosum_1.png,107,Vaccinium corymbosum,HIGHBUSH BLUEBERRY
-vaccinium_corymbosum_2.png,107,Vaccinium corymbosum,HIGHBUSH BLUEBERRY
+vaccinium_corymbosum_blue_0.png,107,Vaccinium corymbosum Blue,HIGHBUSH BLUEBERRY
+vaccinium_corymbosum_blue_1.png,107,Vaccinium corymbosum Blue,HIGHBUSH BLUEBERRY
+vaccinium_corymbosum_blue_2.png,107,Vaccinium corymbosum Blue,HIGHBUSH BLUEBERRY
 viburnum_acerifolium_0.png,108,Viburnum acerifolium,MAPLELEAF VIBURNUM
 viburnum_acerifolium_1.png,108,Viburnum acerifolium,MAPLELEAF VIBURNUM
-viburnum_dentatum_0.png,109,Viburnum dentatum,ARROWWOOD VIBURNUM
-viburnum_dentatum_1.png,109,Viburnum dentatum,ARROWWOOD VIBURNUM
-viburnum_dentatum_2.png,109,Viburnum dentatum,ARROWWOOD VIBURNUM
+viburnum_dentatum_arrowwood_0.png,109,Viburnum dentatum arrowwood,ARROWWOOD VIBURNUM
+viburnum_dentatum_arrowwood_1.png,109,Viburnum dentatum arrowwood,ARROWWOOD VIBURNUM
+viburnum_dentatum_arrowwood_2.png,109,Viburnum dentatum arrowwood,ARROWWOOD VIBURNUM
 viburnum_lentago_0.png,110,Viburnum lentago,NANNYBERRY
 viburnum_lentago_1.png,110,Viburnum lentago,NANNYBERRY
 viburnum_lentago_2.png,110,Viburnum lentago,NANNYBERRY
-viburnum_nudum_0.png,111,Viburnum nudum,POSSUMHAW VIRBURNUM
-viburnum_nudum_1.png,111,Viburnum nudum,POSSUMHAW VIRBURNUM
-page_112_0.png,112,Page_112,
-page_112_1.png,112,Page_112,
-page_112_2.png,112,Page_112,
+viburnum_nudum_brandywine_0.png,111,Viburnum nudum Brandywine,POSSUMHAW VIRBURNUM
+viburnum_nudum_brandywine_1.png,111,Viburnum nudum Brandywine,POSSUMHAW VIRBURNUM
+viburnum_trilobum_0.png,112,Viburnum trilobum,CRANBERRY VIBURNUM
+viburnum_trilobum_1.png,112,Viburnum trilobum,CRANBERRY VIBURNUM
+viburnum_trilobum_2.png,112,Viburnum trilobum,CRANBERRY VIBURNUM
 amelanchier_canadensis_0.png,114,Amelanchier canadensis,SERVICEBERRY
 amelanchier_canadensis_1.png,114,Amelanchier canadensis,SERVICEBERRY
 amelanchier_canadensis_2.png,114,Amelanchier canadensis,SERVICEBERRY
-asimina_triloba_0.png,115,Asimina triloba,COMMON PAWPAW
-asimina_triloba_1.png,115,Asimina triloba,COMMON PAWPAW
-betula_nigra_0.png,116,Betula nigra,RIVER BIRCH
-betula_nigra_1.png,116,Betula nigra,RIVER BIRCH
-betula_nigra_2.png,116,Betula nigra,RIVER BIRCH
+asimina_triloba_pawpaw_0.png,115,Asimina triloba pawpaw,COMMON PAWPAW
+asimina_triloba_pawpaw_1.png,115,Asimina triloba pawpaw,COMMON PAWPAW
+betula_nigra_river_0.png,116,Betula nigra river,RIVER BIRCH
+betula_nigra_river_1.png,116,Betula nigra river,RIVER BIRCH
+betula_nigra_river_2.png,116,Betula nigra river,RIVER BIRCH
 cercis_canadensis_0.png,117,Cercis canadensis,EASTERN REDBUD
 cercis_canadensis_1.png,117,Cercis canadensis,EASTERN REDBUD
 cercis_canadensis_2.png,117,Cercis canadensis,EASTERN REDBUD
-cornus_florida_0.png,118,Cornus florida,FLOWERING DOGWOOD
-cornus_florida_1.png,118,Cornus florida,FLOWERING DOGWOOD
-cornus_florida_2.png,118,Cornus florida,FLOWERING DOGWOOD
-page_119_0.png,119,Page_119,
-page_119_1.png,119,Page_119,
-page_119_2.png,119,Page_119,
+cornus_florida_flowering_0.png,118,Cornus florida flowering,FLOWERING DOGWOOD
+cornus_florida_flowering_1.png,118,Cornus florida flowering,FLOWERING DOGWOOD
+cornus_florida_flowering_2.png,118,Cornus florida flowering,FLOWERING DOGWOOD
+magnolia_virginiana_0.png,119,Magnolia virginiana,SWEETBAY MAGNOLIA
+magnolia_virginiana_1.png,119,Magnolia virginiana,SWEETBAY MAGNOLIA
+magnolia_virginiana_2.png,119,Magnolia virginiana,SWEETBAY MAGNOLIA
