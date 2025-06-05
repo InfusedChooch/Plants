@@ -4,6 +4,7 @@
 from pathlib import Path
 import re
 
+
 def strip_prefix(folder: Path):
     for file in folder.glob("*.*"):
         match = re.match(r"^\d{3}_(.+)", file.name)
@@ -17,6 +18,7 @@ def strip_prefix(folder: Path):
                 print(f"⚠️ Skipped (already exists): {new_name}")
         else:
             print(f"⏭️ No prefix match: {file.name}")
+
 
 if __name__ == "__main__":
     base = Path("Static/Outputs/pdf_images")
