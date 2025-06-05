@@ -421,7 +421,13 @@ class PlantPDF(FPDF):
             )
             if any([tolerates, maintenance, agcp]):
                 self.set_font("Helvetica", "B", 13)
-                self.cell(0, 8, "Characteristics", ln=1)
+                self.cell(
+                    0,
+                    8,
+                    "Characteristics",
+                    new_x=XPos.LMARGIN,
+                    new_y=YPos.NEXT,
+                )
                 self.set_font("Helvetica", "", 12)
                 char_parts = []
                 if tolerates:
@@ -435,7 +441,13 @@ class PlantPDF(FPDF):
 
             # ── Appearance ──
             self.set_font("Helvetica", "B", 13)
-            self.cell(0, 8, "Appearance", ln=1)
+            self.cell(
+                0,
+                8,
+                "Appearance",
+                new_x=XPos.LMARGIN,
+                new_y=YPos.NEXT,
+            )
             self.set_font("Helvetica", "", 12)
             appearance_parts = []
             color_text = safe_text(row.get("Bloom Color", ""))
@@ -474,7 +486,13 @@ class PlantPDF(FPDF):
 
             # ── Site & Wildlife Details ──
             self.set_font("Helvetica", "B", 13)
-            self.cell(0, 8, "Site & Wildlife Details", ln=1)
+            self.cell(
+                0,
+                8,
+                "Site & Wildlife Details",
+                new_x=XPos.LMARGIN,
+                new_y=YPos.NEXT,
+            )
             self.set_font("Helvetica", "", 12)
             site_parts = []
             sun = safe_text(row.get("Sun", ""))
