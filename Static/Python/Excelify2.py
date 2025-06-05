@@ -11,7 +11,6 @@ from openpyxl.cell.cell import Cell
 from datetime import datetime
 import black
 import argparse
-import sys
 
 parser = argparse.ArgumentParser(description="Export formatted Excel from CSV")
 parser.add_argument(
@@ -185,8 +184,9 @@ def style_sheet(ws: Worksheet, df: pd.DataFrame, header: list[str]) -> None:
             cell: Cell = ws.cell(row=row_idx, column=col_idx)
             value = str(value).strip()
 
-            if col_name in link_map and value.startswith("http"):
-                cell.value = link_map[col_name]
+            alias = link_map.get(col_name)
+            if alias and value.startswith("http"):
+                cell.value = alias
                 cell.hyperlink = value
                 cell.style = "Hyperlink"
             else:
@@ -211,7 +211,9 @@ for row_idx, row in enumerate(df.itertuples(index=False, name=None), start=2):
     for col_idx, value in enumerate(row, start=1):
         raw_sheet.cell(row=row_idx, column=col_idx).value = value
 
-        
+
+autofit_columns(raw_sheet)
+
 set_fixed_column_widths(raw_sheet)
 
 # ─── Step 5: README Sheet ─────────────────────────────────────────────────
