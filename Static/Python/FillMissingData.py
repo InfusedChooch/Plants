@@ -99,7 +99,6 @@ WF_COLS = {
     "Sun",
     "Water",
     "Attracts",
-    "Characteristics",
     "AGCP Regional Status",
 }
 PR_COLS = {
@@ -336,9 +335,6 @@ def parse_wf(html: str, mbg_missing: bool = False) -> Dict[str, Optional[str]]:
                 "Sun": sun_conditions(grab(text, r"Light Requirement")),
                 "Water": water_conditions(grab(text, r"Soil Moisture")),
                 "Attracts": grab(text, r"Benefit"),
-                "Characteristics": wf_chars(
-                    grab(text, r"Leaf Retention"), grab(text, r"Fruit Type")
-                ),
             }
         )
     return data
@@ -497,7 +493,7 @@ def main(in_csv: Path = IN_CSV, out_csv: Path = OUT_CSV) -> None:
                 for col, val in wf_data.items():
                     if not val:
                         continue
-                    if col in {"Sun", "Water", "Attracts", "Characteristics"}:
+                    if col in {"Sun", "Water", "Attracts"}:
                         if df.at[idx, col]:
                             df.at[idx, col] = merge_field(df.at[idx, col], val)
                         else:
