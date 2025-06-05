@@ -127,6 +127,49 @@ def name_slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
 
 
+def draw_wrapped_legend(pdf) -> None:
+    """Draw the link legend centered and wrapped by available width."""
+    parts = list(LINK_LEGEND.items())
+    max_w = pdf.w - pdf.l_margin - pdf.r_margin
+    line_parts = []
+    line_width = 0
+
+    def flush_line():
+        nonlocal line_parts, line_width
+        if not line_parts:
+            return
+        total_w = 0
+        for i, (text, color) in enumerate(line_parts):
+            total_w += pdf.get_string_width(text)
+            if i < len(line_parts) - 1:
+                total_w += pdf.get_string_width(" | ")
+        start_x = pdf.l_margin + (max_w - total_w) / 2
+        pdf.set_x(start_x)
+        for i, (text, color) in enumerate(line_parts):
+            pdf.set_text_color(*color)
+            pdf.write(6, text)
+            if i < len(line_parts) - 1:
+                pdf.set_text_color(0, 0, 0)
+                pdf.write(6, " | ")
+        pdf.ln(6)
+        line_parts = []
+        line_width = 0
+
+    for idx, (abbr, name) in enumerate(parts):
+        seg_text = f"[{abbr}] {name}"
+        seg_width = pdf.get_string_width(seg_text)
+        sep_width = pdf.get_string_width(" | ") if line_parts else 0
+        if line_width + seg_width + sep_width > max_w:
+            flush_line()
+        if line_parts:
+            line_width += pdf.get_string_width(" | ")
+        line_parts.append((seg_text, LINK_COLORS.get(abbr, (0, 0, 200))))
+        line_width += seg_width
+
+    flush_line()
+    pdf.set_text_color(0, 0, 0)
+
+
 # ─── PDF Class ────────────────────────────────────────────────────────────
 class PlantPDF(FPDF):
     def __init__(self):
@@ -546,16 +589,7 @@ pdf.cell(
 pdf.set_text_color(0, 0, 0)
 pdf.ln(4)
 pdf.set_font("Helvetica", "", 11)
-legend_parts = list(LINK_LEGEND.items())
-for i, (abbr, name) in enumerate(legend_parts):
-    color = LINK_COLORS.get(abbr, (0, 0, 200))
-    pdf.set_text_color(*color)
-    text = f"[{abbr}] {name}"
-    pdf.write(6, text)
-    pdf.set_text_color(0, 0, 0)
-    if i < len(legend_parts) - 1:
-        pdf.write(6, "   |   ")
-pdf.ln(6)
+draw_wrapped_legend(pdf)
 
 # ─── Reserve TOC pages (2–4) ─────────────────────────────────────────────
 pdf.skip_footer = False
