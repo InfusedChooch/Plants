@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-# Launcher.py – CTk GUI for the plant-database tool-chain (2025-05-31, layout + prefix patch)
-"""Launch the plant data pipeline via a simple CustomTkinter GUI.
+# Launcher.py – CTk GUI for the plant-database tool-chain (2025-06-01, tabbed layout)
+"""Launch the plant data pipeline via a CustomTkinter interface.
 
-The interface lets users run each processing script in order, choose input
-and output locations, and view live console logs of the subprocesses.
+The GUI runs each processing script in order, allows users to choose input and
+output locations, and displays live console logs.  This version separates the
+tools into two tabs—"Builder" for the data-gathering steps and "Export" for the
+final outputs.
 """
 
 import sys, subprocess, threading, queue, customtkinter as ctk
@@ -66,6 +68,14 @@ TOOLS = [
         ".xlsx",
     ),
 ]
+
+TAB_MAP = {
+    "PDFScraper.py": "builder",
+    "GetLinks.py": "builder",
+    "FillMissingData.py": "builder",
+    "GeneratePDF.py": "export",
+    "Excelify2.py": "export",
+}
 
 LABEL_OVERRIDES = {
     "PDFScraper.py": "Extract from PDF",
@@ -166,9 +176,16 @@ ctk.CTkLabel(hdr, text="Image folder:").grid(
 ctk.CTkEntry(hdr, textvariable=img_dir_var, width=430).grid(row=2, column=1, padx=4)
 ctk.CTkButton(hdr, text="Browse", command=browse_img).grid(row=2, column=2)
 
-# ─── Tool Rows ───────────────────────────────────────────────────────────
-body = ctk.CTkScrollableFrame(app, height=420)
-body.pack(fill="both", padx=15, pady=6)
+# ─── Tabs & Tool Rows ───────────────────────────────────────────────────
+tabs = ctk.CTkTabview(app)
+tabs.pack(fill="both", padx=15, pady=6, expand=True)
+builder_tab = tabs.add("Builder")
+export_tab = tabs.add("Export")
+
+b_body = ctk.CTkScrollableFrame(builder_tab, height=420)
+b_body.pack(fill="both", expand=True)
+e_body = ctk.CTkScrollableFrame(export_tab, height=420)
+e_body.pack(fill="both", expand=True)
 
 
 def choose_input(var: ctk.StringVar, flag: str):
@@ -222,7 +239,8 @@ def run_tool(script, in_flag, out_flag, stem, ext):
 
 
 for script, in_flag, out_flag, def_in, stem, ext in TOOLS:
-    fr = ctk.CTkFrame(body)
+    parent = b_body if TAB_MAP[script] == "builder" else e_body
+    fr = ctk.CTkFrame(parent)
     fr.pack(fill="x", pady=6, padx=8)
 
     # Header row with script name and ▶ Run
