@@ -219,220 +219,229 @@ class PlantPDF(FPDF):
                 )
 
     def add_plant(self, row, plant_type):
-        """Add a single plant page: title, images, and all details."""
-        bot_name = safe_text(row.get("Botanical Name", ""))  # Clean botanical name
-        base_name = name_slug(bot_name)  # Slug for image filenames
+        """Add a single plant page. Regenerate with shorter text if needed."""
+        bot_name = safe_text(row.get("Botanical Name", ""))
+        base_name = name_slug(bot_name)
         links = []
         for col, label in LINK_LABELS:
             url = row.get(col, "").strip()
             if url:
                 links.append((label, url))
+
         self.current_plant_type = plant_type
-        # One-page constraint: disable auto page breaks during rendering so
-        # long sections don't spill onto a new page inadvertently
-        self.set_auto_page_break(auto=False)
-        self.add_page()  # New PDF page
-        start_page = self.page_no()
-        start_y = self.get_y()
-        self.footer_links = links  # Links for footer
-
-        # Add internal TOC entry
-        display_page = self.page_no() - getattr(self, "_ghost_pages", 0)
         link = self.add_link()
-        self.set_link(link)
-        self.toc[plant_type].append((bot_name, display_page, link, links))
+        max_len = 300
 
-        # Botanical name
-        self.set_font("Helvetica", "I", 18)
-        self.set_text_color(22, 92, 34)
-        self.multi_cell(0, 8, bot_name, align="C")
+        while True:
+            self.set_auto_page_break(auto=False)
+            self.add_page()
+            page_start = self.page_no()
+            self.footer_links = links
+            self.set_link(link)
 
-        # Common name, if present
-        common = primary_common_name(safe_text(row.get("Common Name", ""))).strip()
-        if common:
-            self.set_font("Helvetica", "B", 13)
-            self.set_text_color(0, 0, 0)
-            try:
-                self.multi_cell(0, 8, common, align="C")
-            except FPDFException:
-                self.set_x((self.w - self.get_string_width(common)) / 2)
-                self.cell(self.get_string_width(common) + 1, 8, common)
-        self.ln(2)
+            # Botanical name
+            self.set_font("Helvetica", "I", 18)
+            self.set_text_color(22, 92, 34)
+            self.multi_cell(0, 8, bot_name, align="C")
 
-        # ── Images ──
-        images = sorted(
-            list(IMG_DIR.glob(f"{base_name}_*.jpg"))
-            + list(IMG_DIR.glob(f"{base_name}_*.png"))
-        )  # Find up to 3 images
-        count = max(1, min(len(images), 3))
-        margin = self.l_margin
-        avail_w = self.w - margin - self.r_margin
-        gap = 5
-        img_w = (avail_w - (count - 1) * gap) / count
-        img_h_fixed = 100
-        x = margin
-        y0 = 40
-        self.set_y(y0)
-        for i in range(count):
-            if i < len(images):
-                img_path = str(images[i])
-                with Image.open(img_path) as im:
-                    aspect = im.height / im.width
-                scaled_h = min(img_w * aspect, img_h_fixed)
-                scaled_w = scaled_h / aspect
-                x_img = x + (img_w - scaled_w) / 2
-                y_img = y0 + (img_h_fixed - scaled_h) / 2
-                self.image(img_path, x=x_img, y=y_img, w=scaled_w, h=scaled_h)
-            else:
-                self.rect(x, y0, img_w, img_h_fixed)  # Empty box if no image
-            x += img_w + gap
-        self.set_y(y0 + img_h_fixed + 6)
+            # Common name, if present
+            common = primary_common_name(safe_text(row.get("Common Name", ""))).strip()
+            if common:
+                self.set_font("Helvetica", "B", 13)
+                self.set_text_color(0, 0, 0)
+                try:
+                    self.multi_cell(0, 8, common, align="C")
+                except FPDFException:
+                    self.set_x((self.w - self.get_string_width(common)) / 2)
+                    self.cell(self.get_string_width(common) + 1, 8, common)
+            self.ln(2)
 
-        # ── Characteristics section ──
-        tolerates = truncate_text(
-            safe_text(row.get("Tolerates", "")), 300, bot_name, "Tolerates"
-        )
-        maintenance = truncate_text(
-            safe_text(row.get("Maintenance", "")), 300, bot_name, "Maintenance"
-        )
-        agcp = truncate_text(
-            safe_text(row.get("AGCP Regional Status", "")), 300, bot_name, "AGCP"
-        )
-        if any([tolerates, maintenance, agcp]):
-            self.set_font("Helvetica", "B", 13)
-            self.cell(0, 8, "Characteristics", ln=1)
-            self.set_font("Helvetica", "", 12)
-            if tolerates:
-                self.multi_cell(0, 6, f"- Tolerates: {tolerates}")
-                self.set_x(self.l_margin)
-            if maintenance:
-                self.multi_cell(0, 6, f"- Maintenance: {maintenance}")
-                self.set_x(self.l_margin)
-            if agcp:
-                self.multi_cell(0, 6, f"- AGCP Status: {agcp}")
-                self.set_x(self.l_margin)
-            self.ln(6)
-
-        # ── Appearance ──
-        self.set_font("Helvetica", "B", 13)
-        self.cell(0, 8, "Appearance", ln=1)
-        self.set_font("Helvetica", "", 12)
-        appearance_parts = []
-        ht = safe_text(row.get("Height (ft)", ""))
-        if ht:
-            appearance_parts.append(("Height:", f"{ht} ft"))
-        sp = safe_text(row.get("Spread (ft)", ""))
-        if sp:
-            appearance_parts.append(("Spread:", f"{sp} ft"))
-        # Bloom color with colored text
-        color_text = safe_text(row.get("Bloom Color", ""))
-        if color_text:
-            self.set_font("Helvetica", "B", 12)
-            self.write(6, "Bloom Color: ")
-            self.set_font("Helvetica", "", 12)
-            for i, color in enumerate(color_text.split(",")):
-                color = color.strip()
-                if color.lower() != "white":
-                    hex_color = {
-                        "red": (200, 0, 0),
-                        "pink": (255, 105, 180),
-                        "purple": (128, 0, 128),
-                        "blue": (0, 0, 200),
-                        "yellow": (200, 180, 0),
-                        "orange": (255, 140, 0),
-                        "green": (34, 139, 34),
-                    }.get(color.lower(), (0, 0, 0))
-                    self.set_text_color(*hex_color)
+            # ── Images ──
+            images = sorted(
+                list(IMG_DIR.glob(f"{base_name}_*.jpg"))
+                + list(IMG_DIR.glob(f"{base_name}_*.png"))
+            )  # Find up to 3 images
+            count = max(1, min(len(images), 3))
+            margin = self.l_margin
+            avail_w = self.w - margin - self.r_margin
+            gap = 5
+            img_w = (avail_w - (count - 1) * gap) / count
+            img_h_fixed = 100
+            x = margin
+            y0 = 40
+            self.set_y(y0)
+            for i in range(count):
+                if i < len(images):
+                    img_path = str(images[i])
+                    with Image.open(img_path) as im:
+                        aspect = im.height / im.width
+                    scaled_h = min(img_w * aspect, img_h_fixed)
+                    scaled_w = scaled_h / aspect
+                    x_img = x + (img_w - scaled_w) / 2
+                    y_img = y0 + (img_h_fixed - scaled_h) / 2
+                    self.image(img_path, x=x_img, y=y_img, w=scaled_w, h=scaled_h)
                 else:
-                    self.set_text_color(0, 0, 0)
-                self.write(6, color)
-                if i < len(color_text.split(",")) - 1:
-                    self.write(6, ", ")
-            self.set_text_color(0, 0, 0)
-            self.ln(6)
-        # Bloom time
-        bloom_time = safe_text(row.get("Bloom Time", ""))
-        if bloom_time:
-            appearance_parts.append(("Bloom Time:", bloom_time))
-        # Print height/spread/bloom time separated by bars
-        for i, (label, val) in enumerate(appearance_parts):
-            self.set_font("Helvetica", "B", 12)
-            self.write(6, f"{label} ")
-            self.set_font("Helvetica", "", 12)
-            self.write(6, val)
-            if i < len(appearance_parts) - 1:
-                self.write(6, "   |   ")
-        self.ln(10)
+                    self.rect(x, y0, img_w, img_h_fixed)  # Empty box if no image
+                x += img_w + gap
+            self.set_y(y0 + img_h_fixed + 6)
 
-        # ── Site & Wildlife Details ──
-        self.set_font("Helvetica", "B", 13)
-        self.cell(0, 8, "Site & Wildlife Details", ln=1)
-        self.set_font("Helvetica", "", 12)
-        site_parts = []
-        sun = safe_text(row.get("Sun", ""))
-        water = safe_text(row.get("Water", ""))
-        zone = safe_text(row.get("Distribution Zone", "") or row.get("Zone", ""))
-        if sun:
-            site_parts.append(("Sun:", sun))
-        if water:
-            site_parts.append(("Water:", water))
-        if zone:
-            site_parts.append(("Zone:", zone))
-        for i, (label, val) in enumerate(site_parts):
-            self.set_font("Helvetica", "B", 12)
-            self.write(6, f"{label} ")
-            self.set_font("Helvetica", "", 12)
-            self.write(6, val)
-            if i < len(site_parts) - 1:
-                self.write(6, "   |   ")
-        self.ln(8)
+            # ── Characteristics section ──
+            tolerates = truncate_text(
+                safe_text(row.get("Tolerates", "")), max_len, bot_name, "Tolerates"
+            )
+            maintenance = truncate_text(
+                safe_text(row.get("Maintenance", "")), max_len, bot_name, "Maintenance"
+            )
+            agcp = truncate_text(
+                safe_text(row.get("AGCP Regional Status", "")),
+                max_len,
+                bot_name,
+                "AGCP",
+            )
+            if any([tolerates, maintenance, agcp]):
+                self.set_font("Helvetica", "B", 13)
+                self.cell(0, 8, "Characteristics", ln=1)
+                self.set_font("Helvetica", "", 12)
+                if tolerates:
+                    self.multi_cell(0, 6, f"- Tolerates: {tolerates}")
+                    self.set_x(self.l_margin)
+                if maintenance:
+                    self.multi_cell(0, 6, f"- Maintenance: {maintenance}")
+                    self.set_x(self.l_margin)
+                if agcp:
+                    self.multi_cell(0, 6, f"- AGCP Status: {agcp}")
+                    self.set_x(self.l_margin)
+                self.ln(6)
 
-        # Attracts
-        attracts = truncate_text(
-            safe_text(row.get("Attracts", "")), 300, bot_name, "Attracts"
-        )
-        if attracts:
-            self.set_font("Helvetica", "B", 12)
-            self.write(6, "Attracts: ")
+            # ── Appearance ──
+            self.set_font("Helvetica", "B", 13)
+            self.cell(0, 8, "Appearance", ln=1)
             self.set_font("Helvetica", "", 12)
-            self.multi_cell(0, 6, attracts)
-            self.ln(6)
+            appearance_parts = []
+            ht = safe_text(row.get("Height (ft)", ""))
+            if ht:
+                appearance_parts.append(("Height:", f"{ht} ft"))
+            sp = safe_text(row.get("Spread (ft)", ""))
+            if sp:
+                appearance_parts.append(("Spread:", f"{sp} ft"))
+            # Bloom color with colored text
+            color_text = safe_text(row.get("Bloom Color", ""))
+            if color_text:
+                self.set_font("Helvetica", "B", 12)
+                self.write(6, "Bloom Color: ")
+                self.set_font("Helvetica", "", 12)
+                for i, color in enumerate(color_text.split(",")):
+                    color = color.strip()
+                    if color.lower() != "white":
+                        hex_color = {
+                            "red": (200, 0, 0),
+                            "pink": (255, 105, 180),
+                            "purple": (128, 0, 128),
+                            "blue": (0, 0, 200),
+                            "yellow": (200, 180, 0),
+                            "orange": (255, 140, 0),
+                            "green": (34, 139, 34),
+                        }.get(color.lower(), (0, 0, 0))
+                        self.set_text_color(*hex_color)
+                    else:
+                        self.set_text_color(0, 0, 0)
+                    self.write(6, color)
+                    if i < len(color_text.split(",")) - 1:
+                        self.write(6, ", ")
+                self.set_text_color(0, 0, 0)
+                self.ln(6)
+            # Bloom time
+            bloom_time = safe_text(row.get("Bloom Time", ""))
+            if bloom_time:
+                appearance_parts.append(("Bloom Time:", bloom_time))
+            # Print height/spread/bloom time separated by bars
+            for i, (label, val) in enumerate(appearance_parts):
+                self.set_font("Helvetica", "B", 12)
+                self.write(6, f"{label} ")
+                self.set_font("Helvetica", "", 12)
+                self.write(6, val)
+                if i < len(appearance_parts) - 1:
+                    self.write(6, "   |   ")
+            self.ln(10)
 
-        # Soil Description
-        soil = truncate_text(
-            safe_text(row.get("Soil Description", "")),
-            300,
-            bot_name,
-            "Soil Description",
-        )
-        if soil:
-            self.set_font("Helvetica", "B", 12)
-            self.write(6, "Soil Description: ")
+            # ── Site & Wildlife Details ──
+            self.set_font("Helvetica", "B", 13)
+            self.cell(0, 8, "Site & Wildlife Details", ln=1)
             self.set_font("Helvetica", "", 12)
-            self.multi_cell(0, 6, soil)
-            self.ln(6)
+            site_parts = []
+            sun = safe_text(row.get("Sun", ""))
+            water = safe_text(row.get("Water", ""))
+            zone = safe_text(row.get("Distribution Zone", "") or row.get("Zone", ""))
+            if sun:
+                site_parts.append(("Sun:", sun))
+            if water:
+                site_parts.append(("Water:", water))
+            if zone:
+                site_parts.append(("Zone:", zone))
+            for i, (label, val) in enumerate(site_parts):
+                self.set_font("Helvetica", "B", 12)
+                self.write(6, f"{label} ")
+                self.set_font("Helvetica", "", 12)
+                self.write(6, val)
+                if i < len(site_parts) - 1:
+                    self.write(6, "   |   ")
+            self.ln(8)
 
-        # Habitats
-        habitats = truncate_text(
-            safe_text(row.get("Native Habitats", "") or row.get("Habitats", "")),
-            300,
-            bot_name,
-            "Habitats",
-        )
-        if habitats:
-            self.set_font("Helvetica", "B", 12)
-            self.write(6, "Habitats: ")
-            self.set_font("Helvetica", "", 12)
-            self.multi_cell(0, 6, habitats)
+            # Attracts
+            attracts = truncate_text(
+                safe_text(row.get("Attracts", "")), max_len, bot_name, "Attracts"
+            )
+            if attracts:
+                self.set_font("Helvetica", "B", 12)
+                self.write(6, "Attracts: ")
+                self.set_font("Helvetica", "", 12)
+                self.multi_cell(0, 6, attracts)
+                self.ln(6)
 
-        # Verify single-page layout
-        end_page = self.page_no()
-        end_y = self.get_y()
-        allowed_height = self.h - self.b_margin
-        overflow = end_page != start_page or end_y > allowed_height
-        self.set_auto_page_break(auto=True, margin=20)
-        if overflow:
-            logging.warning("Truncating content for %s to fit on one page", bot_name)
+            # Soil Description
+            soil = truncate_text(
+                safe_text(row.get("Soil Description", "")),
+                max_len,
+                bot_name,
+                "Soil Description",
+            )
+            if soil:
+                self.set_font("Helvetica", "B", 12)
+                self.write(6, "Soil Description: ")
+                self.set_font("Helvetica", "", 12)
+                self.multi_cell(0, 6, soil)
+                self.ln(6)
+
+            # Habitats
+            habitats = truncate_text(
+                safe_text(row.get("Native Habitats", "") or row.get("Habitats", "")),
+                max_len,
+                bot_name,
+                "Habitats",
+            )
+            if habitats:
+                self.set_font("Helvetica", "B", 12)
+                self.write(6, "Habitats: ")
+                self.set_font("Helvetica", "", 12)
+                self.multi_cell(0, 6, habitats)
+
+            # Verify single-page layout
+            end_page = self.page_no()
+            end_y = self.get_y()
+            allowed_height = self.h - self.b_margin
+            overflow = end_page != page_start or end_y > allowed_height
+            self.set_auto_page_break(auto=True, margin=20)
+            if overflow:
+                logging.warning(
+                    "Truncating content for %s to fit on one page", bot_name
+                )
+                self.pages.pop()
+                self.page -= 1
+                max_len = max(50, max_len - 50)
+                continue
+            display_page = self.page_no() - getattr(self, "_ghost_pages", 0)
+            self.toc[plant_type].append((bot_name, display_page, link, links))
+            break
 
 
 # ─── Build PDF ────────────────────────────────────────────────────────────
