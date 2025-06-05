@@ -58,6 +58,7 @@ ws = wb.active
 ws.title = "Plant Data"
 
 # ─── Step 2: Style Headers and Columns ────────────────────────────────────
+# ─── Step 2: Style Headers and Columns ────────────────────────────────────
 ws.freeze_panes = "A2"
 HEADER_FILL = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
 BOLD_FONT = Font(bold=True)
@@ -79,7 +80,6 @@ def set_fixed_column_widths(ws: Worksheet) -> None:
     """Apply hard-coded column widths using Excel character units."""
 
     pixel_widths = {
-
         "A": 150.0,
         "B": 60.0,
         "C": 180.0,
@@ -103,13 +103,13 @@ def set_fixed_column_widths(ws: Worksheet) -> None:
         "V": 100.0,
         "W": 100.0,
     }
-    
+
     # Excel stores widths as the number of "0" characters that fit in the column.
     # Convert pixel values (as used by Google Sheets) to these character units.
     char_widths = {col: round((px - 5) / 7, 2) for col, px in pixel_widths.items()}
 
     for col, width in char_widths.items():
-
+        ws.column_dimensions[col].width = width
 
 
 autofit_columns(ws)
@@ -122,6 +122,50 @@ filter_indices = [i + 1 for i, val in enumerate(header) if val in filter_cols]
 if filter_indices:
     col_range = f"{get_column_letter(min(filter_indices))}1:{get_column_letter(max(filter_indices))}1"
     ws.auto_filter.ref = col_range
+
+# ─── Step 4: Format Cells + Short Hyperlinks ──────────────────────────────
+link_map = {
+    "Link: Missouri Botanical Garden": "[MBG]",
+    "Link: Wildflower.org": "[WF]",
+    "Link: Pleasantrunnursery.com": "[PR]",
+    "Link: Newmoonnursery.com": "[NM]",
+    "Link: Pinelandsnursery.com": "[PN]",
+}
+
+
+def style_sheet(ws: Worksheet, df: pd.DataFrame, header: list[str]) -> None:
+    red_fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
+
+    for row_idx, row in enumerate(df.itertuples(index=False, name=None), start=2):
+        for col_idx, (col_name, value) in enumerate(zip(header, row), start=1):
+            cell: Cell = ws.cell(row=row_idx, column=col_idx)
+            cell.value = link_map[col_name]
+            cell.hyperlink = value
+            cell.style = "Hyperlink"
+        else:
+             cell.value = value
+
+        if col_name == "Botanical Name":
+                cell.font = Font(italic=True)
+        if not value:
+                cell.fill = red_fill
+
+
+style_sheet(ws, df, header)
+
+# ─── Step 4B: Add raw export sheet with full link data ─────────────────────
+raw_sheet = wb.create_sheet("Plant Data CSV — No Short Links")
+for col_idx, col_name in enumerate(df.columns, start=1):
+    cell = raw_sheet.cell(row=1, column=col_idx)
+    cell.value = col_name
+    cell.font = BOLD_FONT
+
+for row_idx, row in enumerate(df.itertuples(index=False, name=None), start=2):
+    for col_idx, value in enumerate(row, start=1):
+        raw_sheet.cell(row=row_idx, column=col_idx).value = value
+
+set_fixed_column_widths(raw_sheet)
+
 
 # ─── Step 4: Format Cells + Short Hyperlinks ──────────────────────────────
 link_map = {
