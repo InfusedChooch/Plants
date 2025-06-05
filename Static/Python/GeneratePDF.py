@@ -52,9 +52,10 @@ df = df.reindex(
     columns=template_cols + [c for c in df.columns if c not in template_cols]
 )
 df["Plant Type"] = df["Plant Type"].str.upper()  # Normalize plant types to uppercase
-df["Page in PDF"] = pd.to_numeric(
-    df["Page in PDF"], errors="coerce"
-)  # Ensure page numbers are numeric
+if "Page in PDF" in df.columns:
+    df["Page in PDF"] = pd.to_numeric(
+        df["Page in PDF"], errors="coerce"
+    )  # Ensure page numbers are numeric
 
 PLANT_TYPE_ORDER = [  # Desired order of sections
     "HERBACEOUS, PERENNIAL",
@@ -206,8 +207,8 @@ class PlantPDF(FPDF):
         """Add a single plant page: title, images, and all details."""
         bot_name = safe_text(row.get("Botanical Name", ""))  # Clean botanical name
         base_name = name_slug(bot_name)  # Slug for image filenames
-        mbg = row.get("MBG Link", "").strip()
-        wf = row.get("WF Link", "").strip()
+        mbg = row.get("Link: Missouri Botanical Garden", "").strip()
+        wf = row.get("Link: Wildflower.org", "").strip()
         self.current_plant_type = plant_type
         self.add_page()  # New PDF page
         self.footer_links = (mbg or None, wf or None)  # Links for footer
@@ -267,17 +268,22 @@ class PlantPDF(FPDF):
         self.set_y(y0 + img_h_fixed + 6)
 
         # ── Characteristics section ──
-        chars = safe_text(row.get("Characteristics", ""))
-        if chars:
+        tolerates = safe_text(row.get("Tolerates", ""))
+        maintenance = safe_text(row.get("Maintenance", ""))
+        agcp = safe_text(row.get("AGCP Regional Status", ""))
+        if any([tolerates, maintenance, agcp]):
             self.set_font("Helvetica", "B", 13)
             self.cell(0, 8, "Characteristics", ln=1)
             self.set_font("Helvetica", "", 12)
-            for part in chars.split("|"):
-                label, _, desc = part.strip().partition(":")
-                self.set_font("Helvetica", "B", 12)
-                self.write(6, f"- {label.strip()}: ")
-                self.set_font("Helvetica", "", 12)
-                self.multi_cell(0, 6, desc.strip())
+            if tolerates:
+                self.multi_cell(0, 6, f"- Tolerates: {tolerates}")
+                self.set_x(self.l_margin)
+            if maintenance:
+                self.multi_cell(0, 6, f"- Maintenance: {maintenance}")
+                self.set_x(self.l_margin)
+            if agcp:
+                self.multi_cell(0, 6, f"- AGCP Status: {agcp}")
+                self.set_x(self.l_margin)
             self.ln(6)
 
         # ── Appearance ──
@@ -338,7 +344,7 @@ class PlantPDF(FPDF):
         site_parts = []
         sun = safe_text(row.get("Sun", ""))
         water = safe_text(row.get("Water", ""))
-        zone = safe_text(row.get("Zone", ""))
+        zone = safe_text(row.get("Distribution Zone", "") or row.get("Zone", ""))
         if sun:
             site_parts.append(("Sun:", sun))
         if water:
@@ -373,7 +379,7 @@ class PlantPDF(FPDF):
             self.ln(6)
 
         # Habitats
-        habitats = safe_text(row.get("Habitats", ""))
+        habitats = safe_text(row.get("Native Habitats", "") or row.get("Habitats", ""))
         if habitats:
             self.set_font("Helvetica", "B", 12)
             self.write(6, "Habitats: ")
