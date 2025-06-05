@@ -167,11 +167,14 @@ def build_page_type_map(pdf_path: Path) -> Dict[int, str]:
         "TREES": "Trees",
     }
     page_type_map = {}
+    last_type = ""
     with pdfplumber.open(pdf_path) as pdf:
         for idx, page in enumerate(pdf.pages, start=1):
             text = (page.extract_text() or "").upper()
             match = next((v for k, v in valid_types.items() if k in text), "")
-            page_type_map[idx] = match
+            if match:
+                last_type = match
+            page_type_map[idx] = last_type
     return page_type_map
 
 
