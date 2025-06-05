@@ -24,6 +24,11 @@ parser.add_argument(
     default="Static/Outputs/Plants_Linked_Filled_Review.xlsx",
     help="Output Excel file",
 )
+parser.add_argument(
+    "--template_csv",
+    default="Static/Templates/Plants_Linked_Filled_Master.csv",
+    help="CSV file containing column template",
+)
 args = parser.parse_args()
 
 # ─── File Paths ───────────────────────────────────────────────────────────
@@ -31,14 +36,11 @@ BASE = Path(__file__).resolve().parent
 REPO = BASE.parent.parent
 CSV_FILE = (REPO / args.in_csv).resolve()
 XLSX_FILE = (REPO / args.out_xlsx).resolve()
+TEMPLATE_CSV = (REPO / args.template_csv).resolve()
 
 # ─── Step 1: Load CSV and write it to a basic Excel file ──────────────────
 df = pd.read_csv(CSV_FILE, dtype=str).fillna("")
-template_cols = list(
-    pd.read_csv(
-        REPO / "Static/Templates/Plants_Linked_Filled_Master.csv", nrows=0
-    ).columns
-)
+template_cols = list(pd.read_csv(TEMPLATE_CSV, nrows=0).columns)
 df = df.reindex(
     columns=template_cols + [c for c in df.columns if c not in template_cols]
 )

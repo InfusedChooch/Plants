@@ -37,6 +37,11 @@ def parse_cli_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="Static/Outputs/Plants_Linked_Filled.csv",
         help="Output CSV file",
     )
+    parser.add_argument(
+        "--master_csv",
+        default="Static/Templates/Plants_Linked_Filled_Master.csv",
+        help="CSV file containing column template",
+    )
     return parser.parse_args(argv)
 
 
@@ -423,7 +428,11 @@ def parse_pn(html: str) -> Dict[str, Optional[str]]:
 
 
 # ─── Main Processing Loop ─────────────────────────────────────────────────
-def main(in_csv: Path = IN_CSV, out_csv: Path = OUT_CSV) -> None:
+def main(
+    in_csv: Path = IN_CSV,
+    out_csv: Path = OUT_CSV,
+    master_csv: Path = MASTER_CSV,
+) -> None:
     # load CSV into a DataFrame, ensuring all empty cells become blank strings
     df = pd.read_csv(in_csv, dtype=str).fillna("")
 
@@ -570,7 +579,7 @@ def main(in_csv: Path = IN_CSV, out_csv: Path = OUT_CSV) -> None:
         df = df.rename(columns={"Habitats": "Native Habitats"})
 
     # reorder columns to match original template, keeping extras at end
-    template = list(pd.read_csv(MASTER_CSV, nrows=0).columns)
+    template = list(pd.read_csv(master_csv, nrows=0).columns)
     df = df.rename(
         columns={
             "MBG Link": "Link: Missouri Botanical Garden",
@@ -589,5 +598,7 @@ def main(in_csv: Path = IN_CSV, out_csv: Path = OUT_CSV) -> None:
 if __name__ == "__main__":
     cli_args = parse_cli_args()
     main(
-        repo_path(cli_args.in_csv), repo_path(cli_args.out_csv)
+        repo_path(cli_args.in_csv),
+        repo_path(cli_args.out_csv),
+        repo_path(cli_args.master_csv),
     )  # run when executed as a script
