@@ -12,6 +12,7 @@ OUT_DIR.mkdir(exist_ok=True)
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
 
+
 def fetch_html(url: str) -> str | None:
     try:
         r = requests.get(url.strip(), headers=HEADERS, timeout=12)
@@ -20,6 +21,7 @@ def fetch_html(url: str) -> str | None:
     except Exception as e:
         print(f"❌ Error fetching {url}: {e}")
     return None
+
 
 def save_html(content: str, url: str):
     parsed = urlparse(url)
@@ -30,6 +32,7 @@ def save_html(content: str, url: str):
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(content)
     print(f"✅ Saved: {filepath}")
+
 
 # ─── Main loop ───────────────────────────────────────────────────────────
 print("Paste your URLs one per line. Leave blank and press Enter when done:\n")
