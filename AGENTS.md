@@ -6,8 +6,8 @@ This project contains a set of scripts to automatically extract and enrich plant
 1. **PDFScraper.py** – extract text, hyperlinks and images from the source PDF. Produces `Static/Outputs/Plants_NeedLinks.csv` and image files.
 2. **GetLinks.py** – search for plant pages on Missouri Botanical Garden, Wildflower.org and several nursery sites to populate missing links.
 3. **FillMissingData.py** – scrape details from those links and fill empty fields in the CSV.
-4. **GeneratePDF.py** – output a printable PDF plant guide from the final dataset.
-5. **Excelify2.py** – create a formatted Excel workbook for review.
+4. **Excelify2.py** – create a formatted Excel workbook for review.
+5. **GeneratePDF.py** – output a printable PDF plant guide from the final dataset.
 
 `Launcher.py` provides a CustomTkinter interface to run these steps with GUI controls and live logging.
 
