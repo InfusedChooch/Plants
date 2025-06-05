@@ -54,6 +54,7 @@ def safe_print(*objs, **kw):
 
 # ─── CSV Columns ─────────────────────────────────────────────────────────
 COLUMNS = [
+    "Page in PDF",
     "Plant Type",
     "Key",
     "Botanical Name",
