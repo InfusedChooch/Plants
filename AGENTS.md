@@ -18,6 +18,7 @@ This project contains a set of scripts to automatically extract and enrich plant
   black --check .
   ```
 - There are no automated tests. Verify changes by running the scripts on the sample data in `Static/Templates/` and confirming the outputs in `Static/Outputs/`.
+- All CSV Outputs must conform to [Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,Tolerates,Maintenance,Native Habitats,Attracts,Soil Description,Distribution Zone,AGCP Regional Status,Link: Missouri Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com]
 
 ## Pull request expectations
 - Summarize the purpose of the change and mention affected files.

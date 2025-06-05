@@ -126,6 +126,8 @@ the command above.
 * PDF sections auto-group by type (Herbaceous, Ferns, Shrubs, etc).
 * `Excelify2.py` sets filters on select columns and highlights missing values.
 * Scripts are designed to be rerun with override support.
+* CSV Hierarchy [Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,Tolerates,Maintenance,Native Habitats,Attracts,Soil Description,Distribution Zone,AGCP Regional Status,Link: Missouri Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com]
+
 
 ---
 
