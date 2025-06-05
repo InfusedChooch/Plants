@@ -17,8 +17,8 @@ import argparse
 parser = argparse.ArgumentParser(description="Export formatted Excel from CSV")
 parser.add_argument(
     "--in_csv",
-    default="Static/Templates/Plants_Linked_Filled_Master.csv",
-    help="Input CSV file",
+    default="Static/Outputs/Plants_Linked_Filled.csv",
+    help="Input CSV file with filled data",
 )
 parser.add_argument(
     "--out_xlsx",

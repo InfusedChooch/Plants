@@ -19,8 +19,8 @@ import argparse
 parser = argparse.ArgumentParser(description="Generate plant guide PDF")
 parser.add_argument(
     "--in_csv",
-    default="Static/Templates/Plants_Linked_Filled_Master.csv",
-    help="Input CSV file",
+    default="Static/Outputs/Plants_Linked_Filled.csv",
+    help="Input CSV file with filled data",
 )
 parser.add_argument(
     "--out_pdf", default="Static/Outputs/Plant_Guide_EXPORT.pdf", help="Output PDF file"
@@ -37,7 +37,7 @@ BASE_DIR = Path(__file__).resolve().parent
 CSV_FILE = (
     Path(args.in_csv)
     if args.in_csv
-    else Path("Static/Templates/Plants_Linked_Filled_Master.csv")
+    else Path("Static/Outputs/Plants_Linked_Filled.csv")
 )
 IMG_DIR = Path(args.img_dir) if args.img_dir else BASE_DIR / "Static/Outputs/pdf_images"
 OUTPUT = Path(args.out_pdf)
