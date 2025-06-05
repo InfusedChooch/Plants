@@ -179,8 +179,9 @@ ctk.CTkButton(hdr, text="Browse", command=browse_img).grid(row=2, column=2)
 # ─── Tabs & Tool Rows ───────────────────────────────────────────────────
 tabs = ctk.CTkTabview(app)
 tabs.pack(fill="both", padx=15, pady=6, expand=True)
-builder_tab = tabs.add("Builder")
 export_tab = tabs.add("Export")
+builder_tab = tabs.add("Builder")
+
 
 b_body = ctk.CTkScrollableFrame(builder_tab, height=420)
 b_body.pack(fill="both", expand=True)

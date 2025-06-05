@@ -17,7 +17,6 @@ selenium==4.20.0
 
 # GUI and formatting
 customtkinter
-tkinter          # pre-installed with Python
 black            # for code formatting in Excelify2
 
 # Optional / Windows-specific notes
