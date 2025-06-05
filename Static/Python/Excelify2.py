@@ -79,6 +79,7 @@ def set_fixed_column_widths(ws: Worksheet) -> None:
     """Apply hard-coded column widths using Excel character units."""
 
     pixel_widths = {
+
         "A": 150.0,
         "B": 60.0,
         "C": 180.0,
@@ -102,13 +103,13 @@ def set_fixed_column_widths(ws: Worksheet) -> None:
         "V": 100.0,
         "W": 100.0,
     }
-
+    
     # Excel stores widths as the number of "0" characters that fit in the column.
     # Convert pixel values (as used by Google Sheets) to these character units.
     char_widths = {col: round((px - 5) / 7, 2) for col, px in pixel_widths.items()}
 
     for col, width in char_widths.items():
-        ws.column_dimensions[col].width = width
+
 
 
 autofit_columns(ws)
