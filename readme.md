@@ -36,6 +36,27 @@ the command above.
 > **Chrome Note**: To use Selenium, you must install [Google Chrome Portable](https://portableapps.com/apps/internet/google_chrome_portable) and place it inside the `Static/GoogleChromePortable/` folder. Also ensure `chromedriver.exe` is in `Static/Python/`.
 
 ---
+## 🖥️ Building a Windows Executable
+
+Create a standalone `Launcher.exe` using [PyInstaller](https://pyinstaller.org/):
+
+```bash
+pip install pyinstaller
+pyinstaller Launcher.py --onefile
+```
+
+The generated binary is placed in `dist/`. Keep these folders next to the
+executable so Selenium and the scripts can run:
+
+* `Static/GoogleChromePortable/` – portable Chrome for Selenium
+* `Static/Python/chromedriver.exe`
+* all other data folders under `Static/` (`Templates/`, `themes/`, etc.)
+
+Run `dist/Launcher.exe` on Windows and verify each button processes the sample
+data in `Static/Templates`.
+
+
+
 
 ## 🔁 Workflow Overview
 

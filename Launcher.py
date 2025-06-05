@@ -109,7 +109,7 @@ pre_var = ctk.StringVar(value=f"{today}_")
 suf_var = ctk.StringVar(value="")
 img_dir_var = ctk.StringVar(value=str(OUTDEF / "pdf_images"))
 guide_pdf_var = ctk.StringVar(value=str(TEMPL / "Plant Guide 2025 Update.pdf"))
-master_csv_var = ctk.StringVar(value=str(TEMPL / "MASTER_MASTER_20250605.csv"))
+master_csv_var = ctk.StringVar(value=str(TEMPL / "Plants_Linked_Filled_Master.csv"))
 _img_user_set = False
 
 log_q: queue.Queue[str] = queue.Queue(maxsize=500)
