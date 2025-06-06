@@ -6,7 +6,7 @@ Existing links from the master sheet are reused. Any remaining gaps are
 queried against several plant databases and nursery sites, optionally
 spinning up a headless Chrome session when necessary.
 """
-
+import sys
 import argparse, io, re, shutil, subprocess, tempfile, time, zipfile, json
 from pathlib import Path
 from typing import Optional
@@ -18,40 +18,50 @@ from urllib.parse import quote_plus
 
 # ─── CLI ────────────────────────────────────────────────────────────────
 parser = argparse.ArgumentParser(description="Fill missing plant site links")
-parser.add_argument("--in_csv", default="Static/Outputs/Plants_NeedLinks.csv")
-parser.add_argument("--out_csv", default="Static/Outputs/Plants_Linked.csv")
-parser.add_argument(
-    "--master_csv", default="Static/Templates/Plants_Linked_Filled_Master.csv"
-)
-parser.add_argument(
-    "--chromedriver", default="", help="Path to chromedriver.exe (file OR folder)"
-)
-parser.add_argument(
-    "--chrome_binary",
-    default="",
-    help="Path to chrome.exe (leave blank to auto-detect)",
-)
+parser.add_argument("--in_csv",
+                    default="Outputs/Plants_NeedLinks.csv")        # ← moved
+parser.add_argument("--out_csv",
+                    default="Outputs/Plants_Linked.csv")           # ← moved
+parser.add_argument("--master_csv",
+                    default="Templates/Plants_Linked_Filled_Master.csv")  # ← moved
+parser.add_argument("--chromedriver", default="", help="Path to chromedriver.exe")
+parser.add_argument("--chrome_binary", default="", help="Path to chrome.exe")
 args = parser.parse_args()
 
-# ─── Repo layout ────────────────────────────────────────────────────────
-BASE = Path(__file__).resolve().parent
-STATIC = BASE.parent
-REPO = STATIC.parent
+# ─── Repo layout & path helpers ─────────────────────────────────────────
+from pathlib import Path
+import sys
 
+def repo_dir() -> Path:
+    """Bundle root if frozen, else repo root."""
+    if getattr(sys, "frozen", False):             # running as GetLinks.exe
+        return Path(sys.executable).resolve().parent
+    # source: Static/Python/GetLinks.py  →  repo/
+    return Path(__file__).resolve().parent.parent.parent
 
-def repo_path(arg: str) -> Path:
+REPO   = repo_dir()
+STATIC = REPO / "Static"          # still contains themes, GoogleChromePortable, etc.
+
+def repo_path(arg: str | Path) -> Path:
+    """
+    Turn relative CLI strings ('Outputs/…', 'Templates/…', 'Static/…')
+    into absolute paths under REPO.  Absolute paths pass through.
+    """
     p = Path(arg).expanduser()
     if p.is_absolute():
         return p
-    if p.parts and p.parts[0].lower() == "static":
+    if p.parts and p.parts[0].lower() in {"outputs", "templates", "static"}:
         return (REPO / p).resolve()
-    cand = (BASE / p).resolve()
+    # fallback: relative to script, then repo root
+    cand = (Path(__file__).resolve().parent / p).resolve()
     return cand if cand.exists() else (REPO / p).resolve()
 
+INPUT   = repo_path(args.in_csv)         # e.g.  …/Outputs/Plants_NeedLinks.csv
+OUTPUT  = repo_path(args.out_csv)        # e.g.  …/Outputs/Plants_Linked.csv
+MASTER  = repo_path(args.master_csv)     # e.g.  …/Templates/Plants_Linked_Filled_Master.csv
 
-INPUT = repo_path(args.in_csv)
-OUTPUT = repo_path(args.out_csv)
-MASTER = repo_path(args.master_csv)
+# first run from a fresh flash-drive: make sure Outputs exists
+OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 
 HEADERS = {
     "User-Agent": (
@@ -169,7 +179,7 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import WebDriverException
 
 # where we look for a bundled chrome.exe
-PORT_DIRS = [BASE / "GoogleChromePortable"]  # legacy
+PORT_DIRS = [STATIC / "GoogleChromePortable"]  # legacy
 
 
 def find_chrome() -> Path:
@@ -207,18 +217,38 @@ def major(v: str) -> str:
     return v.split(".", 1)[0] if v else ""
 
 
+# ─── Driver discovery ────────────────────────────────────────────────────
 def find_driver() -> Path:
-    # CLI override allowed, else use Static\Python\chromedriver.exe
+    """
+    Return a working chromedriver.exe.
+
+    Priority:
+    1) --chromedriver CLI flag  (file or folder)
+    2) Static/Python/chromedriver.exe
+    3) Any chromedriver.exe inside Static/GoogleChromePortable/App/Chrome-bin/*
+    """
+    # 1) explicit CLI path wins
     if args.chromedriver:
         p = Path(args.chromedriver).expanduser()
         return (p / "chromedriver.exe") if p.is_dir() else p
-    drv = BASE / "chromedriver.exe"
-    if drv.exists():
-        return drv
+
+    # 2) standalone driver next to helper scripts
+    cand = STATIC / "Python" / "chromedriver.exe"
+    if cand.exists():
+        return cand
+
+    # 3) driver that ships with portable Chrome
+    for drv in (STATIC / "GoogleChromePortable" / "App" / "Chrome-bin").rglob(
+        "chromedriver.exe"
+    ):
+        return drv  # take the first one found
+
     raise SystemExit(
-        " chromedriver.exe not found in Static\\Python – "
-        "copy a matching build there."
+        "❌ chromedriver.exe not found.\n"
+        "Put one in Static\\Python or rely on the copy under "
+        "Static\\GoogleChromePortable\\App\\Chrome-bin\\<version>\\"
     )
+
 
 
 CHROME_EXE = find_chrome()

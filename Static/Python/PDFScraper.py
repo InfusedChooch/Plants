@@ -19,27 +19,58 @@ from PIL import Image
 parser = argparse.ArgumentParser(description="Extract plant data from a PDF guide.")
 parser.add_argument(
     "--in_pdf",
-    default="Static/Templates/Plant Guide 2025 Update.pdf",
+    default="Templates/Plant Guide 2025 Update.pdf",          # ← moved
     help="PDF input file",
 )
 parser.add_argument(
-    "--out_csv", default="Static/Outputs/Plants_NeedLinks.csv", help="CSV output file"
+    "--out_csv",
+    default="Outputs/Plants_NeedLinks.csv",                    # ← moved
+    help="CSV output file",
 )
 parser.add_argument(
-    "--img_dir", default="Static/Outputs/pdf_images", help="Directory for PNG dump"
+    "--img_dir",
+    default="Outputs/pdf_images",                             # ← moved
+    help="Directory for PNG dump",
 )
 parser.add_argument(
-    "--map_csv", default="Static/Outputs/image_map.csv", help="Image → plant map CSV"
+    "--map_csv",
+    default="Outputs/image_map.csv",                          # ← moved
+    help="Image → plant map CSV",
 )
 args = parser.parse_args()
 
-# ─── Paths ───────────────────────────────────────────────────────────────
-BASE = Path(__file__).resolve().parent
-PDF_PATH = Path(args.in_pdf).resolve()
-OUT_CSV = Path(args.out_csv).resolve()
-IMG_DIR = Path(args.img_dir).resolve()
-MAP_CSV = Path(args.map_csv).resolve()
-IMG_DIR.mkdir(exist_ok=True)
+# ─── Path helpers ────────────────────────────────────────────────────────
+def repo_dir() -> Path:
+    """Return bundle root if frozen, else repo root when running from source."""
+    if getattr(sys, "frozen", False):              # running as PDFScraper.exe
+        return Path(sys.executable).resolve().parent
+    # source layout: Static/Python/PDFScraper.py  →  ../../ (repo root)
+    return Path(__file__).resolve().parent.parent.parent
+
+REPO = repo_dir()
+
+def repo_path(rel: str | Path) -> Path:
+    """
+    Convert a relative CLI string ('Outputs/…', 'Templates/…', 'Static/…')
+    into an absolute path under REPO. Absolute paths pass through unchanged.
+    """
+    p = Path(rel).expanduser()
+    if p.is_absolute():
+        return p
+    if p.parts and p.parts[0].lower() in {"outputs", "templates", "static"}:
+        return (REPO / p).resolve()
+    # fallback: make it relative to script, then repo
+    cand = (Path(__file__).resolve().parent / p).resolve()
+    return cand if cand.exists() else (REPO / p).resolve()
+
+PDF_PATH = repo_path(args.in_pdf)
+OUT_CSV  = repo_path(args.out_csv)
+IMG_DIR  = repo_path(args.img_dir)
+MAP_CSV  = repo_path(args.map_csv)
+
+# ensure folders exist when running from a fresh flash-drive
+IMG_DIR.mkdir(parents=True, exist_ok=True)
+OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 
 
 # ─── Safe Print ──────────────────────────────────────────────────────────

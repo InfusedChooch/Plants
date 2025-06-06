@@ -1,69 +1,63 @@
-# FillMissingData.py
-"""Fill in numeric, habitat and other details from plant reference sites.
+#!/usr/bin/env python3
+# FillMissingData.py – Fill numeric / habitat gaps from MBG + Wildflower (2025-06-05)
 
-Missing fields in the input CSV are looked up on Missouri Botanical Garden and
-Wildflower.org and then written back to disk.
-"""
+from __future__ import annotations
+import csv, re, time, argparse
+from pathlib import Path
+from typing import Dict, Optional
 
-from __future__ import (
-    annotations,
-)  # allow postponed evaluation of type hints for forward references
-import csv  # built-in support for CSV operations (writing with quotes)
-import re  # regular expressions for searching and cleaning text
-import time  # to pause between HTTP requests for politeness
-from pathlib import Path  # easy file system path manipulations
-from typing import (
-    Dict,
-    Optional,
-)  # type hinting for dictionaries and optional return values
-
-import pandas as pd  # data handling library for reading and writing CSVs as DataFrames
-import requests  # HTTP library to fetch webpage content
-from bs4 import BeautifulSoup  # HTML parser to extract text from web pages
-from tqdm import tqdm  # progress bar utility when looping over many items
-import argparse
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+from tqdm import tqdm
 
 
+# ─── CLI ──────────────────────────────────────────────────────────────────
 def parse_cli_args(argv: list[str] | None = None) -> argparse.Namespace:
-    """Return CLI arguments for script execution."""
-    parser = argparse.ArgumentParser(
-        description="Fill missing plant fields using MBG/WF"
-    )
-    parser.add_argument(
-        "--in_csv", default="Static/Outputs/Plants_Linked.csv", help="Input CSV file"
-    )
-    parser.add_argument(
-        "--out_csv",
-        default="Static/Outputs/Plants_Linked_Filled.csv",
-        help="Output CSV file",
-    )
-    parser.add_argument(
-        "--master_csv",
-        default="Static/Templates/Plants_Linked_Filled_Master.csv",
-        help="CSV file containing column template",
-    )
-    return parser.parse_args(argv)
+    p = argparse.ArgumentParser(description="Fill missing plant fields using MBG/WF")
+    p.add_argument("--in_csv",    default="Outputs/Plants_Linked.csv",           help="Input CSV")
+    p.add_argument("--out_csv",   default="Outputs/Plants_Linked_Filled.csv",    help="Output CSV")
+    p.add_argument("--master_csv",default="Templates/Plants_Linked_Filled_Master.csv",
+                   help="Column template CSV")
+    return p.parse_args(argv)
 
 
-# ─── File Paths & Configuration ───────────────────────────────────────────
-BASE = Path(__file__).resolve().parent
-REPO = BASE.parent.parent
+args = parse_cli_args()
+
+# ─── Path helpers ─────────────────────────────────────────────────────────
+def repo_dir() -> Path:
+    """Return bundle root when frozen or repo root when running from source."""
+    if getattr(sys, "frozen", False):          # running as helper EXE
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent.parent.parent   # Static/Python/ → repo
+
+REPO = repo_dir()
 
 
-def repo_path(arg: str) -> Path:
-    """Resolve CLI paths relative to the repo root or this script."""
+def repo_path(arg: str | Path) -> Path:
+    """
+    Resolve a CLI path so that strings like 'Outputs/…' or 'Templates/…'
+    always point to those folders at the repo/bundle root, while absolute
+    paths are passed through unchanged.
+    """
     p = Path(arg).expanduser()
     if p.is_absolute():
         return p
-    if p.parts and p.parts[0].lower() == "static":
+    if p.parts and p.parts[0].lower() in {"outputs", "templates"}:
         return (REPO / p).resolve()
-    cand = (BASE / p).resolve()
+    # Fallback (rare): relative to script, then repo
+    cand = (Path(__file__).resolve().parent / p).resolve()
     return cand if cand.exists() else (REPO / p).resolve()
 
 
-IN_CSV = repo_path("Static/Outputs/Plants_Linked.csv")
-OUT_CSV = repo_path("Static/Outputs/Plants_Linked_Filled.csv")
-MASTER_CSV = repo_path("Static/Templates/Plants_Linked_Filled_Master.csv")
+IN_CSV     = repo_path(args.in_csv)
+OUT_CSV    = repo_path(args.out_csv)
+MASTER_CSV = repo_path(args.master_csv)
+
+# auto-create Outputs the first time the helper runs from a fresh flash drive
+OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
+
+
 SLEEP_BETWEEN = 0.7  # seconds to wait between each HTTP request
 # identify as a browser
 HEADERS = {

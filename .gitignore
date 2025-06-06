@@ -8,7 +8,7 @@ Static/GoogleChromePortable/
 __pycache__/
 *.pyc
 dist/
-
+build
 # Ignore environment and IDE settings
 .venv/
 .vscode/

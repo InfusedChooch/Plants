@@ -1,53 +1,64 @@
-# /mnt/data/GeneratePDF.py
-"""Produce a printable PDF guide from the consolidated plant dataset.
+#!/usr/bin/env python3
+# GeneratePDF.py – Produce a printable plant-guide PDF (2025-06-05, portable paths)
 
-The script lays out a title page, table of contents and a page per plant with
-images, using fpdf2 for PDF generation.
+"""
+Generate a title page, TOC and a page per plant with images using fpdf2.
 """
 
-from fpdf import FPDF  # PDF generation library
-from fpdf.enums import XPos, YPos  # Enums for text positioning
-from fpdf.errors import FPDFException  # Exception for PDF text overflow
-from pathlib import Path  # Filesystem path handling
-import pandas as pd  # DataFrame handling for CSV
-import re  # Regular expressions for text cleaning
-from PIL import Image  # Image handling for JPEGs
-from datetime import datetime  # To display current date on title page
-import logging
-import argparse
+from pathlib import Path
+import sys, argparse, logging, re
+from datetime import datetime
+from PIL import Image
+import pandas as pd
+from fpdf import FPDF
+from fpdf.enums import XPos, YPos
+from fpdf.errors import FPDFException
 
+
+# ─── CLI ──────────────────────────────────────────────────────────────────
 parser = argparse.ArgumentParser(description="Generate plant guide PDF")
 parser.add_argument(
     "--in_csv",
-    default="Static/Outputs/Plants_Linked_Filled.csv",
+    default="Outputs/Plants_Linked_Filled.csv",           # ← moved
     help="Input CSV file with filled data",
 )
 parser.add_argument(
-    "--out_pdf", default="Static/Outputs/Plant_Guide_EXPORT.pdf", help="Output PDF file"
+    "--out_pdf",
+    default="Outputs/Plant_Guide_EXPORT.pdf",             # ← moved
+    help="Output PDF file",
 )
 parser.add_argument(
-    "--img_dir", default="Static/Outputs/pdf_images/jpeg", help="Image directory"
+    "--img_dir",
+    default="Outputs/pdf_images/jpeg",                    # ← moved
+    help="Folder that holds plant JPEGs",
 )
 parser.add_argument(
     "--template_csv",
-    default="Static/Templates/Plants_Linked_Filled_Master.csv",
+    default="Templates/Plants_Linked_Filled_Master.csv",  # ← moved
     help="CSV file containing column template",
 )
 args = parser.parse_args()
 
-logging.basicConfig(level=logging.INFO)
 
-# ─── Constants ────────────────────────────────────────────────────────────
-BASE_DIR = Path(__file__).resolve().parent
-CSV_FILE = (
-    Path(args.in_csv)
-    if args.in_csv
-    else Path("Static/Outputs/Plants_Linked_Filled.csv")
-)
-IMG_DIR = Path(args.img_dir) if args.img_dir else BASE_DIR / "Static/Outputs/pdf_images"
-OUTPUT = Path(args.out_pdf)
-logo_dir = IMG_DIR.parent if IMG_DIR.name == "jpeg" else IMG_DIR
-TEMPLATE_CSV = Path(args.template_csv)
+# ─── Path helpers ─────────────────────────────────────────────────────────
+def repo_dir() -> Path:
+    """Return bundle root when frozen, or repo root when running from source."""
+    if getattr(sys, "frozen", False):          # PyInstaller helper EXE
+        return Path(sys.executable).resolve().parent
+    # source layout: Static/Python/GeneratePDF.py → ../../ (repo root)
+    return Path(__file__).resolve().parent.parent.parent
+
+
+REPO = repo_dir()
+CSV_FILE      = (REPO / args.in_csv).resolve()
+IMG_DIR       = (REPO / args.img_dir).resolve()
+OUTPUT        = (REPO / args.out_pdf).resolve()
+TEMPLATE_CSV  = (REPO / args.template_csv).resolve()
+
+# auto-create Outputs on first run from a clean flash-drive
+OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
 # ─── Load and Prepare Data ────────────────────────────────────────────────

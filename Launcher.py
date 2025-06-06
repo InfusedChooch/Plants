@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-# Launcher.py – CTk GUI for the plant-database tool-chain (2025-06-01, tabbed layout)
-"""Launch the plant data pipeline via a CustomTkinter interface.
-
-The GUI runs each processing script in order, allows users to choose input and
-output locations, and displays live console logs.  This version separates the
-tools into two tabs—"Builder" for the data-gathering steps and "Export" for the
-final outputs.
-"""
+# Launcher.py – CTk GUI for the plant-database tool-chain (2025-06-05, portable one-dir)
 
 import sys, subprocess, threading, queue, customtkinter as ctk
 from tkinter import filedialog
@@ -14,60 +7,44 @@ import webbrowser
 from pathlib import Path
 from datetime import datetime
 
+
+# ─── Locate the bundle root ──────────────────────────────────────────────
+from pathlib import Path
+import sys
+
+def repo_dir() -> Path:
+    """Return the app root whether running from source or PyInstaller (onedir)."""
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent  # ✅ works in one-dir
+    return Path(__file__).resolve().parent
+
+
+
+REPO   = repo_dir()                 # <── new single source of truth
+HELPERS = REPO / "helpers"          
+STATIC = REPO / "Static"            # scripts & themes stay here
+
 # ─── Appearance ──────────────────────────────────────────────────────────
 ctk.set_appearance_mode("dark")
-# use Rutgers scarlet color scheme for buttons and accents
-THEME = Path(__file__).resolve().parent / "Static/themes/rutgers.json"
+THEME = STATIC / "themes" / "rutgers.json"
 ctk.set_default_color_theme(str(THEME))
 
-BASE = Path(__file__).resolve().parent
-SCRIPTS = BASE / "Static/Python"
-OUTDEF = BASE / "Static/Outputs"
-TEMPL = BASE / "Static/Templates"
-today = datetime.now().strftime("%Y%m%d")
+# ─── Paths used throughout the GUI ───────────────────────────────────────
+SCRIPTS = STATIC / "Python"         # original .py sources (used when *not* frozen)
+TEMPL   = REPO / "Templates"        # <── moved out of Static
+OUTDEF  = REPO / "Outputs"          # <── moved out of Static
+OUTDEF.mkdir(exist_ok=True)         # create on first launch
+
+today   = datetime.now().strftime("%Y%m%d")
 
 # ─── Tool Config ─────────────────────────────────────────────────────────
 TOOLS = [
-    (
-        "PDFScraper.py",
-        "--in_pdf",
-        "--out_csv",
-        "Static/Templates/Plant Guide 2025 Update.pdf",
-        "Plants_NeedLinks",
-        ".csv",
-    ),
-    (
-        "GetLinks.py",
-        "--in_csv",
-        "--out_csv",
-        "Static/Outputs/Plants_NeedLinks.csv",
-        "Plants_Linked",
-        ".csv",
-    ),
-    (
-        "FillMissingData.py",
-        "--in_csv",
-        "--out_csv",
-        "Static/Outputs/Plants_Linked.csv",
-        "Plants_Linked_Filled",
-        ".csv",
-    ),
-    (
-        "GeneratePDF.py",
-        "--in_csv",
-        "--out_pdf",
-        "Static/Outputs/Plants_Linked_Filled.csv",
-        "Plant_Guide_EXPORT",
-        ".pdf",
-    ),
-    (
-        "Excelify2.py",
-        "--in_csv",
-        "--out_xlsx",
-        "Static/Outputs/Plants_Linked_Filled.csv",
-        "Plants_Linked_Filled_Review",
-        ".xlsx",
-    ),
+    # script           in-flag      out-flag     default-IN                         stem                     ext
+    ("PDFScraper.py",  "--in_pdf",  "--out_csv", "Templates/Plant Guide 2025 Update.pdf", "Plants_NeedLinks",      ".csv"),
+    ("GetLinks.py",    "--in_csv",  "--out_csv", "Outputs/Plants_NeedLinks.csv",        "Plants_Linked",          ".csv"),
+    ("FillMissingData.py","--in_csv","--out_csv","Outputs/Plants_Linked.csv",           "Plants_Linked_Filled",   ".csv"),
+    ("GeneratePDF.py", "--in_csv",  "--out_pdf", "Outputs/Plants_Linked_Filled.csv",    "Plant_Guide_EXPORT",     ".pdf"),
+    ("Excelify2.py",   "--in_csv",  "--out_xlsx","Outputs/Plants_Linked_Filled.csv",    "Plants_Linked_Filled_Review",".xlsx"),
 ]
 
 TAB_MAP = {
@@ -248,28 +225,58 @@ def choose_input(var: ctk.StringVar, flag: str):
 def run_tool(script, in_flag, out_flag, stem, ext):
     """Execute one of the pipeline scripts in a background thread."""
 
+    # ── 1. Resolve input path ────────────────────────────────────────────
     if script == "PDFScraper.py":
         inp = guide_pdf_var.get().strip()
     else:
         inp = in_vars[(script, in_flag)].get().strip()
+
     if not inp or not Path(inp).exists():
         status_lbl[script].configure(text="❌ input missing", text_color="red")
         return
-    out_path = Path(out_dir_var.get()) / f"{pre_var.get()}{stem}{suf_var.get()}{ext}"
+
+    # ── 2. Build output path ─────────────────────────────────────────────
+    out_path = (
+        Path(out_dir_var.get()) /
+        f"{pre_var.get()}{stem}{suf_var.get()}{ext}"
+    )
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    cmd = [sys.executable, str(SCRIPTS / script), in_flag, inp, out_flag, str(out_path)]
+    # ── 3. Choose interpreter / helper EXE ───────────────────────────────
+    if getattr(sys, "frozen", False):
+        helper_exe = HELPERS / f"{script[:-3]}.exe"  # helpers\PDFScraper.exe …
+        print(f"[debug] Expecting helper at: {helper_exe}")
+        log_q.put(f"[debug] Expecting helper at: {helper_exe}\n")
 
-    if script == "GetLinks.py":
-        cmd += ["--master_csv", master_csv_var.get()]
-    if script == "FillMissingData.py":
+        if not helper_exe.exists():
+            status_lbl[script].configure(text="❌ helper missing", text_color="red")
+            return
+        cmd = [
+            str(helper_exe),
+            in_flag, inp,
+            out_flag, str(out_path),
+        ]
+    else:  # running from source → use python
+        cmd = [
+            sys.executable,
+            str(SCRIPTS / script),
+            in_flag, inp,
+            out_flag, str(out_path),
+        ]
+
+    # ── 4. Add script-specific extra flags ───────────────────────────────
+    if script in {"GetLinks.py", "FillMissingData.py"}:
         cmd += ["--master_csv", master_csv_var.get()]
 
     if script in {"GeneratePDF.py", "PDFScraper.py"}:
         cmd += ["--img_dir", img_dir_var.get()]
         if script == "PDFScraper.py":
-            cmd += ["--map_csv", str(Path(img_dir_var.get()).parent / "image_map.csv")]
+            cmd += [
+                "--map_csv",
+                str(Path(img_dir_var.get()).parent / "image_map.csv"),
+            ]
 
+    # ── 5. Spawn in a background thread & stream output ─────────────────
     def worker():
         lbl = status_lbl[script]
         lbl.configure(text="⏳ running…", text_color="yellow")
@@ -325,7 +332,7 @@ for script, in_flag, out_flag, def_in, stem, ext in TOOLS:
     if script == "PDFScraper.py":
         var = guide_pdf_var
     else:
-        var = ctk.StringVar(value=str(BASE / def_in))
+        var = ctk.StringVar(value=str(REPO / def_in))
     in_vars[(script, in_flag)] = var
     ctk.CTkEntry(in_row, textvariable=var, width=380).pack(side="left", padx=4)
     ctk.CTkButton(

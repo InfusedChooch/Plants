@@ -1,8 +1,8 @@
-# Static\Python\Excelify2.py
-# Description: Create a styled Excel workbook from the fully populated plant CSV.
+#!/usr/bin/env python3
+# Excelify2.py – Create a styled Excel workbook from the fully populated plant CSV.
 
 from pathlib import Path
-import pandas as pd
+import sys, argparse, pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font
 from openpyxl.utils import get_column_letter
@@ -10,33 +10,46 @@ from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.cell.cell import Cell
 from datetime import datetime
 import black
-import argparse
-import sys
 
+
+# ─── CLI ──────────────────────────────────────────────────────────────────
 parser = argparse.ArgumentParser(description="Export formatted Excel from CSV")
 parser.add_argument(
     "--in_csv",
-    default="Static/Outputs/Plants_Linked_Filled.csv",
+    default="Outputs/Plants_Linked_Filled.csv",          # ← moved
     help="Input CSV file with filled data",
 )
 parser.add_argument(
     "--out_xlsx",
-    default="Static/Outputs/Plants_Linked_Filled_Review.xlsx",
+    default="Outputs/Plants_Linked_Filled_Review.xlsx",  # ← moved
     help="Output Excel file",
 )
 parser.add_argument(
     "--template_csv",
-    default="Static/Templates/Plants_Linked_Filled_Master.csv",
+    default="Templates/Plants_Linked_Filled_Master.csv", # ← moved
     help="CSV file containing column template",
 )
 args = parser.parse_args()
 
-# ─── File Paths ───────────────────────────────────────────────────────────
-BASE = Path(__file__).resolve().parent
-REPO = BASE.parent.parent
-CSV_FILE = (REPO / args.in_csv).resolve()
-XLSX_FILE = (REPO / args.out_xlsx).resolve()
-TEMPLATE_CSV = (REPO / args.template_csv).resolve()
+
+# ─── Path helpers ─────────────────────────────────────────────────────────
+def repo_dir() -> Path:
+    """Folder that contains the helper EXE (frozen) or repo root (source)."""
+    if getattr(sys, "frozen", False):          # running as a PyInstaller exe
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent.parent.parent  # Static/Python/ → repo
+
+
+REPO = repo_dir()
+CSV_FILE      = (REPO / args.in_csv).resolve()
+XLSX_FILE     = (REPO / args.out_xlsx).resolve()
+TEMPLATE_CSV  = (REPO / args.template_csv).resolve()
+
+# ensure the Outputs folder exists when running on a flash-drive
+XLSX_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+# ─── rest of the script stays unchanged ───────────────────────────────────
+
 
 # ─── Step 1: Load CSV and write it to a basic Excel file ──────────────────
 df = pd.read_csv(CSV_FILE, dtype=str).fillna("")
