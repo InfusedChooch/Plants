@@ -163,8 +163,9 @@ ctk.CTkButton(hdr, text="Get Chrome Portable", width=160, command=open_chrome_po
 
 # ─── Tabs & tool rows ────────────────────────────────────────────────────
 tabs        = ctk.CTkTabview(app)
-builder_tab = tabs.add("Builder")
 export_tab  = tabs.add("Export")
+builder_tab = tabs.add("Builder")
+
 tabs.pack(fill="both", padx=15, pady=(0,6), expand=True)
 
 b_body = ctk.CTkScrollableFrame(builder_tab, height=420) ; b_body.pack(fill="both", expand=True)
