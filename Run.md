@@ -55,7 +55,7 @@ foreach ($h in $helpers) {
 ### 3.2  Compile the launcher (onedir)
 
 ```powershell
-pyinstaller Launcher.py --onedir --noconfirm --windowed --name Launcher `
+pyinstaller Launcher_lite.py --onedir --noconfirm --windowed --name Launcher `
     --icon "Static/themes/leaf.ico" `
     --add-data "Static;_internal/Static" `
     --add-data "Static/Templates;Templates" `

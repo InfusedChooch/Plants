@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Launcher.py – CTk GUI for the plant-database tool-chain
+# Launcher_lite.py – CTk GUI for the plant-database tool-chain
 # 2025-06-09  portable-layout & resizable console edition
 
 import sys, subprocess, threading, queue, customtkinter as ctk
