@@ -30,11 +30,46 @@ ctk.set_default_color_theme(str(STATIC / "themes" / "rutgers.json"))
 
 # ─── Tool definitions (script, in-flag, out-flag, default-IN, stem, ext) ─
 TOOLS = [
-    ("PDFScraper.py",     "--in_pdf",  "--out_csv", "Templates/Plant Guide 2025 Update.pdf", "Plants_NeedLinks",                ".csv"),
-    ("GetLinks.py",       "--in_csv",  "--out_csv", "Outputs/Plants_NeedLinks.csv",            "Plants_Linked",                  ".csv"),
-    ("FillMissingData.py","--in_csv",  "--out_csv", "Outputs/Plants_Linked.csv",               "Plants_Linked_Filled",           ".csv"),
-    ("GeneratePDF.py",    "--in_csv",  "--out_pdf", "Outputs/Plants_Linked_Filled.csv",        "Plant_Guide_EXPORT",             ".pdf"),
-    ("Excelify2.py",      "--in_csv",  "--out_xlsx","Outputs/Plants_Linked_Filled.csv",        "Plants_Linked_Filled_Review",    ".xlsx"),
+    (
+        "PDFScraper.py",
+        "--in_pdf",
+        "--out_csv",
+        "Templates/Plant Guide 2025 Update.pdf",
+        "Plants_NeedLinks",
+        ".csv",
+    ),
+    (
+        "GetLinks.py",
+        "--in_csv",
+        "--out_csv",
+        "Outputs/Plants_NeedLinks.csv",
+        "Plants_Linked",
+        ".csv",
+    ),
+    (
+        "FillMissingData.py",
+        "--in_csv",
+        "--out_csv",
+        "Outputs/Plants_Linked.csv",
+        "Plants_Linked_Filled",
+        ".csv",
+    ),
+    (
+        "GeneratePDF.py",
+        "--in_csv",
+        "--out_pdf",
+        "Outputs/Plants_Linked_Filled.csv",
+        "Plant_Guide_EXPORT",
+        ".pdf",
+    ),
+    (
+        "Excelify2.py",
+        "--in_csv",
+        "--out_xlsx",
+        "Outputs/Plants_Linked_Filled.csv",
+        "Plants_Linked_Filled_Review",
+        ".xlsx",
+    ),
 ]
 
 TAB_MAP = {
@@ -107,7 +142,6 @@ def browse_output() -> None:
     if folder:
         out_dir_var.set(folder)
         _rewrite_inputs_for_new_folder(folder)
-        global _img_user_set
         if not _img_user_set:
             img_dir_var.set(str(Path(folder) / "pdf_images"))
         refresh_out_labels()
@@ -233,7 +267,7 @@ def run_tool(script, in_flag, out_flag, stem, ext):
                 produced = str(out_path)
                 for j, (scr, i_flag, *_rest) in enumerate(TOOLS[:-1]):
                     if scr == script:
-                        nxt_scr, nxt_flag, *_ = TOOLS[j+1]
+                        nxt_scr, nxt_flag, *_ = TOOLS[j + 1]
                         in_vars[(nxt_scr, nxt_flag)].set(produced)
                         break
         except Exception as e:
@@ -252,8 +286,14 @@ for script, in_flag, out_flag, def_in, stem, ext in TOOLS:
     title = LABEL_OVERRIDES.get(script, script.replace(".py","").replace("_"," ").title())
     head = ctk.CTkFrame(fr) ; head.pack(fill="x", padx=10, pady=(2,1))
     ctk.CTkLabel(head, text=title, font=("Arial",14,"bold")).pack(side="left")
-    ctk.CTkButton(head, text="Run", width=70,
-                  command=lambda s=script,i=in_flag,o=out_flag,st=stem,e=ext: run_tool(s,i,o,st,e)).pack(side="right", padx=4)
+    ctk.CTkButton(
+        head,
+        text="Run",
+        width=70,
+        command=lambda s=script, i=in_flag, o=out_flag, st=stem, e=ext: run_tool(
+            s, i, o, st, e
+        ),
+    ).pack(side="right", padx=4)
 
     # input row
     in_row = ctk.CTkFrame(fr) ; in_row.pack(fill="x", padx=10, pady=1)

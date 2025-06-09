@@ -7,7 +7,11 @@ queried against several plant databases and nursery sites, optionally
 spinning up a headless Chrome session when necessary.
 """
 import sys
-import argparse, io, re, shutil, subprocess, tempfile, time, zipfile, json
+import argparse
+import re
+import subprocess
+import time
+import json
 from pathlib import Path
 from typing import Optional
 
