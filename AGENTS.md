@@ -1,105 +1,85 @@
 # 🧠 agents.md — Overview of Helper EXEs and Workflow Roles
 
-This document explains how the plant database pipeline has been modularized into standalone agents (compiled `.exe` files) and how each one contributes to the overall process. This system allows for portable, frozen distribution using PyInstaller's **onedir** mode.
+This document defines the folder layout, structure, and dependencies for running the Rutgers Plant Guide pipeline from a portable folder. Each step in the pipeline is a separate `.exe` in the `/helpers/` folder, all coordinated by a GUI launcher.
 
 ---
 
-## 🎯 Project Architecture: One Tool = One Agent
+## 🏠 Folder Structure Requirement
 
-Each tool in the workflow is converted to its own EXE via PyInstaller, and organized under the `/helpers` subdirectory.
+> **All `.exe` tools must reside in `helpers/` alongside `Launcher.exe`**.
 
-```text
-dist/
-  Launcher/
-    Launcher.exe
-    helpers/
-      PDFScraper.exe
-      GetLinks.exe
-      FillMissingData.exe
-      GeneratePDF.exe
-      Excelify2.exe
-    Static/
-    Templates/
+Correct portable layout (Windows example):
+
+```
+C:\Users\james.gliem\Desktop\RU Plant Guide\Launcher.exe
+C:\Users\james.gliem\Desktop\RU Plant Guide\helpers\Excelify2.exe
+C:\Users\james.gliem\Desktop\RU Plant Guide\helpers\FillMissingData.exe
+C:\Users\james.gliem\Desktop\RU Plant Guide\helpers\GeneratePDF.exe
+C:\Users\james.gliem\Desktop\RU Plant Guide\helpers\GetLinks.exe
+C:\Users\james.gliem\Desktop\RU Plant Guide\helpers\PDFScraper.exe
+C:\Users\james.gliem\Desktop\RU Plant Guide\Outputs\...
+C:\Users\james.gliem\Desktop\RU Plant Guide\Static\...
+C:\Users\james.gliem\Desktop\RU Plant Guide\Templates\...
 ```
 
-The `Launcher.exe` serves as the central GUI that calls each helper with its respective input/output arguments.
+---
+
+## 🚧 Agent Roles
+
+| Executable            | Role Description                                                   |
+| --------------------- | ------------------------------------------------------------------ |
+| `PDFScraper.exe`      | Extracts plant data, hyperlinks, and images from the source PDF.   |
+| `GetLinks.exe`        | Fills in MBG/Wildflower/nursery links using Chrome-based scraping. |
+| `FillMissingData.exe` | Scrapes site data (height, spread, habitats) into empty fields.    |
+| `GeneratePDF.exe`     | Builds a printable guide with TOC, plant cards, and images.        |
+| `Excelify2.exe`       | Outputs an Excel workbook with legends, links, and full metadata.  |
 
 ---
 
-## 🥉 Agent Responsibilities
+## ✨ Launcher Behavior
 
-Each EXE in the `/helpers` folder maps directly to one Python script and is responsible for a single pipeline step:
+The launcher GUI (`Launcher.exe`) provides:
 
-| EXE Name              | Role Description                                                                  |
-| --------------------- | --------------------------------------------------------------------------------- |
-| `PDFScraper.exe`      | Extracts plant data, links, and image assets from the source PDF.                 |
-| `GetLinks.exe`        | Fills in missing web links (MBG, Wildflower.org, nurseries) via browser scraping. |
-| `FillMissingData.exe` | Fills gaps in plant data using those links (height, spread, habitats, etc.).      |
-| `GeneratePDF.exe`     | Generates a printable PDF guide with TOC, plant cards, and inline images.         |
-| `Excelify2.exe`       | Exports a cleanly formatted Excel workbook with filters, legends, and links.      |
+* Input/output override per tool
+* Persistent state for prefix/suffix, folders, and master CSV
+* Image folder configuration
+* Chrome portable validation and installation guidance
+* One-click run for each EXE via subprocess
 
-All of these EXEs accept CLI arguments for input/output and behave identically whether run standalone or via the Launcher.
+All scripts resolve paths from the launcher root using `repo_dir()` internally, so frozen or source mode works identically.
 
 ---
 
-## ⚙️ The Launcher
+## 📦 Freezing Helpers
 
-The `Launcher.py` (built as `Launcher.exe`) is a CustomTkinter GUI that:
-
-* Detects whether it's running from source or frozen.
-* Routes user input to the correct agent (EXE) via subprocess.
-* Handles file I/O paths, argument passing, and runtime logging.
-* Automatically syncs with `Static/`, `Templates/`, and `Outputs/`.
-
-You can override:
-
-* Input/output paths
-* File prefixes/suffixes
-* PDF/image directories
-* Master CSVs
-  ...all from the UI before triggering a run.
-
----
-
-## 📦 How Freezing Works
-
-Each script is bundled individually using:
+Build EXEs using onefile mode:
 
 ```bash
-pyinstaller your_script.py --onefile --noconfirm --windowed
+pyinstaller Static/Python/PDFScraper.py      --onefile --noconfirm --windowed --distpath "helpers"
+pyinstaller Static/Python/GetLinks.py        --onefile --noconfirm --windowed --distpath "helpers"
+pyinstaller Static/Python/FillMissingData.py --onefile --noconfirm --windowed --distpath "helpers"
+pyinstaller Static/Python/GeneratePDF.py     --onefile --noconfirm --windowed --distpath "helpers"
+pyinstaller Static/Python/Excelify2.py       --onefile --noconfirm --windowed --distpath "helpers"
 ```
 
-The Launcher is bundled as:
+The launcher must be built in `onedir` mode:
 
 ```bash
-pyinstaller Launcher.py --onedir --noconfirm --windowed \
-  --add-data "Static;Static" \
-  --add-data "Templates;Templates" \
-  --add-data "helpers;helpers" \
+pyinstaller Launcher.py --onedir --noconfirm --windowed ^
+  --add-data "Static;Static" ^
+  --add-data "Templates;Templates" ^
+  --add-data "helpers;helpers" ^
   --icon "Static/themes/leaf.ico"
 ```
 
-> 💡 By separating each tool into its own EXE, we simplify debugging, modular reuse, and allow for partial updates without rebuilding the entire suite.
-
 ---
 
-## 🗃 Folder Layout Summary
+## 🔎 Dev Notes
 
-```text
-Templates/           ← PDF, master CSV
-Static/              ← ChromePortable, themes, pdf_images/
-helpers/             ← Onefile PyInstaller EXEs
-Outputs/             ← All generated files
-Launcher.exe         ← GUI entry point
-```
+* `Static/Python/*.py` are the source scripts for EXEs.
+* `Static/GoogleChromePortable` is required for link scraping.
+* `Templates/` holds the PDF, master CSV, and templates.
+* `Outputs/` is the target folder for generated CSVs, images, and PDFs.
+* Launcher dynamically patches subprocess arguments and watches log output live.
 
----
-
-## 🧼 Notes for Devs
-
-* All scripts use `repo_dir()` to find the root, so relative paths always resolve from the launcher.
-* If a Chrome driver is needed, place it in `Static/GoogleChromePortable/...`.
-* All missing folders are auto-created on first launch.
-* Ensure `requirements.txt` is up to date when re-freezing any EXE.
-
----
+Do **not** move helper `.exe` files outside of `/helpers/`, or the GUI launcher will fail to locate them.
