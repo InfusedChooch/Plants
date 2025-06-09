@@ -18,12 +18,11 @@ from urllib.parse import quote_plus
 
 # ─── CLI ────────────────────────────────────────────────────────────────
 parser = argparse.ArgumentParser(description="Fill missing plant site links")
-parser.add_argument("--in_csv",
-                    default="Outputs/Plants_NeedLinks.csv")        # ← moved
-parser.add_argument("--out_csv",
-                    default="Outputs/Plants_Linked.csv")           # ← moved
-parser.add_argument("--master_csv",
-                    default="Templates/Plants_Linked_Filled_Master.csv")  # ← moved
+parser.add_argument("--in_csv", default="Outputs/Plants_NeedLinks.csv")  # ← moved
+parser.add_argument("--out_csv", default="Outputs/Plants_Linked.csv")  # ← moved
+parser.add_argument(
+    "--master_csv", default="Templates/Plants_Linked_Filled_Master.csv"
+)  # ← moved
 parser.add_argument("--chromedriver", default="", help="Path to chromedriver.exe")
 parser.add_argument("--chrome_binary", default="", help="Path to chrome.exe")
 args = parser.parse_args()
@@ -32,15 +31,19 @@ args = parser.parse_args()
 from pathlib import Path
 import sys
 
-def repo_dir() -> Path:
-    """Bundle root if frozen, else repo root."""
-    if getattr(sys, "frozen", False):             # running as GetLinks.exe
-        return Path(sys.executable).resolve().parent
-    # source: Static/Python/GetLinks.py  →  repo/
-    return Path(__file__).resolve().parent.parent.parent
 
-REPO   = repo_dir()
-STATIC = REPO / "Static"          # still contains themes, GoogleChromePortable, etc.
+def repo_dir() -> Path:
+    """Return bundle root when frozen, or repo root when running from source."""
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent
+        return exe_dir.parent if exe_dir.name.lower() == "helpers" else exe_dir
+    # scripts now live directly in `Python/`
+    return Path(__file__).resolve().parent.parent
+
+
+REPO = repo_dir()
+STATIC = REPO / "Static"  # still contains themes, GoogleChromePortable, etc.
+
 
 def repo_path(arg: str | Path) -> Path:
     """
@@ -56,9 +59,10 @@ def repo_path(arg: str | Path) -> Path:
     cand = (Path(__file__).resolve().parent / p).resolve()
     return cand if cand.exists() else (REPO / p).resolve()
 
-INPUT   = repo_path(args.in_csv)         # e.g.  …/Outputs/Plants_NeedLinks.csv
-OUTPUT  = repo_path(args.out_csv)        # e.g.  …/Outputs/Plants_Linked.csv
-MASTER  = repo_path(args.master_csv)     # e.g.  …/Templates/Plants_Linked_Filled_Master.csv
+
+INPUT = repo_path(args.in_csv)  # e.g.  …/Outputs/Plants_NeedLinks.csv
+OUTPUT = repo_path(args.out_csv)  # e.g.  …/Outputs/Plants_Linked.csv
+MASTER = repo_path(args.master_csv)  # e.g.  …/Templates/Plants_Linked_Filled_Master.csv
 
 # first run from a fresh flash-drive: make sure Outputs exists
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
@@ -248,7 +252,6 @@ def find_driver() -> Path:
         "Put one in Static\\Python or rely on the copy under "
         "Static\\GoogleChromePortable\\App\\Chrome-bin\\<version>\\"
     )
-
 
 
 CHROME_EXE = find_chrome()

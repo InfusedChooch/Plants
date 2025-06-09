@@ -15,21 +15,30 @@ from tqdm import tqdm
 # ─── CLI ──────────────────────────────────────────────────────────────────
 def parse_cli_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Fill missing plant fields using MBG/WF")
-    p.add_argument("--in_csv",    default="Outputs/Plants_Linked.csv",           help="Input CSV")
-    p.add_argument("--out_csv",   default="Outputs/Plants_Linked_Filled.csv",    help="Output CSV")
-    p.add_argument("--master_csv",default="Templates/Plants_Linked_Filled_Master.csv",
-                   help="Column template CSV")
+    p.add_argument("--in_csv", default="Outputs/Plants_Linked.csv", help="Input CSV")
+    p.add_argument(
+        "--out_csv", default="Outputs/Plants_Linked_Filled.csv", help="Output CSV"
+    )
+    p.add_argument(
+        "--master_csv",
+        default="Templates/Plants_Linked_Filled_Master.csv",
+        help="Column template CSV",
+    )
     return p.parse_args(argv)
 
 
 args = parse_cli_args()
 
+
 # ─── Path helpers ─────────────────────────────────────────────────────────
 def repo_dir() -> Path:
-    """Return bundle root when frozen or repo root when running from source."""
-    if getattr(sys, "frozen", False):          # running as helper EXE
-        return Path(sys.executable).resolve().parent
-    return Path(__file__).resolve().parent.parent.parent   # Static/Python/ → repo
+    """Return bundle root when frozen, or repo root when running from source."""
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent
+        return exe_dir.parent if exe_dir.name.lower() == "helpers" else exe_dir
+    # scripts live in `Python/` at repo root
+    return Path(__file__).resolve().parent.parent
+
 
 REPO = repo_dir()
 
@@ -50,8 +59,8 @@ def repo_path(arg: str | Path) -> Path:
     return cand if cand.exists() else (REPO / p).resolve()
 
 
-IN_CSV     = repo_path(args.in_csv)
-OUT_CSV    = repo_path(args.out_csv)
+IN_CSV = repo_path(args.in_csv)
+OUT_CSV = repo_path(args.out_csv)
 MASTER_CSV = repo_path(args.master_csv)
 
 # auto-create Outputs the first time the helper runs from a fresh flash drive

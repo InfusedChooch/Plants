@@ -16,7 +16,7 @@ import black
 parser = argparse.ArgumentParser(description="Export formatted Excel from CSV")
 parser.add_argument(
     "--in_csv",
-    default="Outputs/Plants_Linked_Filled.csv",          # ← moved
+    default="Outputs/Plants_Linked_Filled.csv",  # ← moved
     help="Input CSV file with filled data",
 )
 parser.add_argument(
@@ -26,7 +26,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--template_csv",
-    default="Templates/Plants_Linked_Filled_Master.csv", # ← moved
+    default="Templates/Plants_Linked_Filled_Master.csv",  # ← moved
     help="CSV file containing column template",
 )
 args = parser.parse_args()
@@ -35,15 +35,17 @@ args = parser.parse_args()
 # ─── Path helpers ─────────────────────────────────────────────────────────
 def repo_dir() -> Path:
     """Folder that contains the helper EXE (frozen) or repo root (source)."""
-    if getattr(sys, "frozen", False):          # running as a PyInstaller exe
-        return Path(sys.executable).resolve().parent
-    return Path(__file__).resolve().parent.parent.parent  # Static/Python/ → repo
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent
+        return exe_dir.parent if exe_dir.name.lower() == "helpers" else exe_dir
+    # Python scripts live two levels below the repo root
+    return Path(__file__).resolve().parent.parent
 
 
 REPO = repo_dir()
-CSV_FILE      = (REPO / args.in_csv).resolve()
-XLSX_FILE     = (REPO / args.out_xlsx).resolve()
-TEMPLATE_CSV  = (REPO / args.template_csv).resolve()
+CSV_FILE = (REPO / args.in_csv).resolve()
+XLSX_FILE = (REPO / args.out_xlsx).resolve()
+TEMPLATE_CSV = (REPO / args.template_csv).resolve()
 
 # ensure the Outputs folder exists when running on a flash-drive
 XLSX_FILE.parent.mkdir(parents=True, exist_ok=True)
