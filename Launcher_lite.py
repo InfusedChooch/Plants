@@ -164,7 +164,7 @@ for r, (label, var, cmd) in enumerate(
     ctk.CTkEntry(hdr, textvariable=var, width=430).grid(row=r, column=1, padx=4)
     ctk.CTkButton(hdr, text="Browse", command=cmd).grid(row=r, column=2)
 
-ctk.CTkButton(hdr, text="Get Chrome Portable", width=160,
+ctk.CTkButton(hdr, text="Get Chrome Portable (Not for Lite)", width=160,
               command=open_chrome_portable).grid(row=5, column=1, sticky="w", padx=4, pady=4)
 
 # ── Tabs & tool rows ──────────────────────────────────────────────────────
