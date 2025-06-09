@@ -18,14 +18,10 @@ dist\
    ├─ _internal\
    │  ├─ helpers\                 ← compiled helper tools
    │  │  ├─ PDFScraper.exe
-   │  │  ├─ GetLinks.exe
-   │  │  ├─ FillMissingData.exe
    │  │  ├─ GeneratePDF.exe
    │  │  └─ Excelify2.exe
    │  └─ Static\                  ← runtime assets
    │     ├─ themes\rutgers.json
-   │     ├─ GoogleChromePortable\...
-   │     └─ Python\chromedriver.exe
    ├─ Outputs\                    ← created at runtime
    │  ├─ pdf_images\
    │  │  ├─ 001_*.png
@@ -47,7 +43,7 @@ dist\
 
 ```powershell
 # build_helpers.ps1  – run from repo root
-$helpers = "PDFScraper.py","GetLinks.py","FillMissingData.py","GeneratePDF.py","Excelify2.py"
+$helpers = "PDFScraper.py","GeneratePDF.py","Excelify2.py"
 $dest    = "dist/Launcher/_internal/helpers"
 foreach ($h in $helpers) {
     pyinstaller "Python/$h" --onefile --noconfirm --windowed `

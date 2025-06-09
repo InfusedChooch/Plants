@@ -1,35 +1,40 @@
-# Plant Guide Toolchain
+# Plant Guide Toolchain (Lite Edition)
 
-This repository contains a set of helper scripts and a simple GUI for processing
-PDF plant guides into CSV, PDF and Excel outputs. The scripts can be run
-directly with Python or packaged into executables using PyInstaller.
+This branch is a simplified version of the full Plant Guide toolchain. It is designed for users who already have a **master list** of plants and want to generate reviewable and printable outputs.
+
+## Features in this Version
+
+✅ **PDF Scraper**: Still available to extract plant data from a guide PDF.
+
+✅ **Generate PDF**: Creates a printable plant guide with sections, photos, and formatting.
+
+✅ **Export to Excel**: Produces a styled Excel file with filters, highlights, and version notes.
+
+🚫 **Find Links (GetLinks.py)**: **Removed** in this branch. It is assumed your master list already contains necessary links.
+
+🚫 **Fill Missing Data (FillMissingData.py)**: **Removed** in this branch. No online enrichment is performed.
+
+---
 
 ## Prerequisites
 
 * **Python** 3.10 or higher
 * `pip` for installing packages
-* Google Chrome and a matching `chromedriver` (required by `GetLinks.py` when
-  automated browsing is needed)
-* Python dependencies from `requirements.txt`:
-
-```
-$(cat requirements.txt)
-```
-
-Install them with:
+* Python dependencies from `requirements.txt`
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Running the Helper Scripts
+---
 
-Each script lives under `Static/Python/` and has sensible defaults so it can be
-run directly from the repository root.
+## Available Scripts
+
+Each script can be run from the command line or through the included GUI launcher.
 
 ### PDFScraper
 
-Extracts plant data and images from `Templates/Plant Guide 2025 Update.pdf`.
+Extract plant names and images from a source PDF.
 
 ```bash
 python Static/Python/PDFScraper.py \
@@ -39,35 +44,9 @@ python Static/Python/PDFScraper.py \
     --map_csv Outputs/image_map.csv
 ```
 
-### GetLinks
-
-Looks up missing plant links. Chrome will only be launched when needed.
-Specify the location of `chromedriver.exe` and `chrome.exe` when not detected
-automatically.
-
-```bash
-python Static/Python/GetLinks.py \
-    --in_csv Outputs/Plants_NeedLinks.csv \
-    --out_csv Outputs/Plants_Linked.csv \
-    --master_csv Templates/Plants_Linked_Filled_Master.csv \
-    --chromedriver /path/to/chromedriver.exe \
-    --chrome_binary /path/to/chrome.exe
-```
-
-### FillMissingData
-
-Fills numeric fields and habitat descriptions from online resources.
-
-```bash
-python Static/Python/FillMissingData.py \
-    --in_csv Outputs/Plants_Linked.csv \
-    --out_csv Outputs/Plants_Linked_Filled.csv \
-    --master_csv Templates/Plants_Linked_Filled_Master.csv
-```
-
 ### GeneratePDF
 
-Creates a printable guide PDF from the filled CSV.
+Generate a styled PDF from your filled CSV and images.
 
 ```bash
 python Static/Python/GeneratePDF.py \
@@ -79,7 +58,7 @@ python Static/Python/GeneratePDF.py \
 
 ### Excelify2
 
-Exports a styled Excel workbook for review.
+Export a formatted Excel workbook for easy filtering and review.
 
 ```bash
 python Static/Python/Excelify2.py \
@@ -88,61 +67,76 @@ python Static/Python/Excelify2.py \
     --template_csv Templates/Plants_Linked_Filled_Master.csv
 ```
 
-### GUI Launcher
+### Launcher GUI
 
-For a simple GUI workflow run:
+Provides a simple GUI interface for the tools above:
 
 ```bash
 python Launcher.py
 ```
 
-## Building Executables
+---
 
-Install PyInstaller (already listed in `requirements.txt`) and run the following
-from the repository root. The helpers are placed in `helpers/` and the launcher
-at the repository root.
+## Building Executables (Optional)
+
+If you'd like to build standalone executables using PyInstaller:
 
 ```bash
 pyinstaller --onefile --distpath helpers Static/Python/PDFScraper.py
-pyinstaller --onefile --distpath helpers Static/Python/GetLinks.py
-pyinstaller --onefile --distpath helpers Static/Python/FillMissingData.py
 pyinstaller --onefile --distpath helpers Static/Python/GeneratePDF.py
 pyinstaller --onefile --distpath helpers Static/Python/Excelify2.py
-pyinstaller Launcher.py --onedir --noconfirm --windowed `
-  --add-data "Static;Static" `
-  --add-data "Templates;Templates" `
-  --add-data "helpers;helpers" `
+
+pyinstaller Launcher.py --onedir --noconfirm --windowed \
+  --add-data "Static;Static" \
+  --add-data "Templates;Templates" \
+  --add-data "helpers;helpers" \
   --icon "Static/themes/leaf.ico"
 ```
 
-## Verifying the Toolchain
+---
 
-Before packaging, ensure each step works with the provided sample files:
+## Folder Layout
 
-1. Run `PDFScraper.py` and confirm that `Outputs/Plants_NeedLinks.csv` and
-   extracted images appear.
-2. Run `GetLinks.py` to populate URLs in the CSV.
-3. Run `FillMissingData.py` and verify the filled CSV is created.
-4. Run `GeneratePDF.py` and check that the resulting PDF opens correctly.
-5. Run `Excelify2.py` to produce the review spreadsheet.
-6. Optionally launch `Launcher.py` and walk through the steps via the GUI.
+```
+├── Launcher.py
+├── Static/
+│   └── Python/
+│       ├── PDFScraper.py
+│       ├── GeneratePDF.py
+│       └── Excelify2.py
+├── Templates/
+│   └── Plants_Linked_Filled_Master.csv
+│   └── Plant Guide 2025 Update.pdf
+│   └── MASTER_MASTER_20250605.csv
+├── Outputs/
+│   ├── Plants_Linked_Filled.csv
+│   ├── Plant_Guide_EXPORT.pdf
+│   └── Plants_Linked_Filled_Review.xlsx
+```
 
-If each script succeeds with the defaults, the toolchain is ready to package
-with PyInstaller.
+## EXE Folder Layout
+
+```
+RU Plant Guide/
+├── Launcher.exe                     # <- main GUI
+├── _internal/
+│   ├── Static/
+│   │   └── themes/
+│   │       └── leaf.ico
+│   ├── Templates/
+│   │   ├── Plants_Linked_Filled_Master.csv
+│   │   ├── Plant Guide 2025 Update.pdf
+│   │   └── MASTER_MASTER_20250605.csv
+│   ├── helpers/
+│   │   ├── PDFScraper.exe
+│   │   ├── GeneratePDF.exe
+│   │   └── Excelify2.exe
+├── Outputs/
+│   ├── pdf_images/
+│   ├── Plants_Linked_Filled.csv
+│   ├── Plant_Guide_EXPORT.pdf
+│   └── Plants_Linked_Filled_Review.xlsx
+```
 
 
-Most recent run was complied with
-
-$dist="dist\Launcher\_internal\helpers"
-pyinstaller Python\PDFScraper.py     --onefile --noconfirm --windowed --add-data "Static;Static" --add-data "Static\Templates;Static\Templates" --icon Static\themes\leaf.ico --distpath $dist
-pyinstaller Python\GetLinks.py       --onefile --noconfirm --windowed --add-data "Static;Static" --distpath $dist
-pyinstaller Python\FillMissingData.py --onefile --noconfirm --windowed --add-data "Static;Static" --distpath $dist
-pyinstaller Python\GeneratePDF.py     --onefile --noconfirm --windowed --add-data "Static;Static" --add-data "Static\Templates;Static\Templates" --distpath $dist
-pyinstaller Python\Excelify2.py       --onefile --noconfirm --windowed --add-data "Static;Static" --distpath $dist
-
-
-pyinstaller Launcher.py --onedir --noconfirm --windowed `
-    --icon "Static\themes\leaf.ico" `
-    --add-data "Static;Static" `
-    --add-data "Static\Templates;Static\Templates" `
-    --distpath "dist"         # → dist\Launcher\…
+This Lite version assumes your CSV is already prepared. If you need help generating it from scratch, refer to the full toolchain branch.
