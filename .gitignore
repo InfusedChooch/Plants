@@ -7,8 +7,9 @@ Static/GoogleChromePortable/
 # Ignore compiled Python files
 __pycache__/
 *.pyc
-dist/
 build
+dist/Launcher 1.0/_internal/
+dist/Launcher 1.0/Outputs/pdf_images/jpeg
 # Ignore environment and IDE settings
 .venv/
 .vscode/
