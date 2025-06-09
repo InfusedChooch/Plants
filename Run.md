@@ -43,14 +43,15 @@ dist\
 ## 3. Build Steps
 
 ### 3.1  Compile helper executables
+.\.venv\Scripts\Activate.ps1
 
 ```powershell
 # build_helpers.ps1  – run from repo root
 $helpers = "PDFScraper.py","GetLinks.py","FillMissingData.py","GeneratePDF.py","Excelify2.py"
 $dest    = "dist/Launcher/_internal/helpers"
 foreach ($h in $helpers) {
-    pyinstaller "Python/$h" --onefile --noconfirm --windowed \`
-        --add-data "Static;Static" \`
+    pyinstaller "Python/$h" --onefile --noconfirm --windowed `
+        --add-data "Static;Static" `
         --distpath  $dest
 }
 ```
@@ -58,13 +59,13 @@ foreach ($h in $helpers) {
 ### 3.2  Compile the launcher (onedir)
 
 ```powershell
-pyinstaller Launcher.py --onedir --noconfirm --windowed ^
-    --name Launcher ^                            # folder & exe name
-    --icon "Static/themes/leaf.ico" ^
-    --add-data "Static;_internal/Static" ^
-    --add-data "Static/Templates;Templates" ^
-    --add-data "Static/Outputs;Outputs" ^
+pyinstaller Launcher.py --onedir --noconfirm --windowed --name Launcher `
+    --icon "Static/themes/leaf.ico" `
+    --add-data "Static;_internal/Static" `
+    --add-data "Static/Templates;Templates" `
+    --add-data "Static/Outputs;Outputs" `
     --distpath "dist"
+
 ```
 
 > **Hint:** run *3.1* first so PyInstaller scoops the helpers automatically.
