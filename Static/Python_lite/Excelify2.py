@@ -203,11 +203,11 @@ readme["A18"] = "Static/GoogleChromePortable"
 
 # --- Step 6: Script Version Info ------------------------------------------
 script_descriptions = {
-    "Static/Python/PDFScraper.py": "Extracts plant data from the PDF guide",
-    "Static/Python/GetLinks.py": "Finds official MBG & WF URLs for each plant",
-    "Static/Python/FillMissingData.py": "Populates missing fields using those links",
-    "Static/Python/GeneratePDF.py": "Creates printable PDF guide with images and sections",
-    "Static/Python/Excelify2.py": "Creates formatted Excel output with filters & highlights",
+    "Static/Python_full/PDFScraper.py": "Extracts plant data from the PDF guide",
+    "Static/Python_full/GetLinks.py": "Finds official MBG & WF URLs for each plant",
+    "Static/Python_full/FillMissingData.py": "Populates missing fields using those links",
+    "Static/Python_full/GeneratePDF.py": "Creates printable PDF guide with images and sections",
+    "Static/Python_full/Excelify2.py": "Creates formatted Excel output with filters & highlights",
 }
 row_start = readme.max_row + 2
 readme[f"A{row_start}"] = "Folder: Script Version Info (Last Modified):"

@@ -1,15 +1,10 @@
-  pandas
-  openpyxl
-  black
-  requests
-  beautifulsoup4
-  lxml
-  tqdm
-  pillow
-  fpdf2
-  pdfplumber
-  pymupdf
-  selenium
-  customtkinter
-
-  pyinstaller
+pandas
+openpyxl
+black
+tqdm
+pillow
+fpdf2
+pdfplumber
+pymupdf
+customtkinter
+pyinstaller

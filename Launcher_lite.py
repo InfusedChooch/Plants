@@ -27,7 +27,7 @@ def prefer(*candidates: Path) -> Path:
 
 HELPERS = prefer(INTERNAL / "helpers", BASE / "helpers")
 STATIC  = prefer(INTERNAL / "Static",  BASE / "Static")
-SCRIPTS = prefer(BASE / "Python", STATIC / "Python")                             # dev-only
+SCRIPTS = prefer(BASE / "Static" / "Python_lite", STATIC / "Python_lite")                            # dev-only
 TEMPL   = prefer(BASE / "Templates",  STATIC / "Templates")
 OUTDEF  = prefer(BASE / "Outputs",    STATIC / "Outputs")
 OUTDEF.mkdir(exist_ok=True, parents=True)
