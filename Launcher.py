@@ -1,50 +1,40 @@
 #!/usr/bin/env python3
-# Launcher.py - CTk GUI for the plant-database tool-chain (2025-06-05, portable one-dir)
+# Launcher.py – CTk GUI for the plant-database tool-chain
+# 2025-06-09  Fix console spacing + auto-update input paths when output folder changes
 
 import sys, subprocess, threading, queue, customtkinter as ctk
 from tkinter import filedialog
-import webbrowser
 from pathlib import Path
 from datetime import datetime
+import webbrowser
 
-
-# --- Locate the bundle root ----------------------------------------------
-from pathlib import Path
-import sys
-
+# ─── Locate bundle root ──────────────────────────────────────────────────
 def repo_dir() -> Path:
-    """Return the app root whether running from source or PyInstaller (onedir)."""
-    if getattr(sys, "frozen", False):
-        return Path(sys.executable).resolve().parent  # [OK] works in one-dir
-    return Path(__file__).resolve().parent
+    """Return application root whether running from source or PyInstaller."""
+    if getattr(sys, "frozen", False):                       # one-dir build
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent                  # source checkout
 
 
+REPO     = repo_dir()
+HELPERS  = REPO / "helpers"
+STATIC   = REPO / "Static"          # themes & Python helpers
+SCRIPTS  = STATIC / "Python"
+TEMPL    = REPO / "Templates"
+OUTDEF   = REPO / "Outputs"
+OUTDEF.mkdir(exist_ok=True)
 
-REPO   = repo_dir()                 # <-- new single source of truth
-HELPERS = REPO / "helpers"          
-STATIC = REPO / "Static"            # scripts & themes stay here
-
-# --- Appearance ----------------------------------------------------------
+# ─── Appearance ──────────────────────────────────────────────────────────
 ctk.set_appearance_mode("dark")
-THEME = STATIC / "themes" / "rutgers.json"
-ctk.set_default_color_theme(str(THEME))
+ctk.set_default_color_theme(str(STATIC / "themes" / "rutgers.json"))
 
-# --- Paths used throughout the GUI ---------------------------------------
-SCRIPTS = STATIC / "Python"         # original .py sources (used when *not* frozen)
-TEMPL   = REPO / "Templates"        # <-- moved out of Static
-OUTDEF  = REPO / "Outputs"          # <-- moved out of Static
-OUTDEF.mkdir(exist_ok=True)         # create on first launch
-
-today   = datetime.now().strftime("%Y%m%d")
-
-# --- Tool Config ---------------------------------------------------------
+# ─── Tool definitions (script, in-flag, out-flag, default-IN, stem, ext) ─
 TOOLS = [
-    # script           in-flag      out-flag     default-IN                         stem                     ext
-    ("PDFScraper.py",  "--in_pdf",  "--out_csv", "Templates/Plant Guide 2025 Update.pdf", "Plants_NeedLinks",      ".csv"),
-    ("GetLinks.py",    "--in_csv",  "--out_csv", "Outputs/Plants_NeedLinks.csv",        "Plants_Linked",          ".csv"),
-    ("FillMissingData.py","--in_csv","--out_csv","Outputs/Plants_Linked.csv",           "Plants_Linked_Filled",   ".csv"),
-    ("GeneratePDF.py", "--in_csv",  "--out_pdf", "Outputs/Plants_Linked_Filled.csv",    "Plant_Guide_EXPORT",     ".pdf"),
-    ("Excelify2.py",   "--in_csv",  "--out_xlsx","Outputs/Plants_Linked_Filled.csv",    "Plants_Linked_Filled_Review",".xlsx"),
+    ("PDFScraper.py",     "--in_pdf",  "--out_csv", "Templates/Plant Guide 2025 Update.pdf", "Plants_NeedLinks",                ".csv"),
+    ("GetLinks.py",       "--in_csv",  "--out_csv", "Outputs/Plants_NeedLinks.csv",            "Plants_Linked",                  ".csv"),
+    ("FillMissingData.py","--in_csv",  "--out_csv", "Outputs/Plants_Linked.csv",               "Plants_Linked_Filled",           ".csv"),
+    ("GeneratePDF.py",    "--in_csv",  "--out_pdf", "Outputs/Plants_Linked_Filled.csv",        "Plant_Guide_EXPORT",             ".pdf"),
+    ("Excelify2.py",      "--in_csv",  "--out_xlsx","Outputs/Plants_Linked_Filled.csv",        "Plants_Linked_Filled_Review",    ".xlsx"),
 ]
 
 TAB_MAP = {
@@ -54,7 +44,6 @@ TAB_MAP = {
     "GeneratePDF.py": "export",
     "Excelify2.py": "export",
 }
-
 LABEL_OVERRIDES = {
     "PDFScraper.py": "Extract from PDF",
     "GetLinks.py": "Get Plant Links",
@@ -63,314 +52,248 @@ LABEL_OVERRIDES = {
     "Excelify2.py": "Export to Excel",
 }
 
-
-# --- Utility -------------------------------------------------------------
+# ─── Utility helpers ─────────────────────────────────────────────────────
 def pretty(flag: str) -> str:
     return f"{'Input' if flag.startswith('--in_') else 'Output'} {flag.split('_',1)[1].upper()}"
 
-
 def ftypes(flag: str):
-    return (
-        [("PDF", "*.pdf")] if "pdf" in flag else [("CSV", "*.csv"), ("Excel", "*.xlsx")]
-    )
+    return [("PDF", "*.pdf")] if "pdf" in flag else [("CSV", "*.csv"), ("Excel", "*.xlsx")]
 
-
-# --- GUI ROOT ------------------------------------------------------------
+# ─── GUI ROOT ────────────────────────────────────────────────────────────
 app = ctk.CTk()
 app.title(" Rutgers Plant Launcher")
 app.geometry("860x760")
 
-# --- Global Vars ---------------------------------------------------------
-out_dir_var = ctk.StringVar(value=str(OUTDEF))
-pre_var = ctk.StringVar(value=f"{today}_")
-suf_var = ctk.StringVar(value="")
-img_dir_var = ctk.StringVar(value=str(OUTDEF / "pdf_images"))
-guide_pdf_var = ctk.StringVar(value=str(TEMPL / "Plant Guide 2025 Update.pdf"))
+# ─── Global state vars ───────────────────────────────────────────────────
+today          = datetime.now().strftime("%Y%m%d")
+out_dir_var    = ctk.StringVar(value=str(OUTDEF))
+pre_var        = ctk.StringVar(value=f"{today}_")
+suf_var        = ctk.StringVar(value="")
+img_dir_var    = ctk.StringVar(value=str(OUTDEF / "pdf_images"))
+guide_pdf_var  = ctk.StringVar(value=str(TEMPL / "Plant Guide 2025 Update.pdf"))
 master_csv_var = ctk.StringVar(value=str(TEMPL / "Plants_Linked_Filled_Master.csv"))
-_img_user_set = False
+_img_user_set  = False
+_prev_out_dir  = out_dir_var.get()   # track last output dir for path-rewrite
 
-log_q: queue.Queue[str] = queue.Queue(maxsize=500)
-in_vars: dict[tuple[str, str], ctk.StringVar] = {}
-status_lbl: dict[str, ctk.CTkLabel] = {}
-out_widgets: list[tuple] = []
+log_q          : queue.Queue[str]            = queue.Queue(maxsize=800)
+in_vars        : dict[tuple[str,str],ctk.StringVar] = {}
+status_lbl     : dict[str,ctk.CTkLabel]      = {}
+out_widgets    : list[tuple]                 = []
 
-# --- Top Controls --------------------------------------------------------
+# ─── Top controls (folder / prefix / master paths) ───────────────────────
 hdr = ctk.CTkFrame(app)
 hdr.pack(fill="x", padx=15, pady=10)
 
-
-def refresh_out_labels():
-    """Update output labels to reflect current folder, prefix and suffix."""
-
+def refresh_out_labels() -> None:
+    """Update all *output* path previews."""
     for _, lbl, stem, ext in out_widgets:
         lbl.configure(
-            text=str(
-                Path(out_dir_var.get()) / f"{pre_var.get()}{stem}{suf_var.get()}{ext}"
-            )
+            text=str(Path(out_dir_var.get()) / f"{pre_var.get()}{stem}{suf_var.get()}{ext}")
         )
 
+def _rewrite_inputs_for_new_folder(new_folder: str) -> None:
+    """Whenever the output folder changes, rewrite any INPUT path that
+    still lives in the old folder so it follows along automatically."""
+    global _prev_out_dir
+    for (script, flag), var in in_vars.items():
+        cur = Path(var.get())
+        if cur.is_absolute() and str(cur).startswith(_prev_out_dir):
+            # Keep the filename part (incl. prefix/suffix) but move under new_folder
+            var.set(str(Path(new_folder) / cur.name))
+    _prev_out_dir = new_folder
 
-def browse_output():
-    """Prompt for an output directory and refresh file previews."""
-
+def browse_output() -> None:
     folder = filedialog.askdirectory(initialdir=out_dir_var.get())
     if folder:
         out_dir_var.set(folder)
+        _rewrite_inputs_for_new_folder(folder)
         global _img_user_set
         if not _img_user_set:
             img_dir_var.set(str(Path(folder) / "pdf_images"))
         refresh_out_labels()
 
-
-def browse_img():
-    """Prompt for a directory to store scraped images."""
-
+def browse_img() -> None:
     folder = filedialog.askdirectory(initialdir=img_dir_var.get())
     if folder:
         img_dir_var.set(folder)
         global _img_user_set
         _img_user_set = True
 
+def browse_pdf() -> None:
+    f = filedialog.askopenfilename(initialdir=Path(guide_pdf_var.get()).parent, filetypes=[("PDF","*.pdf")])
+    if f: guide_pdf_var.set(f)
 
-def browse_pdf():
-    """Prompt for the guide PDF file."""
+def browse_master() -> None:
+    f = filedialog.askopenfilename(initialdir=Path(master_csv_var.get()).parent, filetypes=[("CSV","*.csv")])
+    if f: master_csv_var.set(f)
 
-    f = filedialog.askopenfilename(
-        initialdir=Path(guide_pdf_var.get()).parent, filetypes=[("PDF", "*.pdf")]
-    )
-    if f:
-        guide_pdf_var.set(f)
+def open_chrome_portable() -> None:
+    webbrowser.open("https://portableapps.com/apps/internet/google_chrome_portable", new=1)
 
-
-def browse_master():
-    """Prompt for the master CSV file."""
-
-    f = filedialog.askopenfilename(
-        initialdir=Path(master_csv_var.get()).parent, filetypes=[("CSV", "*.csv")]
-    )
-    if f:
-        master_csv_var.set(f)
-
-
-def open_chrome_portable():
-    webbrowser.open(
-        "https://portableapps.com/apps/internet/google_chrome_portable",
-        new=1,
-    )
-
-
-# Output folder
-ctk.CTkLabel(hdr, text="Output folder:").grid(
-    row=0, column=0, sticky="e", padx=4, pady=4
-)
+# Output folder row
+ctk.CTkLabel(hdr, text="Output folder:").grid(row=0, column=0, sticky="e", padx=4, pady=4)
 ctk.CTkEntry(hdr, textvariable=out_dir_var, width=430).grid(row=0, column=1, padx=4)
 ctk.CTkButton(hdr, text="Browse", command=browse_output).grid(row=0, column=2)
 
-# Prefix/Suffix row
+# Prefix / suffix
 name_box = ctk.CTkFrame(hdr)
 name_box.grid(row=1, column=0, columnspan=3, sticky="w", padx=4, pady=4)
-ctk.CTkLabel(name_box, text="File-name prefix:").pack(side="left", padx=(0, 4))
-ctk.CTkEntry(name_box, textvariable=pre_var, width=120).pack(side="left", padx=(0, 12))
-ctk.CTkLabel(name_box, text="File-name suffix:").pack(side="left", padx=(0, 4))
+ctk.CTkLabel(name_box, text="File-name prefix:").pack(side="left", padx=(0,4))
+ctk.CTkEntry(name_box, textvariable=pre_var, width=120).pack(side="left", padx=(0,12))
+ctk.CTkLabel(name_box, text="File-name suffix:").pack(side="left", padx=(0,4))
 ctk.CTkEntry(name_box, textvariable=suf_var, width=120).pack(side="left")
-pre_var.trace_add("write", lambda *a: refresh_out_labels())
-suf_var.trace_add("write", lambda *a: refresh_out_labels())
+for v in (pre_var, suf_var):
+    v.trace_add("write", lambda *_: refresh_out_labels())
 
-# Image folder
-ctk.CTkLabel(hdr, text="Image folder:").grid(
-    row=2, column=0, sticky="e", padx=4, pady=4
+# Image dir / guide PDF / master CSV rows
+for r, (label, var, cmd) in enumerate(
+    [("Image folder:", img_dir_var, browse_img),
+     ("Guide PDF:",    guide_pdf_var, browse_pdf),
+     ("Master CSV:",   master_csv_var, browse_master)],
+    start=2
+):
+    ctk.CTkLabel(hdr, text=label).grid(row=r, column=0, sticky="e", padx=4, pady=4)
+    ctk.CTkEntry(hdr, textvariable=var, width=430).grid(row=r, column=1, padx=4)
+    ctk.CTkButton(hdr, text="Browse", command=cmd).grid(row=r, column=2)
+
+# Chrome portable helper
+ctk.CTkButton(hdr, text="Get Chrome Portable", width=160, command=open_chrome_portable).grid(
+    row=5, column=1, sticky="w", padx=4, pady=4
 )
-ctk.CTkEntry(hdr, textvariable=img_dir_var, width=430).grid(row=2, column=1, padx=4)
-ctk.CTkButton(hdr, text="Browse", command=browse_img).grid(row=2, column=2)
 
-# Guide PDF
-ctk.CTkLabel(hdr, text="Guide PDF:").grid(row=3, column=0, sticky="e", padx=4, pady=4)
-ctk.CTkEntry(hdr, textvariable=guide_pdf_var, width=430).grid(row=3, column=1, padx=4)
-ctk.CTkButton(hdr, text="Browse", command=browse_pdf).grid(row=3, column=2)
-
-# Master CSV
-ctk.CTkLabel(hdr, text="Master CSV:").grid(row=4, column=0, sticky="e", padx=4, pady=4)
-ctk.CTkEntry(hdr, textvariable=master_csv_var, width=430).grid(row=4, column=1, padx=4)
-ctk.CTkButton(hdr, text="Browse", command=browse_master).grid(row=4, column=2)
-
-# Chrome Portable link
-ctk.CTkButton(
-    hdr,
-    text="Get Chrome Portable",
-    width=160,
-    command=open_chrome_portable,
-).grid(row=5, column=1, padx=4, pady=4, sticky="w")
-
-# --- Tabs & Tool Rows ---------------------------------------------------
-tabs = ctk.CTkTabview(app)
-tabs.pack(fill="both", padx=15, pady=6, expand=True)
-export_tab = tabs.add("Export")
+# ─── Tabs & tool rows ────────────────────────────────────────────────────
+tabs        = ctk.CTkTabview(app)
 builder_tab = tabs.add("Builder")
+export_tab  = tabs.add("Export")
+tabs.pack(fill="both", padx=15, pady=(0,6), expand=True)
 
-
-b_body = ctk.CTkScrollableFrame(builder_tab, height=420)
-b_body.pack(fill="both", expand=True)
-e_body = ctk.CTkScrollableFrame(export_tab, height=420)
-e_body.pack(fill="both", expand=True)
-
+b_body = ctk.CTkScrollableFrame(builder_tab, height=420) ; b_body.pack(fill="both", expand=True)
+e_body = ctk.CTkScrollableFrame(export_tab,  height=420) ; e_body.pack(fill="both", expand=True)
 
 def choose_input(var: ctk.StringVar, flag: str):
-    """Ask for an input file and update the provided variable."""
-
     f = filedialog.askopenfilename(initialdir=TEMPL, filetypes=ftypes(flag))
-    if f:
-        var.set(f)
-
+    if f: var.set(f)
 
 def run_tool(script, in_flag, out_flag, stem, ext):
-    """Execute one of the pipeline scripts in a background thread."""
-
-    # -- 1. Resolve input path --------------------------------------------
+    """Spawn a helper exe (or python script) in a background thread."""
+    # 1. resolve input
     if script == "PDFScraper.py":
         inp = guide_pdf_var.get().strip()
     else:
         inp = in_vars[(script, in_flag)].get().strip()
 
+    # attempt to auto-guess missing input under current output dir
+    if (not inp or not Path(inp).exists()) and in_flag.startswith("--in_"):
+        guess = Path(out_dir_var.get()) / f"{pre_var.get()}{Path(inp).name}"
+        if guess.exists():
+            inp, in_vars[(script, in_flag)].set(str(guess))
+
     if not inp or not Path(inp).exists():
         status_lbl[script].configure(text="[ERROR] input missing", text_color="red")
         return
 
-    # -- 2. Build output path ---------------------------------------------
-    out_path = (
-        Path(out_dir_var.get()) /
-        f"{pre_var.get()}{stem}{suf_var.get()}{ext}"
-    )
+    # 2. build output
+    out_path = Path(out_dir_var.get()) / f"{pre_var.get()}{stem}{suf_var.get()}{ext}"
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # -- 3. Choose interpreter / helper EXE -------------------------------
+    # 3. interpreter / helper selection
     if getattr(sys, "frozen", False):
-        helper_exe = HELPERS / f"{script[:-3]}.exe"  # helpers\PDFScraper.exe ...
-        print(f"[debug] Expecting helper at: {helper_exe}")
-        log_q.put(f"[debug] Expecting helper at: {helper_exe}\n")
-
-        if not helper_exe.exists():
+        exe = HELPERS / f"{script[:-3]}.exe"
+        if not exe.exists():
             status_lbl[script].configure(text="[ERROR] helper missing", text_color="red")
             return
-        cmd = [
-            str(helper_exe),
-            in_flag, inp,
-            out_flag, str(out_path),
-        ]
-    else:  # running from source -> use python
-        cmd = [
-            sys.executable,
-            str(SCRIPTS / script),
-            in_flag, inp,
-            out_flag, str(out_path),
-        ]
+        cmd = [str(exe), in_flag, inp, out_flag, str(out_path)]
+    else:
+        cmd = [sys.executable, str(SCRIPTS / script), in_flag, inp, out_flag, str(out_path)]
 
-    # -- 4. Add script-specific extra flags -------------------------------
+    # 4. extra flags
     if script in {"GetLinks.py", "FillMissingData.py"}:
         cmd += ["--master_csv", master_csv_var.get()]
-
     if script in {"GeneratePDF.py", "PDFScraper.py"}:
         cmd += ["--img_dir", img_dir_var.get()]
         if script == "PDFScraper.py":
-            cmd += [
-                "--map_csv",
-                str(Path(img_dir_var.get()).parent / "image_map.csv"),
-            ]
+            cmd += ["--map_csv", str(Path(img_dir_var.get()).parent / "image_map.csv")]
 
-    # -- 5. Spawn in a background thread & stream output -----------------
+    # 5. thread worker
     def worker():
         lbl = status_lbl[script]
-        lbl.configure(text="running... running...", text_color="yellow")
-        log_q.put(f"\n\nRun {' '.join(cmd)}\n")
+        lbl.configure(text="running…", text_color="yellow")
+        log_q.put(f"\n> {' '.join(cmd)}\n")
         try:
-            with subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-            ) as p:
+            with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                  text=True, bufsize=1) as p:
                 for line in p.stdout:
                     log_q.put(line)
-            lbl.configure(
-                text="[OK] finished" if p.returncode == 0 else "[ERROR] error",
-                text_color="green" if p.returncode == 0 else "red",
-            )
+            ok = p.returncode == 0
+            lbl.configure(text="[OK]" if ok else "[ERROR]", text_color="green" if ok else "red")
+
+            # if success, push this file path into the *next* tool's input box
+            if ok:
+                produced = str(out_path)
+                for j, (scr, i_flag, *_rest) in enumerate(TOOLS[:-1]):
+                    if scr == script:
+                        nxt_scr, nxt_flag, *_ = TOOLS[j+1]
+                        in_vars[(nxt_scr, nxt_flag)].set(produced)
+                        break
         except Exception as e:
-            lbl.configure(text="[ERROR] exception", text_color="red")
+            lbl.configure(text="[EXCEPTION]", text_color="red")
             log_q.put(f"[launcher] {e}\n")
 
     threading.Thread(target=worker, daemon=True).start()
 
-
+# build tool rows
 for script, in_flag, out_flag, def_in, stem, ext in TOOLS:
     parent = b_body if TAB_MAP[script] == "builder" else e_body
     fr = ctk.CTkFrame(parent)
-    fr.pack(fill="x", pady=6, padx=8)
+    fr.pack(fill="x", pady=4, padx=8)
 
-    # Header row with script name and Run Run
-    title_row = ctk.CTkFrame(fr)
-    title_row.pack(fill="x", padx=12, pady=(4, 2))
-    nice_name = LABEL_OVERRIDES.get(
-        script, script.replace(".py", "").replace("_", " ").title()
-    )
-    ctk.CTkLabel(title_row, text=nice_name, font=("Arial", 14, "bold")).pack(
-        side="left"
-    )
-    ctk.CTkButton(
-        title_row,
-        text="Run Run",
-        width=70,
-        command=lambda s=script, i=in_flag, o=out_flag, st=stem, e=ext: run_tool(
-            s, i, o, st, e
-        ),
-    ).pack(side="right", padx=4)
+    # header
+    title = LABEL_OVERRIDES.get(script, script.replace(".py","").replace("_"," ").title())
+    head = ctk.CTkFrame(fr) ; head.pack(fill="x", padx=10, pady=(2,1))
+    ctk.CTkLabel(head, text=title, font=("Arial",14,"bold")).pack(side="left")
+    ctk.CTkButton(head, text="Run", width=70,
+                  command=lambda s=script,i=in_flag,o=out_flag,st=stem,e=ext: run_tool(s,i,o,st,e)).pack(side="right", padx=4)
 
-    # Input row
-    in_row = ctk.CTkFrame(fr)
-    in_row.pack(fill="x", padx=12, pady=2)
-    ctk.CTkLabel(in_row, text=pretty(in_flag), width=120).pack(side="left")
+    # input row
+    in_row = ctk.CTkFrame(fr) ; in_row.pack(fill="x", padx=10, pady=1)
+    ctk.CTkLabel(in_row, text=pretty(in_flag), width=118).pack(side="left")
     if script == "PDFScraper.py":
         var = guide_pdf_var
     else:
         var = ctk.StringVar(value=str(REPO / def_in))
-    in_vars[(script, in_flag)] = var
+    in_vars[(script,in_flag)] = var
     ctk.CTkEntry(in_row, textvariable=var, width=380).pack(side="left", padx=4)
-    ctk.CTkButton(
-        in_row, text="Browse...", command=lambda v=var, f=in_flag: choose_input(v, f)
-    ).pack(side="left")
+    ctk.CTkButton(in_row, text="Browse…", command=lambda v=var,f=in_flag: choose_input(v,f)).pack(side="left")
 
-    # Output row
-    out_row = ctk.CTkFrame(fr)
-    out_row.pack(fill="x", padx=12, pady=1)
-    ctk.CTkLabel(out_row, text=pretty(out_flag), width=120).pack(side="left")
-    out_lbl = ctk.CTkLabel(out_row, text="", text_color="#a6f4a6", anchor="w")
-    out_lbl.pack(side="left", padx=4)
-    out_widgets.append((script, out_lbl, stem, ext))
+    # output row
+    out_row = ctk.CTkFrame(fr) ; out_row.pack(fill="x", padx=10, pady=(0,2))
+    ctk.CTkLabel(out_row, text=pretty(out_flag), width=118).pack(side="left")
+    lbl = ctk.CTkLabel(out_row, text="", text_color="#a6f4a6", anchor="w")
+    lbl.pack(side="left", padx=4)
+    out_widgets.append((script, lbl, stem, ext))
+    status_lbl[script] = ctk.CTkLabel(out_row, text="") ; status_lbl[script].pack(side="right", padx=4)
 
-    status_lbl[script] = ctk.CTkLabel(out_row, text="")
-    status_lbl[script].pack(side="right", padx=4)
+# ─── Console widget (tighter spacing) ────────────────────────────────────
+console = ctk.CTkTextbox(app, height=160, wrap="none")
+console.pack(fill="both", padx=15, pady=(0,8), expand=False)
 
-# --- Console Output ------------------------------------------------------
-console = ctk.CTkTextbox(app, height=180, wrap="none")
-console.pack(fill="both", padx=15, pady=8)
 scr = ctk.CTkScrollbar(app, command=console.yview)
-scr.place(relx=0.97, rely=0.74, relheight=0.24)
+scr.place(relx=0.97, rely=0.80, relheight=0.18)
 console.configure(yscrollcommand=scr.set)
 
-
-def feed_console():
-    """Continuously pull lines from the queue into the console widget."""
-
+def feed_console() -> None:
     while True:
-        line = log_q.get()
-        if "CropBox missing from /Page" in line:
-            continue  # Suppress PyMuPDF warning
-        console.insert("end", line)
+        raw = log_q.get()
+        if "CropBox missing from /Page" in raw:            # mute PyMuPDF spam
+            continue
+        clean = raw.replace("\r","")
+        if not clean.strip():                              # skip blank lines
+            continue
+        console.insert("end", clean.rstrip("\n") + "\n")   # single-spaced
         console.see("end")
-
 
 threading.Thread(target=feed_console, daemon=True).start()
 
-# --- Initial Load --------------------------------------------------------
+# ─── Initial paint ───────────────────────────────────────────────────────
 refresh_out_labels()
 app.mainloop()
