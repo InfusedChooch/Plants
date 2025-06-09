@@ -28,9 +28,6 @@ parser.add_argument("--chrome_binary", default="", help="Path to chrome.exe")
 args = parser.parse_args()
 
 # --- Repo layout & path helpers -----------------------------------------
-from pathlib import Path
-import sys
-
 
 def repo_dir() -> Path:
     """Return bundle root when frozen, or repo root when running from source."""

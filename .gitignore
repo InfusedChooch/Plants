@@ -1,3 +1,8 @@
 Static/GoogleChromePortable
 .venv
 _internal
+helpers/Excelify2.exe
+helpers/FillMissingData.exe
+helpers/GeneratePDF.exe
+helpers/GetLinks.exe
+helpers/PDFScraper.exe
