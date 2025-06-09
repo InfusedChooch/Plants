@@ -1,25 +1,105 @@
-# Repository Guidelines
+# 🧠 agents.md — Overview of Helper EXEs and Workflow Roles
 
-This project contains a set of scripts to automatically extract and enrich plant data from PDF files and various websites. All main scripts are located under `Static/Python/` and can be run individually or through the `Launcher.py` GUI.
+This document explains how the plant database pipeline has been modularized into standalone agents (compiled `.exe` files) and how each one contributes to the overall process. This system allows for portable, frozen distribution using PyInstaller's **onedir** mode.
 
-## Workflow overview
-1. **PDFScraper.py** – extract text, hyperlinks and images from the source PDF. Produces `Static/Outputs/Plants_NeedLinks.csv` and image files.
-2. **GetLinks.py** – search for plant pages on Missouri Botanical Garden, Wildflower.org and several nursery sites to populate missing links.
-3. **FillMissingData.py** – scrape details from those links and fill empty fields in the CSV.
-4. **Excelify2.py** – create a formatted Excel workbook for review.
-5. **GeneratePDF.py** – output a printable PDF plant guide from the final dataset.
+---
 
-`Launcher.py` provides a CustomTkinter interface to run these steps with GUI controls and live logging.
+## 🎯 Project Architecture: One Tool = One Agent
 
-## Development notes
-- Install dependencies with `pip install -r requirements.txt`.
-- Format any modified or new Python files using [Black](https://black.readthedocs.io/) before committing. Check formatting with:
-  ```bash
-  black --check .
-  ```
-- There are no automated tests. Verify changes by running the scripts on the sample data in `Static/Templates/` and confirming the outputs in `Static/Outputs/`.
-- All CSV Outputs must conform to [Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,Tolerates,Maintenance,Native Habitats,Attracts,Soil Description,Distribution Zone,AGCP Regional Status,Link: Missouri Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com]
+Each tool in the workflow is converted to its own EXE via PyInstaller, and organized under the `/helpers` subdirectory.
 
-## Pull request expectations
-- Summarize the purpose of the change and mention affected files.
-- Include relevant console output demonstrating that scripts still run after modifications whenever possible.
+```text
+dist/
+  Launcher/
+    Launcher.exe
+    helpers/
+      PDFScraper.exe
+      GetLinks.exe
+      FillMissingData.exe
+      GeneratePDF.exe
+      Excelify2.exe
+    Static/
+    Templates/
+```
+
+The `Launcher.exe` serves as the central GUI that calls each helper with its respective input/output arguments.
+
+---
+
+## 🥉 Agent Responsibilities
+
+Each EXE in the `/helpers` folder maps directly to one Python script and is responsible for a single pipeline step:
+
+| EXE Name              | Role Description                                                                  |
+| --------------------- | --------------------------------------------------------------------------------- |
+| `PDFScraper.exe`      | Extracts plant data, links, and image assets from the source PDF.                 |
+| `GetLinks.exe`        | Fills in missing web links (MBG, Wildflower.org, nurseries) via browser scraping. |
+| `FillMissingData.exe` | Fills gaps in plant data using those links (height, spread, habitats, etc.).      |
+| `GeneratePDF.exe`     | Generates a printable PDF guide with TOC, plant cards, and inline images.         |
+| `Excelify2.exe`       | Exports a cleanly formatted Excel workbook with filters, legends, and links.      |
+
+All of these EXEs accept CLI arguments for input/output and behave identically whether run standalone or via the Launcher.
+
+---
+
+## ⚙️ The Launcher
+
+The `Launcher.py` (built as `Launcher.exe`) is a CustomTkinter GUI that:
+
+* Detects whether it's running from source or frozen.
+* Routes user input to the correct agent (EXE) via subprocess.
+* Handles file I/O paths, argument passing, and runtime logging.
+* Automatically syncs with `Static/`, `Templates/`, and `Outputs/`.
+
+You can override:
+
+* Input/output paths
+* File prefixes/suffixes
+* PDF/image directories
+* Master CSVs
+  ...all from the UI before triggering a run.
+
+---
+
+## 📦 How Freezing Works
+
+Each script is bundled individually using:
+
+```bash
+pyinstaller your_script.py --onefile --noconfirm --windowed
+```
+
+The Launcher is bundled as:
+
+```bash
+pyinstaller Launcher.py --onedir --noconfirm --windowed \
+  --add-data "Static;Static" \
+  --add-data "Templates;Templates" \
+  --add-data "helpers;helpers" \
+  --icon "Static/themes/leaf.ico"
+```
+
+> 💡 By separating each tool into its own EXE, we simplify debugging, modular reuse, and allow for partial updates without rebuilding the entire suite.
+
+---
+
+## 🗃 Folder Layout Summary
+
+```text
+Templates/           ← PDF, master CSV
+Static/              ← ChromePortable, themes, pdf_images/
+helpers/             ← Onefile PyInstaller EXEs
+Outputs/             ← All generated files
+Launcher.exe         ← GUI entry point
+```
+
+---
+
+## 🧼 Notes for Devs
+
+* All scripts use `repo_dir()` to find the root, so relative paths always resolve from the launcher.
+* If a Chrome driver is needed, place it in `Static/GoogleChromePortable/...`.
+* All missing folders are auto-created on first launch.
+* Ensure `requirements.txt` is up to date when re-freezing any EXE.
+
+---
