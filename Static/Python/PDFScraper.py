@@ -89,7 +89,7 @@ def safe_print(*objs, **kw):
 
 
 # --- CSV Columns ---------------------------------------------------------
-MASTER_CSV = Path("Static/Templates/Plants_Linked_Filled_Master.csv").resolve()
+MASTER_CSV = repo_path("Templates/Plants_Linked_Filled_Master.csv")
 template_cols = list(pd.read_csv(MASTER_CSV, nrows=0).columns)
 
 master_df = pd.read_csv(MASTER_CSV, dtype=str).fillna("")
