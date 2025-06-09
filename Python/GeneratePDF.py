@@ -55,6 +55,7 @@ CSV_FILE = (REPO / args.in_csv).resolve()
 IMG_DIR = (REPO / args.img_dir).resolve()
 OUTPUT = (REPO / args.out_pdf).resolve()
 TEMPLATE_CSV = (REPO / args.template_csv).resolve()
+logo_dir = IMG_DIR.parent
 
 # auto-create Outputs on first run from a clean flash-drive
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
