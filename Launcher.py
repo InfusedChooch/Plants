@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Launcher.py – CTk GUI for the plant-database tool-chain (2025-06-05, portable one-dir)
+# Launcher.py - CTk GUI for the plant-database tool-chain (2025-06-05, portable one-dir)
 
 import sys, subprocess, threading, queue, customtkinter as ctk
 from tkinter import filedialog
@@ -8,36 +8,36 @@ from pathlib import Path
 from datetime import datetime
 
 
-# ─── Locate the bundle root ──────────────────────────────────────────────
+# --- Locate the bundle root ----------------------------------------------
 from pathlib import Path
 import sys
 
 def repo_dir() -> Path:
     """Return the app root whether running from source or PyInstaller (onedir)."""
     if getattr(sys, "frozen", False):
-        return Path(sys.executable).resolve().parent  # ✅ works in one-dir
+        return Path(sys.executable).resolve().parent  # [OK] works in one-dir
     return Path(__file__).resolve().parent
 
 
 
-REPO   = repo_dir()                 # <── new single source of truth
+REPO   = repo_dir()                 # <-- new single source of truth
 HELPERS = REPO / "helpers"          
 STATIC = REPO / "Static"            # scripts & themes stay here
 
-# ─── Appearance ──────────────────────────────────────────────────────────
+# --- Appearance ----------------------------------------------------------
 ctk.set_appearance_mode("dark")
 THEME = STATIC / "themes" / "rutgers.json"
 ctk.set_default_color_theme(str(THEME))
 
-# ─── Paths used throughout the GUI ───────────────────────────────────────
+# --- Paths used throughout the GUI ---------------------------------------
 SCRIPTS = STATIC / "Python"         # original .py sources (used when *not* frozen)
-TEMPL   = REPO / "Templates"        # <── moved out of Static
-OUTDEF  = REPO / "Outputs"          # <── moved out of Static
+TEMPL   = REPO / "Templates"        # <-- moved out of Static
+OUTDEF  = REPO / "Outputs"          # <-- moved out of Static
 OUTDEF.mkdir(exist_ok=True)         # create on first launch
 
 today   = datetime.now().strftime("%Y%m%d")
 
-# ─── Tool Config ─────────────────────────────────────────────────────────
+# --- Tool Config ---------------------------------------------------------
 TOOLS = [
     # script           in-flag      out-flag     default-IN                         stem                     ext
     ("PDFScraper.py",  "--in_pdf",  "--out_csv", "Templates/Plant Guide 2025 Update.pdf", "Plants_NeedLinks",      ".csv"),
@@ -64,7 +64,7 @@ LABEL_OVERRIDES = {
 }
 
 
-# ─── Utility ─────────────────────────────────────────────────────────────
+# --- Utility -------------------------------------------------------------
 def pretty(flag: str) -> str:
     return f"{'Input' if flag.startswith('--in_') else 'Output'} {flag.split('_',1)[1].upper()}"
 
@@ -75,12 +75,12 @@ def ftypes(flag: str):
     )
 
 
-# ─── GUI ROOT ────────────────────────────────────────────────────────────
+# --- GUI ROOT ------------------------------------------------------------
 app = ctk.CTk()
-app.title("🌿 Rutgers Plant Launcher")
+app.title(" Rutgers Plant Launcher")
 app.geometry("860x760")
 
-# ─── Global Vars ─────────────────────────────────────────────────────────
+# --- Global Vars ---------------------------------------------------------
 out_dir_var = ctk.StringVar(value=str(OUTDEF))
 pre_var = ctk.StringVar(value=f"{today}_")
 suf_var = ctk.StringVar(value="")
@@ -94,7 +94,7 @@ in_vars: dict[tuple[str, str], ctk.StringVar] = {}
 status_lbl: dict[str, ctk.CTkLabel] = {}
 out_widgets: list[tuple] = []
 
-# ─── Top Controls ────────────────────────────────────────────────────────
+# --- Top Controls --------------------------------------------------------
 hdr = ctk.CTkFrame(app)
 hdr.pack(fill="x", padx=15, pady=10)
 
@@ -201,7 +201,7 @@ ctk.CTkButton(
     command=open_chrome_portable,
 ).grid(row=5, column=1, padx=4, pady=4, sticky="w")
 
-# ─── Tabs & Tool Rows ───────────────────────────────────────────────────
+# --- Tabs & Tool Rows ---------------------------------------------------
 tabs = ctk.CTkTabview(app)
 tabs.pack(fill="both", padx=15, pady=6, expand=True)
 export_tab = tabs.add("Export")
@@ -225,38 +225,38 @@ def choose_input(var: ctk.StringVar, flag: str):
 def run_tool(script, in_flag, out_flag, stem, ext):
     """Execute one of the pipeline scripts in a background thread."""
 
-    # ── 1. Resolve input path ────────────────────────────────────────────
+    # -- 1. Resolve input path --------------------------------------------
     if script == "PDFScraper.py":
         inp = guide_pdf_var.get().strip()
     else:
         inp = in_vars[(script, in_flag)].get().strip()
 
     if not inp or not Path(inp).exists():
-        status_lbl[script].configure(text="❌ input missing", text_color="red")
+        status_lbl[script].configure(text="[ERROR] input missing", text_color="red")
         return
 
-    # ── 2. Build output path ─────────────────────────────────────────────
+    # -- 2. Build output path ---------------------------------------------
     out_path = (
         Path(out_dir_var.get()) /
         f"{pre_var.get()}{stem}{suf_var.get()}{ext}"
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # ── 3. Choose interpreter / helper EXE ───────────────────────────────
+    # -- 3. Choose interpreter / helper EXE -------------------------------
     if getattr(sys, "frozen", False):
-        helper_exe = HELPERS / f"{script[:-3]}.exe"  # helpers\PDFScraper.exe …
+        helper_exe = HELPERS / f"{script[:-3]}.exe"  # helpers\PDFScraper.exe ...
         print(f"[debug] Expecting helper at: {helper_exe}")
         log_q.put(f"[debug] Expecting helper at: {helper_exe}\n")
 
         if not helper_exe.exists():
-            status_lbl[script].configure(text="❌ helper missing", text_color="red")
+            status_lbl[script].configure(text="[ERROR] helper missing", text_color="red")
             return
         cmd = [
             str(helper_exe),
             in_flag, inp,
             out_flag, str(out_path),
         ]
-    else:  # running from source → use python
+    else:  # running from source -> use python
         cmd = [
             sys.executable,
             str(SCRIPTS / script),
@@ -264,7 +264,7 @@ def run_tool(script, in_flag, out_flag, stem, ext):
             out_flag, str(out_path),
         ]
 
-    # ── 4. Add script-specific extra flags ───────────────────────────────
+    # -- 4. Add script-specific extra flags -------------------------------
     if script in {"GetLinks.py", "FillMissingData.py"}:
         cmd += ["--master_csv", master_csv_var.get()]
 
@@ -276,11 +276,11 @@ def run_tool(script, in_flag, out_flag, stem, ext):
                 str(Path(img_dir_var.get()).parent / "image_map.csv"),
             ]
 
-    # ── 5. Spawn in a background thread & stream output ─────────────────
+    # -- 5. Spawn in a background thread & stream output -----------------
     def worker():
         lbl = status_lbl[script]
-        lbl.configure(text="⏳ running…", text_color="yellow")
-        log_q.put(f"\n\n▶ {' '.join(cmd)}\n")
+        lbl.configure(text="running... running...", text_color="yellow")
+        log_q.put(f"\n\nRun {' '.join(cmd)}\n")
         try:
             with subprocess.Popen(
                 cmd,
@@ -292,11 +292,11 @@ def run_tool(script, in_flag, out_flag, stem, ext):
                 for line in p.stdout:
                     log_q.put(line)
             lbl.configure(
-                text="✅ finished" if p.returncode == 0 else "❌ error",
+                text="[OK] finished" if p.returncode == 0 else "[ERROR] error",
                 text_color="green" if p.returncode == 0 else "red",
             )
         except Exception as e:
-            lbl.configure(text="❌ exception", text_color="red")
+            lbl.configure(text="[ERROR] exception", text_color="red")
             log_q.put(f"[launcher] {e}\n")
 
     threading.Thread(target=worker, daemon=True).start()
@@ -307,7 +307,7 @@ for script, in_flag, out_flag, def_in, stem, ext in TOOLS:
     fr = ctk.CTkFrame(parent)
     fr.pack(fill="x", pady=6, padx=8)
 
-    # Header row with script name and ▶ Run
+    # Header row with script name and Run Run
     title_row = ctk.CTkFrame(fr)
     title_row.pack(fill="x", padx=12, pady=(4, 2))
     nice_name = LABEL_OVERRIDES.get(
@@ -318,7 +318,7 @@ for script, in_flag, out_flag, def_in, stem, ext in TOOLS:
     )
     ctk.CTkButton(
         title_row,
-        text="▶ Run",
+        text="Run Run",
         width=70,
         command=lambda s=script, i=in_flag, o=out_flag, st=stem, e=ext: run_tool(
             s, i, o, st, e
@@ -336,7 +336,7 @@ for script, in_flag, out_flag, def_in, stem, ext in TOOLS:
     in_vars[(script, in_flag)] = var
     ctk.CTkEntry(in_row, textvariable=var, width=380).pack(side="left", padx=4)
     ctk.CTkButton(
-        in_row, text="Browse…", command=lambda v=var, f=in_flag: choose_input(v, f)
+        in_row, text="Browse...", command=lambda v=var, f=in_flag: choose_input(v, f)
     ).pack(side="left")
 
     # Output row
@@ -350,7 +350,7 @@ for script, in_flag, out_flag, def_in, stem, ext in TOOLS:
     status_lbl[script] = ctk.CTkLabel(out_row, text="")
     status_lbl[script].pack(side="right", padx=4)
 
-# ─── Console Output ──────────────────────────────────────────────────────
+# --- Console Output ------------------------------------------------------
 console = ctk.CTkTextbox(app, height=180, wrap="none")
 console.pack(fill="both", padx=15, pady=8)
 scr = ctk.CTkScrollbar(app, command=console.yview)
@@ -371,6 +371,6 @@ def feed_console():
 
 threading.Thread(target=feed_console, daemon=True).start()
 
-# ─── Initial Load ────────────────────────────────────────────────────────
+# --- Initial Load --------------------------------------------------------
 refresh_out_labels()
 app.mainloop()

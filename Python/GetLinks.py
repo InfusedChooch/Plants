@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# GetLinks.py – Prefill from master first, launch Chrome only if needed (rev-patched)
+# GetLinks.py - Prefill from master first, launch Chrome only if needed (rev-patched)
 """Search web resources to populate missing plant links in the CSV.
 
 Existing links from the master sheet are reused. Any remaining gaps are
@@ -16,18 +16,18 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
 
-# ─── CLI ────────────────────────────────────────────────────────────────
+# --- CLI ----------------------------------------------------------------
 parser = argparse.ArgumentParser(description="Fill missing plant site links")
-parser.add_argument("--in_csv", default="Outputs/Plants_NeedLinks.csv")  # ← moved
-parser.add_argument("--out_csv", default="Outputs/Plants_Linked.csv")  # ← moved
+parser.add_argument("--in_csv", default="Outputs/Plants_NeedLinks.csv")  # <- moved
+parser.add_argument("--out_csv", default="Outputs/Plants_Linked.csv")  # <- moved
 parser.add_argument(
     "--master_csv", default="Templates/Plants_Linked_Filled_Master.csv"
-)  # ← moved
+)  # <- moved
 parser.add_argument("--chromedriver", default="", help="Path to chromedriver.exe")
 parser.add_argument("--chrome_binary", default="", help="Path to chrome.exe")
 args = parser.parse_args()
 
-# ─── Repo layout & path helpers ─────────────────────────────────────────
+# --- Repo layout & path helpers -----------------------------------------
 from pathlib import Path
 import sys
 
@@ -47,7 +47,7 @@ STATIC = REPO / "Static"  # still contains themes, GoogleChromePortable, etc.
 
 def repo_path(arg: str | Path) -> Path:
     """
-    Turn relative CLI strings ('Outputs/…', 'Templates/…', 'Static/…')
+    Turn relative CLI strings ('Outputs/...', 'Templates/...', 'Static/...')
     into absolute paths under REPO.  Absolute paths pass through.
     """
     p = Path(arg).expanduser()
@@ -60,9 +60,9 @@ def repo_path(arg: str | Path) -> Path:
     return cand if cand.exists() else (REPO / p).resolve()
 
 
-INPUT = repo_path(args.in_csv)  # e.g.  …/Outputs/Plants_NeedLinks.csv
-OUTPUT = repo_path(args.out_csv)  # e.g.  …/Outputs/Plants_Linked.csv
-MASTER = repo_path(args.master_csv)  # e.g.  …/Templates/Plants_Linked_Filled_Master.csv
+INPUT = repo_path(args.in_csv)  # e.g.  .../Outputs/Plants_NeedLinks.csv
+OUTPUT = repo_path(args.out_csv)  # e.g.  .../Outputs/Plants_Linked.csv
+MASTER = repo_path(args.master_csv)  # e.g.  .../Templates/Plants_Linked_Filled_Master.csv
 
 # first run from a fresh flash-drive: make sure Outputs exists
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
@@ -90,7 +90,7 @@ PR_COL = "Link: Pleasantrunnursery.com"
 NM_COL = "Link: Newmoonnursery.com"
 PN_COL = "Link: Pinelandsnursery.com"
 
-# ─── Step 1: Load CSVs & prefill from master ─────────────────────────────
+# --- Step 1: Load CSVs & prefill from master -----------------------------
 df = pd.read_csv(INPUT, dtype=str).fillna("")
 
 rename_map = {
@@ -124,7 +124,7 @@ try:
         inplace=True,
     )
 except FileNotFoundError:
-    print(f"Master CSV not found at {MASTER} – skipping prefill.")
+    print(f"Master CSV not found at {MASTER} - skipping prefill.")
     master = pd.DataFrame(columns=["Botanical Name", MBG_COL, WF_COL])
 
 m_idx = master.set_index("Botanical Name")
@@ -147,7 +147,7 @@ for i, row in df.iterrows():
 print(f"Prefilled {pref} links from master.")
 
 
-# ─── Step 2: Check for needs ─────────────────────────────────────────────
+# --- Step 2: Check for needs ---------------------------------------------
 def safe_starts(col):
     return (
         df[col].astype(str).str.startswith("http")
@@ -172,10 +172,10 @@ if needs.empty:
         columns=template_cols + [c for c in df.columns if c not in template_cols]
     )
     df.to_csv(OUTPUT, index=False, na_rep="")
-    print(f"All links present – written straight to {OUTPUT.relative_to(REPO)}")
+    print(f"All links present - written straight to {OUTPUT.relative_to(REPO)}")
     raise SystemExit
 
-# ─── Step 3: only now import Selenium & start Chrome ────────────────────
+# --- Step 3: only now import Selenium & start Chrome --------------------
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -205,7 +205,7 @@ def find_chrome() -> Path:
         return launcher
 
     raise SystemExit(
-        "❌ Chrome not found – place portable Chrome in " "Static\\GoogleChromePortable"
+        "[ERROR] Chrome not found - place portable Chrome in " "Static\\GoogleChromePortable"
     )
 
 
@@ -221,7 +221,7 @@ def major(v: str) -> str:
     return v.split(".", 1)[0] if v else ""
 
 
-# ─── Driver discovery ────────────────────────────────────────────────────
+# --- Driver discovery ----------------------------------------------------
 def find_driver() -> Path:
     """
     Return a working chromedriver.exe.
@@ -248,7 +248,7 @@ def find_driver() -> Path:
         return drv  # take the first one found
 
     raise SystemExit(
-        "❌ chromedriver.exe not found.\n"
+        "[ERROR] chromedriver.exe not found.\n"
         "Put one in Static\\Python or rely on the copy under "
         "Static\\GoogleChromePortable\\App\\Chrome-bin\\<version>\\"
     )
@@ -257,7 +257,7 @@ def find_driver() -> Path:
 CHROME_EXE = find_chrome()
 DRV_EXE = find_driver()
 if not DRV_EXE.exists():
-    raise SystemExit(f"❌ chromedriver not found at {DRV_EXE}")
+    raise SystemExit(f"[ERROR] chromedriver not found at {DRV_EXE}")
 
 opt = Options()
 opt.binary_location = str(CHROME_EXE)
@@ -271,10 +271,10 @@ opt.add_argument("--blink-settings=imagesEnabled=false")
 try:
     driver = webdriver.Chrome(service=Service(str(DRV_EXE)), options=opt)
 except WebDriverException as e:
-    raise SystemExit(f"❌ Selenium failed to start Chrome:\n{e}")
+    raise SystemExit(f"[ERROR] Selenium failed to start Chrome:\n{e}")
 
 
-# ─── Helper functions ───────────────────────────────────────────────────
+# --- Helper functions ---------------------------------------------------
 def safe_get(url: str, retries=2, delay=2):
     for _ in range(retries + 1):
         try:
@@ -389,7 +389,7 @@ def query_pn_html(name: str) -> Optional[str]:
         return url
 
 
-# ─── Search only rows that still need links ─────────────────────────────
+# --- Search only rows that still need links -----------------------------
 for i, row in needs.iterrows():
     bname = row["Botanical Name"]
     have_mbg = row[MBG_COL].startswith("http")
@@ -414,7 +414,7 @@ for i, row in needs.iterrows():
             for v in name_variants(row):
                 if link := query_mbg_html(v):
                     df.at[i, MBG_COL] = link
-                    print(f" MBG ♻ {link}")
+                    print(f" MBG reused {link}")
                     break
             else:
                 print("  MBG not found")
@@ -449,7 +449,7 @@ for i, row in needs.iterrows():
             for v in name_variants(row):
                 if link := query_pr_html(v):
                     df.at[i, PR_COL] = link
-                    print(f" PR ♻ {link}")
+                    print(f" PR reused {link}")
                     break
             else:
                 print("  PR not found")
@@ -469,7 +469,7 @@ for i, row in needs.iterrows():
             for v in name_variants(row):
                 if link := query_nm_html(v):
                     df.at[i, NM_COL] = link
-                    print(f" NM ♻ {link}")
+                    print(f" NM reused {link}")
                     break
             else:
                 print("  NM not found")
@@ -489,13 +489,13 @@ for i, row in needs.iterrows():
             for v in name_variants(row):
                 if link := query_pn_html(v):
                     df.at[i, PN_COL] = link
-                    print(f" PN ♻ {link}")
+                    print(f" PN reused {link}")
                     break
             else:
                 print("  PN not found")
     time.sleep(1)
 
-# ─── Save & exit ────────────────────────────────────────────────────────
+# --- Save & exit --------------------------------------------------------
 driver.quit()
 df.rename(columns=reverse_map, inplace=True)
 template_cols = list(pd.read_csv(MASTER, nrows=0).columns)
@@ -505,6 +505,6 @@ df = df.reindex(
 df.to_csv(OUTPUT, index=False, na_rep="")
 try:
     rel = OUTPUT.relative_to(REPO)
-except ValueError:  # outside the repo – show full path
+except ValueError:  # outside the repo - show full path
     rel = OUTPUT
 print(f"\n Saved -->  {rel}")

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Excelify2.py – Create a styled Excel workbook from the fully populated plant CSV.
+# Excelify2.py - Create a styled Excel workbook from the fully populated plant CSV.
 
 from pathlib import Path
 import sys, argparse, pandas as pd
@@ -12,27 +12,27 @@ from datetime import datetime
 import black
 
 
-# ─── CLI ──────────────────────────────────────────────────────────────────
+# --- CLI ------------------------------------------------------------------
 parser = argparse.ArgumentParser(description="Export formatted Excel from CSV")
 parser.add_argument(
     "--in_csv",
-    default="Outputs/Plants_Linked_Filled.csv",  # ← moved
+    default="Outputs/Plants_Linked_Filled.csv",  # <- moved
     help="Input CSV file with filled data",
 )
 parser.add_argument(
     "--out_xlsx",
-    default="Outputs/Plants_Linked_Filled_Review.xlsx",  # ← moved
+    default="Outputs/Plants_Linked_Filled_Review.xlsx",  # <- moved
     help="Output Excel file",
 )
 parser.add_argument(
     "--template_csv",
-    default="Templates/Plants_Linked_Filled_Master.csv",  # ← moved
+    default="Templates/Plants_Linked_Filled_Master.csv",  # <- moved
     help="CSV file containing column template",
 )
 args = parser.parse_args()
 
 
-# ─── Path helpers ─────────────────────────────────────────────────────────
+# --- Path helpers ---------------------------------------------------------
 def repo_dir() -> Path:
     """Folder that contains the helper EXE (frozen) or repo root (source)."""
     if getattr(sys, "frozen", False):
@@ -50,10 +50,10 @@ TEMPLATE_CSV = (REPO / args.template_csv).resolve()
 # ensure the Outputs folder exists when running on a flash-drive
 XLSX_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-# ─── rest of the script stays unchanged ───────────────────────────────────
+# --- rest of the script stays unchanged -----------------------------------
 
 
-# ─── Step 1: Load CSV and write it to a basic Excel file ──────────────────
+# --- Step 1: Load CSV and write it to a basic Excel file ------------------
 df = pd.read_csv(CSV_FILE, dtype=str).fillna("")
 template_cols = list(pd.read_csv(TEMPLATE_CSV, nrows=0).columns)
 df = df.reindex(
@@ -74,7 +74,7 @@ wb = load_workbook(XLSX_FILE)
 ws = wb.active
 ws.title = "Plant Data"
 
-# ─── Step 2: Style Headers and Columns ────────────────────────────────────
+# --- Step 2: Style Headers and Columns ------------------------------------
 ws.freeze_panes = "A2"
 HEADER_FILL = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
 BOLD_FONT = Font(bold=True)
@@ -94,7 +94,7 @@ def autofit_columns(ws: Worksheet) -> None:
 
 autofit_columns(ws)
 
-# ─── Step 3: Apply Filters ────────────────────────────────────────────────
+# --- Step 3: Apply Filters ------------------------------------------------
 filter_cols = ["Plant Type", "Bloom Color", "Sun", "Water", "Attracts"]
 header = [cell.value for cell in ws[1]]
 filter_indices = [i + 1 for i, val in enumerate(header) if val in filter_cols]
@@ -102,7 +102,7 @@ if filter_indices:
     col_range = f"{get_column_letter(min(filter_indices))}1:{get_column_letter(max(filter_indices))}1"
     ws.auto_filter.ref = col_range
 
-# ─── Step 4: Format Cells + Short Hyperlinks ──────────────────────────────
+# --- Step 4: Format Cells + Short Hyperlinks ------------------------------
 link_map = {
     "Link: Missouri Botanical Garden": "[MBG]",
     "Link: Wildflower.org": "[WF]",
@@ -135,8 +135,8 @@ def style_sheet(ws: Worksheet, df: pd.DataFrame, header: list[str]) -> None:
 
 style_sheet(ws, df, header)
 
-# ─── Step 4B: Add raw export sheet with full link data ─────────────────────
-raw_sheet = wb.create_sheet("Plant Data CSV — No Short Links")
+# --- Step 4B: Add raw export sheet with full link data ---------------------
+raw_sheet = wb.create_sheet("Plant Data CSV - No Short Links")
 for col_idx, col_name in enumerate(df.columns, start=1):
     cell = raw_sheet.cell(row=1, column=col_idx)
     cell.value = col_name
@@ -146,7 +146,7 @@ for row_idx, row in enumerate(df.itertuples(index=False, name=None), start=2):
     for col_idx, value in enumerate(row, start=1):
         raw_sheet.cell(row=row_idx, column=col_idx).value = value
 
-# ─── Step 4C: Set Column Widths ───────────────────────────────────────────
+# --- Step 4C: Set Column Widths -------------------------------------------
 excel_widths = {
     "A": 22,
     "B": 9,
@@ -176,23 +176,23 @@ for sheet in (ws, raw_sheet):
     for letter, width in excel_widths.items():
         sheet.column_dimensions[letter].width = width
 
-# ─── Step 5: README Sheet ─────────────────────────────────────────────────
+# --- Step 5: README Sheet -------------------------------------------------
 readme = wb.create_sheet("README")
 readme.sheet_properties.tabColor = "A9A9A9"
 readme.column_dimensions["A"].width = 100
-readme["A1"] = "🌿 Plant Database Export: Excel Legend and Process Notes"
+readme["A1"] = " Plant Database Export: Excel Legend and Process Notes"
 readme["A3"] = "Legend:"
-readme["A4"] = "🔴 Red: Missing value (empty cell)"
+readme["A4"] = "RED: Red: Missing value (empty cell)"
 readme["A6"] = "Filters applied only to these columns:"
 readme["A7"] = ", ".join(filter_cols)
-readme["A9"] = "🛠 How to filter by partial match in Excel:"
+readme["A9"] = "Tools: How to filter by partial match in Excel:"
 readme["A10"] = (
     "1. Click the filter dropdown on the column header (e.g., Sun or Characteristics)."
 )
 readme["A11"] = "2. Choose 'Text Filters' > 'Contains...'"
 readme["A12"] = "3. Type a partial term (e.g., 'shade', 'yellow') and click OK."
-readme["A13"] = "💡 Use this to find plants matching conditions across categories."
-readme["A15"] = "📄 https://github.com/InfusedChooch/Plants"
+readme["A13"] = "Tip: Use this to find plants matching conditions across categories."
+readme["A15"] = "Info: https://github.com/InfusedChooch/Plants"
 readme["A16"] = (
     "This Excel was generated from the filled CSV using the script Excelify2.py"
 )
@@ -201,7 +201,7 @@ readme["A17"] = (
 )
 readme["A18"] = "Static/GoogleChromePortable"
 
-# ─── Step 6: Script Version Info ──────────────────────────────────────────
+# --- Step 6: Script Version Info ------------------------------------------
 script_descriptions = {
     "Static/Python/PDFScraper.py": "Extracts plant data from the PDF guide",
     "Static/Python/GetLinks.py": "Finds official MBG & WF URLs for each plant",
@@ -210,7 +210,7 @@ script_descriptions = {
     "Static/Python/Excelify2.py": "Creates formatted Excel output with filters & highlights",
 }
 row_start = readme.max_row + 2
-readme[f"A{row_start}"] = "📁 Script Version Info (Last Modified):"
+readme[f"A{row_start}"] = "Folder: Script Version Info (Last Modified):"
 for i, (script_path, description) in enumerate(
     script_descriptions.items(), start=row_start + 1
 ):
@@ -219,23 +219,23 @@ for i, (script_path, description) in enumerate(
         modified = datetime.fromtimestamp(full_path.stat().st_mtime).strftime(
             "%Y-%m-%d %H:%M"
         )
-        readme[f"A{i}"] = f"{script_path:<40} → {modified}    {description}"
+        readme[f"A{i}"] = f"{script_path:<40} -> {modified}    {description}"
     else:
-        readme[f"A{i}"] = f"{script_path:<40} → MISSING        {description}"
+        readme[f"A{i}"] = f"{script_path:<40} -> MISSING        {description}"
 
-# ─── Step 7: Add pip requirements ─────────────────────────────────────────
+# --- Step 7: Add pip requirements -----------------------------------------
 req_path = REPO / "requirements.txt"
 readme_row = readme.max_row + 2
-readme[f"A{readme_row}"] = "📦 Required Python Packages:"
+readme[f"A{readme_row}"] = "[PKG] Required Python Packages:"
 try:
     lines = req_path.read_text(encoding="utf-8").splitlines()
     for i, line in enumerate(lines, start=readme_row + 1):
         if line.strip() and not line.strip().startswith("#"):
             readme[f"A{i}"] = line.strip()
 except Exception as e:
-    readme[f"A{readme_row + 1}"] = f"⚠️ Error reading requirements.txt: {e}"
+    readme[f"A{readme_row + 1}"] = f"[WARN] Error reading requirements.txt: {e}"
 
-# ─── Step 8: Embed Black-formatted code ──────────────────────────────────
+# --- Step 8: Embed Black-formatted code ----------------------------------
 for script_path, description in script_descriptions.items():
     full_path = REPO / script_path
     if not full_path.exists():
@@ -256,7 +256,7 @@ for script_path, description in script_descriptions.items():
         ws_embed[f"A{i}"] = line
     ws_embed[f"A{i+1}"] = "```"
 
-# ─── Step 9: Import README.md ─────────────────────────────────────────────
+# --- Step 9: Import README.md ---------------------------------------------
 readme_md_path = REPO / "readme.md"
 if readme_md_path.exists():
     readme_full = wb.create_sheet("README_full")
@@ -267,6 +267,6 @@ if readme_md_path.exists():
 else:
     print("[WARN] readme.md not found. Skipping README_full tab.")
 
-# ─── Step 10: Save and Done ──────────────────────────────────────────────
+# --- Step 10: Save and Done ----------------------------------------------
 wb.save(XLSX_FILE)
 print(f"Yeehaw Final Excel saved --> {XLSX_FILE}")
