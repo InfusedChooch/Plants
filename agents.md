@@ -3,15 +3,16 @@ RU Plant Guide/
 ├── _internal/
 │   ├── Static/
 │   │   └── themes/
-│   │       └── leaf.ico
-│   ├── Templates/
-│   │   ├── Plants_Linked_Filled_Master.csv
-│   │   ├── Plant Guide 2025 Update.pdf
-│   │   └── MASTER_MASTER_20250605.csv
+│   │   │    └── leaf.ico
+│   │   └── Python_full/
 │   ├── helpers/
 │   │   ├── PDFScraper.exe
 │   │   ├── GeneratePDF.exe
 │   │   └── Excelify2.exe
+├── Templates/
+│   ├── Plants_Linked_Filled_Master.csv
+│   ├── Plant Guide 2025 Update.pdf
+│   └── MASTER_MASTER_20250605.csv
 ├── Outputs/
 │   ├── pdf_images/
 │   ├── Plants_Linked_Filled.csv
