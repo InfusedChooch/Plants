@@ -42,7 +42,12 @@ Create a standalone `Launcher.exe` using [PyInstaller](https://pyinstaller.org/)
 
 ```bash
 pip install pyinstaller
-pyinstaller Launcher.py --onefile
+pyinstaller Launcher.py --onedir --noconfirm --windowed ^
+    --add-data "Static;Static" ^
+    --add-data "Templates;Templates" ^
+    --add-data "helpers;helpers" ^
+    --icon "Static/themes/leaf.ico"
+    
 ```
 
 The generated binary is placed in `dist/`. Keep these folders next to the
