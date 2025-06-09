@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# GeneratePDF.py – Produce a printable plant-guide PDF (2025-06-05, portable paths)
+# GeneratePDF.py - Produce a printable plant-guide PDF (2025-06-05, portable paths)
 
 """
 Generate a title page, TOC and a page per plant with images using fpdf2.
@@ -15,32 +15,32 @@ from fpdf.enums import XPos, YPos
 from fpdf.errors import FPDFException
 
 
-# ─── CLI ──────────────────────────────────────────────────────────────────
+# --- CLI ------------------------------------------------------------------
 parser = argparse.ArgumentParser(description="Generate plant guide PDF")
 parser.add_argument(
     "--in_csv",
-    default="Outputs/Plants_Linked_Filled.csv",  # ← moved
+    default="Outputs/Plants_Linked_Filled.csv",  # <- moved
     help="Input CSV file with filled data",
 )
 parser.add_argument(
     "--out_pdf",
-    default="Outputs/Plant_Guide_EXPORT.pdf",  # ← moved
+    default="Outputs/Plant_Guide_EXPORT.pdf",  # <- moved
     help="Output PDF file",
 )
 parser.add_argument(
     "--img_dir",
-    default="Outputs/pdf_images/jpeg",  # ← moved
+    default="Outputs/pdf_images/jpeg",  # <- moved
     help="Folder that holds plant JPEGs",
 )
 parser.add_argument(
     "--template_csv",
-    default="Templates/Plants_Linked_Filled_Master.csv",  # ← moved
+    default="Templates/Plants_Linked_Filled_Master.csv",  # <- moved
     help="CSV file containing column template",
 )
 args = parser.parse_args()
 
 
-# ─── Path helpers ─────────────────────────────────────────────────────────
+# --- Path helpers ---------------------------------------------------------
 def repo_dir() -> Path:
     """Return bundle root when frozen, or repo root when running from source."""
     if getattr(sys, "frozen", False):
@@ -63,8 +63,8 @@ OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
-# ─── Load and Prepare Data ────────────────────────────────────────────────
-df = pd.read_csv(CSV_FILE, dtype=str).fillna("")  # Read CSV, empty cells → ""
+# --- Load and Prepare Data ------------------------------------------------
+df = pd.read_csv(CSV_FILE, dtype=str).fillna("")  # Read CSV, empty cells -> ""
 template_cols = list(pd.read_csv(TEMPLATE_CSV, nrows=0).columns)
 df = df.reindex(
     columns=template_cols + [c for c in df.columns if c not in template_cols]
@@ -111,7 +111,7 @@ LINK_COLORS = {
 }
 
 
-# ─── Helpers ──────────────────────────────────────────────────────────────
+# --- Helpers --------------------------------------------------------------
 def safe_text(text: str) -> str:
     """Clean text: remove null chars, collapse newlines, strip non-printable."""
     text = str(text).replace("\x00", "").replace("\r", "")
@@ -138,7 +138,7 @@ def truncate_text(text: str, max_len: int, plant_name: str, field: str) -> str:
 
 
 def name_slug(text: str) -> str:
-    """Convert name to filesystem‐safe lowercase slug (letters/numbers → underscore)."""
+    """Convert name to filesystem-safe lowercase slug (letters/numbers -> underscore)."""
     return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
 
 
@@ -240,7 +240,7 @@ def draw_labeled_parts(pdf, parts, sep=" | ") -> None:
     flush_line()
 
 
-# ─── PDF Class ────────────────────────────────────────────────────────────
+# --- PDF Class ------------------------------------------------------------
 class PlantPDF(FPDF):
     def __init__(self):
         super().__init__(format="Letter")  # Use US Letter size
@@ -392,7 +392,7 @@ class PlantPDF(FPDF):
                     self.cell(self.get_string_width(common) + 1, 8, common)
             self.ln(2)
 
-            # ── Images ──
+            # -- Images --
             images = sorted(
                 list(IMG_DIR.glob(f"{base_name}_*.jpg"))
                 + list(IMG_DIR.glob(f"{base_name}_*.png"))
@@ -421,7 +421,7 @@ class PlantPDF(FPDF):
                 x += img_w + gap
             self.set_y(y0 + img_h_fixed + 6)
 
-            # ── Characteristics section ──
+            # -- Characteristics section --
             tolerates = truncate_text(
                 safe_text(row.get("Tolerates", "")), max_len, bot_name, "Tolerates"
             )
@@ -454,7 +454,7 @@ class PlantPDF(FPDF):
                 draw_labeled_parts(self, char_parts)
                 self.ln(2)
 
-            # ── Appearance ──
+            # -- Appearance --
             self.set_font("Helvetica", "B", 13)
             self.cell(
                 0,
@@ -499,7 +499,7 @@ class PlantPDF(FPDF):
             draw_labeled_parts(self, appearance_parts)
             self.ln(6)
 
-            # ── Site & Wildlife Details ──
+            # -- Site & Wildlife Details --
             self.set_font("Helvetica", "B", 13)
             self.cell(
                 0,
@@ -588,11 +588,11 @@ class PlantPDF(FPDF):
             break
 
 
-# ─── Build PDF ────────────────────────────────────────────────────────────
+# --- Build PDF ------------------------------------------------------------
 pdf = PlantPDF()  # Instantiate PDF generator
 pdf._ghost_pages = 0  # Title page unnumbered
 
-# ─── Title Page ──────────────────────────────────────────────────────────
+# --- Title Page ----------------------------------------------------------
 pdf.skip_footer = True  # Disable footer on cover
 pdf.add_page()
 
@@ -656,13 +656,13 @@ pdf.ln(4)
 pdf.set_font("Helvetica", "", 11)
 draw_wrapped_legend(pdf)
 
-# ─── Reserve TOC pages (2–4) ─────────────────────────────────────────────
+# --- Reserve TOC pages (2-4) ---------------------------------------------
 pdf.skip_footer = False
 pdf.add_page()
 pdf.add_page()
 pdf.add_page()
 
-# ─── Add plant sections and pages ────────────────────────────────────────
+# --- Add plant sections and pages ----------------------------------------
 for plant_type in PLANT_TYPE_ORDER:
     group = df[df["Plant Type"] == plant_type]  # Filter by type
     if not group.empty:
@@ -671,10 +671,10 @@ for plant_type in PLANT_TYPE_ORDER:
             if row.get("Botanical Name", "").strip():
                 pdf.add_plant(row, plant_type)
 
-# ─── Insert TOC content ──────────────────────────────────────────────────
+# --- Insert TOC content --------------------------------------------------
 pdf.page = 2
 pdf.add_table_of_contents()
 
-# ─── Save PDF ───────────────────────────────────────────────────────────
+# --- Save PDF -----------------------------------------------------------
 pdf.output(str(OUTPUT))
-print(f"✅ Exported with TOC on pages 1-3 → {OUTPUT}")
+print(f"[OK] Exported with TOC on pages 1-3 -> {OUTPUT}")

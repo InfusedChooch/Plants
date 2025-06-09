@@ -15,38 +15,38 @@ from tqdm import tqdm
 import fitz  # PyMuPDF
 from PIL import Image
 
-# ─── CLI Arguments ────────────────────────────────────────────────────────
+# --- CLI Arguments --------------------------------------------------------
 parser = argparse.ArgumentParser(description="Extract plant data from a PDF guide.")
 parser.add_argument(
     "--in_pdf",
-    default="Templates/Plant Guide 2025 Update.pdf",  # ← moved
+    default="Templates/Plant Guide 2025 Update.pdf",  # <- moved
     help="PDF input file",
 )
 parser.add_argument(
     "--out_csv",
-    default="Outputs/Plants_NeedLinks.csv",  # ← moved
+    default="Outputs/Plants_NeedLinks.csv",  # <- moved
     help="CSV output file",
 )
 parser.add_argument(
     "--img_dir",
-    default="Outputs/pdf_images",  # ← moved
+    default="Outputs/pdf_images",  # <- moved
     help="Directory for PNG dump",
 )
 parser.add_argument(
     "--map_csv",
-    default="Outputs/image_map.csv",  # ← moved
-    help="Image → plant map CSV",
+    default="Outputs/image_map.csv",  # <- moved
+    help="Image -> plant map CSV",
 )
 args = parser.parse_args()
 
 
-# ─── Path helpers ────────────────────────────────────────────────────────
+# --- Path helpers --------------------------------------------------------
 def repo_dir() -> Path:
     """Return bundle root when frozen, or repo root when running from source."""
     if getattr(sys, "frozen", False):
         exe_dir = Path(sys.executable).resolve().parent
         return exe_dir.parent if exe_dir.name.lower() == "helpers" else exe_dir
-    # scripts now live in `Python/` → repo is two parents up
+    # scripts now live in `Python/` -> repo is two parents up
     return Path(__file__).resolve().parent.parent
 
 
@@ -55,7 +55,7 @@ REPO = repo_dir()
 
 def repo_path(rel: str | Path) -> Path:
     """
-    Convert a relative CLI string ('Outputs/…', 'Templates/…', 'Static/…')
+    Convert a relative CLI string ('Outputs/...', 'Templates/...', 'Static/...')
     into an absolute path under REPO. Absolute paths pass through unchanged.
     """
     p = Path(rel).expanduser()
@@ -78,7 +78,7 @@ IMG_DIR.mkdir(parents=True, exist_ok=True)
 OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 
 
-# ─── Safe Print ──────────────────────────────────────────────────────────
+# --- Safe Print ----------------------------------------------------------
 def safe_print(*objs, **kw):
     try:
         print(*objs, **kw)
@@ -88,7 +88,7 @@ def safe_print(*objs, **kw):
         print(fallback, **kw)
 
 
-# ─── CSV Columns ─────────────────────────────────────────────────────────
+# --- CSV Columns ---------------------------------------------------------
 MASTER_CSV = Path("Static/Templates/Plants_Linked_Filled_Master.csv").resolve()
 template_cols = list(pd.read_csv(MASTER_CSV, nrows=0).columns)
 
@@ -97,7 +97,7 @@ master_idx = master_df.set_index("Botanical Name")
 
 COLUMNS = ["Page in PDF"] + template_cols
 
-# ─── Regex Patterns ──────────────────────────────────────────────────────
+# --- Regex Patterns ------------------------------------------------------
 BOT_LINE_RE = re.compile(
     r"^[A-Z][A-Za-z×\-]+\s+[A-Za-z×\-]*[a-z][A-Za-z×\-]*(?:\s+[A-Za-z×\-]+){0,3}$"
 )
@@ -113,17 +113,17 @@ STOPWORDS = {
     "Contributed by",
 }
 HEIGHT_RE = re.compile(
-    r"height[^:;\n]*?(?:up to\s*)?([\d.]+)(?:\s*(?:[-–]|to)\s*([\d.]+))?\s*ft", re.I
+    r"height[^:;\n]*?(?:up to\s*)?([\d.]+)(?:\s*(?:[--]|to)\s*([\d.]+))?\s*ft", re.I
 )
 SPREAD_RE = re.compile(
-    r"(?:spread|aerial spread)[^:;\n]*?(?:up to\s*)?([\d.]+)(?:\s*(?:[-–]|to)\s*([\d.]+))?\s*ft",
+    r"(?:spread|aerial spread)[^:;\n]*?(?:up to\s*)?([\d.]+)(?:\s*(?:[--]|to)\s*([\d.]+))?\s*ft",
     re.I,
 )
 
 
-# ─── Utility Functions ───────────────────────────────────────────────────
+# --- Utility Functions ---------------------------------------------------
 def clean(line: str) -> str:
-    return re.split(r"[,(–-]", line, 1)[0].strip()
+    return re.split(r"[,(--]", line, 1)[0].strip()
 
 
 def is_all_caps_common(l: str) -> bool:
@@ -177,7 +177,7 @@ def guess_botanical_from_links(links: List[str]) -> str:
     return ""
 
 
-# ─── Link & Type Mapping ─────────────────────────────────────────────────
+# --- Link & Type Mapping -------------------------------------------------
 def extract_links_by_page(pdf_path: Path) -> Dict[int, List[str]]:
     doc = fitz.open(pdf_path)
     page_links = {}
@@ -212,7 +212,7 @@ def build_page_type_map(pdf_path: Path) -> Dict[int, str]:
     return page_type_map
 
 
-# ─── Row & Image Extraction ──────────────────────────────────────────────
+# --- Row & Image Extraction ----------------------------------------------
 def extract_rows() -> List[Dict[str, str]]:
     rows = []
     used_keys = set(master_df.get("Key", []))
@@ -347,8 +347,8 @@ def extract_images(df: pd.DataFrame) -> None:
                 }
             )
     pd.DataFrame(image_rows).to_csv(MAP_CSV, index=False, na_rep="")
-    safe_print(f"📸 Extracted {len(image_rows)} images to {IMG_DIR}")
-    safe_print(f"🗂  Mapping written to {MAP_CSV}")
+    safe_print(f"[IMG] Extracted {len(image_rows)} images to {IMG_DIR}")
+    safe_print(f"[MAP]  Mapping written to {MAP_CSV}")
 
     jpeg_dir = IMG_DIR / "jpeg"
     jpeg_dir.mkdir(exist_ok=True)
@@ -358,16 +358,16 @@ def extract_images(df: pd.DataFrame) -> None:
         jpg_file = jpeg_dir / (png_file.stem + ".jpg")
         img.save(jpg_file, "JPEG", quality=85)
         converted += 1
-    safe_print(f"📸 Converted {converted} PNG images to JPEGs in {jpeg_dir}")
+    safe_print(f"[IMG] Converted {converted} PNG images to JPEGs in {jpeg_dir}")
 
 
-# ─── Main ────────────────────────────────────────────────────────────────
+# --- Main ----------------------------------------------------------------
 def main():
     df = pd.DataFrame(extract_rows(), columns=COLUMNS)
     extract_images(df)
     df.drop(columns=["Page in PDF"], inplace=True, errors="ignore")
     df.to_csv(OUT_CSV, index=False, quoting=csv.QUOTE_MINIMAL, na_rep="")
-    safe_print(f"✅ Saved → {OUT_CSV.name} ({len(df)} rows)")
+    safe_print(f"[OK] Saved -> {OUT_CSV.name} ({len(df)} rows)")
 
 
 if __name__ == "__main__":
