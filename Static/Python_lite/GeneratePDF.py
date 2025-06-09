@@ -42,12 +42,20 @@ args = parser.parse_args()
 
 # --- Path helpers ---------------------------------------------------------
 def repo_dir() -> Path:
-    """Return bundle root when frozen, or repo root when running from source."""
+    """
+    Return the root of the project folder.
+    Works when frozen (EXE) or from source.
+    """
     if getattr(sys, "frozen", False):
         exe_dir = Path(sys.executable).resolve().parent
         return exe_dir.parent if exe_dir.name.lower() == "helpers" else exe_dir
-    # scripts are in `Python/`, so repo root is two parents up
-    return Path(__file__).resolve().parent.parent
+
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        if (parent / "Templates").is_dir() and (parent / "Outputs").is_dir():
+            return parent
+    return here.parent.parent  # fallback
+
 
 
 REPO = repo_dir()

@@ -34,12 +34,26 @@ args = parser.parse_args()
 
 # --- Path helpers ---------------------------------------------------------
 def repo_dir() -> Path:
-    """Folder that contains the helper EXE (frozen) or repo root (source)."""
+    """
+    Return the root of the project folder.
+    Works in both frozen (EXE) and source (.py) mode.
+    """
     if getattr(sys, "frozen", False):
         exe_dir = Path(sys.executable).resolve().parent
         return exe_dir.parent if exe_dir.name.lower() == "helpers" else exe_dir
-    # Python scripts live two levels below the repo root
-    return Path(__file__).resolve().parent.parent
+
+    # Script location
+    here = Path(__file__).resolve()
+
+    # Search up for project root by looking for "Templates" and "Outputs"
+    for parent in here.parents:
+        has_templates = (parent / "Templates").is_dir()
+        has_outputs = (parent / "Outputs").is_dir()
+        if has_templates and has_outputs:
+            return parent
+
+    # Fallback (last resort)
+    return here.parent.parent
 
 
 REPO = repo_dir()
@@ -50,11 +64,9 @@ TEMPLATE_CSV = (REPO / args.template_csv).resolve()
 # ensure the Outputs folder exists when running on a flash-drive
 XLSX_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-# --- rest of the script stays unchanged -----------------------------------
-
 
 # --- Step 1: Load CSV and write it to a basic Excel file ------------------
-df = pd.read_csv(CSV_FILE, dtype=str).fillna("")
+df = pd.read_csv(CSV_FILE, dtype=str, encoding="utf-8-sig").fillna("")
 template_cols = list(pd.read_csv(TEMPLATE_CSV, nrows=0).columns)
 df = df.reindex(
     columns=template_cols + [c for c in df.columns if c not in template_cols]

@@ -41,21 +41,9 @@ args = parser.parse_args()
 
 
 # --- Path helpers --------------------------------------------------------
-def repo_dir() -> Path:
-    """Return bundle root when frozen, or repo root when running from source."""
-    if getattr(sys, "frozen", False):
-        exe_dir = Path(sys.executable).resolve().parent
-        return exe_dir.parent if exe_dir.name.lower() == "helpers" else exe_dir
-    # scripts now live in `Python/` -> repo is two parents up
-    return Path(__file__).resolve().parent.parent
-
-
-REPO = repo_dir()
-
-
 def repo_path(rel: str | Path) -> Path:
     """
-    Convert a relative CLI string ('Outputs/...', 'Templates/...', 'Static/...')
+    Convert a relative CLI string ('Outputs/...', 'Templates/...', etc.)
     into an absolute path under REPO. Absolute paths pass through unchanged.
     """
     p = Path(rel).expanduser()
@@ -67,6 +55,23 @@ def repo_path(rel: str | Path) -> Path:
     cand = (Path(__file__).resolve().parent / p).resolve()
     return cand if cand.exists() else (REPO / p).resolve()
 
+# --- Path helpers --------------------------------------------------------
+def repo_dir() -> Path:
+    """
+    Return the root of the project folder.
+    Works when frozen (EXE) or running from source.
+    """
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent
+        return exe_dir.parent if exe_dir.name.lower() == "helpers" else exe_dir
+
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        if (parent / "Templates").is_dir() and (parent / "Outputs").is_dir():
+            return parent
+    return here.parent.parent  # fallback
+
+REPO = repo_dir()
 
 PDF_PATH = repo_path(args.in_pdf)
 OUT_CSV = repo_path(args.out_csv)

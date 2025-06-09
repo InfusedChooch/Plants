@@ -25,6 +25,11 @@ def prefer(*candidates: Path) -> Path:
             return p
     return candidates[0]
 
+def nice_path(p: Path | str) -> str:
+    """Return string path with forward slashes (even on Windows)."""
+    return str(p).replace("\\", "/")
+
+
 HELPERS = prefer(INTERNAL / "helpers", BASE / "helpers")
 STATIC  = prefer(INTERNAL / "Static",  BASE / "Static")
 SCRIPTS = prefer(BASE / "Static" / "Python_lite", STATIC / "Python_lite")                            # dev-only
@@ -77,12 +82,12 @@ app.minsize(760, 600)        # user can shrink but not collapse
 
 # ── Global state vars ─────────────────────────────────────────────────────
 today          = datetime.now().strftime("%Y%m%d")
-out_dir_var    = ctk.StringVar(value=str(OUTDEF))
+out_dir_var    = ctk.StringVar(value=nice_path(OUTDEF))
 pre_var        = ctk.StringVar(value=f"{today}_")
 suf_var        = ctk.StringVar(value="")
-img_dir_var    = ctk.StringVar(value=str(OUTDEF / "pdf_images"))
-guide_pdf_var  = ctk.StringVar(value=str(TEMPL / "Plant Guide 2025 Update.pdf"))
-master_csv_var = ctk.StringVar(value=str(TEMPL / "Plants_Linked_Filled_Master.csv"))
+img_dir_var    = ctk.StringVar(value=nice_path(OUTDEF / "pdf_images"))
+guide_pdf_var  = ctk.StringVar(value=nice_path(TEMPL / "Plant Guide 2025 Update.pdf"))
+master_csv_var = ctk.StringVar(value=nice_path(TEMPL / "Plants_Linked_Filled_Master.csv"))
 _img_user_set  = False
 _prev_out_dir  = out_dir_var.get()
 
@@ -97,8 +102,8 @@ hdr.pack(fill="x", padx=15, pady=10)
 
 def refresh_out_labels() -> None:
     for _, lbl, stem, ext in out_widgets:
-        lbl.configure(text=str(Path(out_dir_var.get()) /
-                               f"{pre_var.get()}{stem}{suf_var.get()}{ext}"))
+        lbl.configure(text=nice_path(Path(out_dir_var.get()) /
+                                     f"{pre_var.get()}{stem}{suf_var.get()}{ext}"))
 
 def _rewrite_inputs_for_new_folder(new_folder: str) -> None:
     global _prev_out_dir
@@ -230,6 +235,7 @@ def run_tool(script, in_flag, out_flag, stem, ext):
         # builder needs the JPEG folder itself
         jpeg_dir = Path(img_dir_var.get()) / "jpeg"
         cmd += ["--img_dir", str(jpeg_dir)]
+        cmd += ["--template_csv", master_csv_var.get()]
 
     # 5. background worker
     def worker():
@@ -244,17 +250,26 @@ def run_tool(script, in_flag, out_flag, stem, ext):
             ok = p.returncode == 0
             lbl.configure(text="[OK]" if ok else "[ERROR]",
                           text_color="green" if ok else "red")
-            # push output into next tool
+
+            # ─── Safely pass output to next compatible tool ───
             if ok:
                 produced = str(out_path)
                 for j, (scr, i_flag, *_rest) in enumerate(TOOLS[:-1]):
                     if scr == script:
-                        nxt_scr, nxt_flag, *_ = TOOLS[j+1]
-                        in_vars[(nxt_scr, nxt_flag)].set(produced)
+                        nxt_scr, nxt_flag, *_ = TOOLS[j + 1]
+                        out_ext = Path(produced).suffix.lower()
+                        expect_ext = (
+                            ".csv" if "csv" in nxt_flag else
+                            ".pdf" if "pdf" in nxt_flag else
+                            ".xlsx" if "xlsx" in nxt_flag else ""
+                        )
+                        if out_ext == expect_ext:
+                            in_vars[(nxt_scr, nxt_flag)].set(nice_path(produced))
                         break
         except Exception as e:
             lbl.configure(text="[EXCEPTION]", text_color="red")
             log_q.put(f"[launcher] {e}\n")
+
 
     threading.Thread(target=worker, daemon=True).start()
 
@@ -278,7 +293,7 @@ for script, in_flag, out_flag, def_in, stem, ext in TOOLS:
     if script == "PDFScraper.py":
         var = guide_pdf_var
     else:
-        var = ctk.StringVar(value=def_in)
+        var = ctk.StringVar(value=nice_path(def_in))
     in_vars[(script, in_flag)] = var
     ctk.CTkEntry(in_row, textvariable=var).pack(side="left", fill="x", expand=True, padx=4)
     ctk.CTkButton(in_row, text="Browse…",
