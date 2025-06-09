@@ -19,7 +19,7 @@ def repo_dir() -> Path:
 REPO     = repo_dir()
 HELPERS  = REPO / "helpers"
 STATIC   = REPO / "Static"          # themes & Python helpers
-SCRIPTS  = STATIC / "Python"
+SCRIPTS  = REPO / "Python"
 TEMPL    = REPO / "Templates"
 OUTDEF   = REPO / "Outputs"
 OUTDEF.mkdir(exist_ok=True)
