@@ -10,6 +10,10 @@ __pycache__/
 build
 dist/Launcher 1.0/_internal/
 dist/Launcher 1.0/Outputs/pdf_images/jpeg
+
+Test Build Folder/Static/GoogleChromePortable/Data
+Test Build Folder/Static/GoogleChromePortable/App
+Test Build Folder/Outputs/pdf_images/jpeg
 # Ignore environment and IDE settings
 .venv/
 .vscode/
