@@ -10,6 +10,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
+import re
 
 
 # --- CLI ------------------------------------------------------------------
@@ -155,14 +156,15 @@ def fetch(url: str) -> str | None:
 
 
 # --- Text Parsing Utilities ------------------------------------------------
-def grab(txt: str, label_pat: str) -> str | None:
+def grab(text: str, label: str) -> str:
     """
-    Look for patterns like "Label: value" or "Label-value" in `txt`.
-    Return the captured `value` or None if not found.
+    Return the text that follows <label> on the same line.
+    Accepts : - – — after the label, any amount of whitespace.
     """
-    # regex uses case-insensitive match of the label pattern, then a colon/dash, then the text
-    m = re.search(rf"(?:{label_pat})\s*[:--]\s*(.+?)(?:\n|$)", txt, flags=re.I)
-    return m.group(1).strip() if m else None
+    label_pat = re.escape(label)       # keep the raw label literal-safe
+    pattern = rf"(?:{label_pat})\s*[:\-\u2013\u2014]+\s*(.+?)(?:\n|$)"
+    m = re.search(pattern, text, flags=re.I)
+    return m.group(1).strip() if m else ""
 
 
 def rng(s: str | None) -> str | None:
