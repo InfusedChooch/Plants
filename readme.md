@@ -129,3 +129,20 @@ Before packaging, ensure each step works with the provided sample files:
 
 If each script succeeds with the defaults, the toolchain is ready to package
 with PyInstaller.
+
+
+Most recent run was complied with
+
+$dist="dist\Launcher\_internal\helpers"
+pyinstaller Python\PDFScraper.py     --onefile --noconfirm --windowed --add-data "Static;Static" --add-data "Static\Templates;Static\Templates" --icon Static\themes\leaf.ico --distpath $dist
+pyinstaller Python\GetLinks.py       --onefile --noconfirm --windowed --add-data "Static;Static" --distpath $dist
+pyinstaller Python\FillMissingData.py --onefile --noconfirm --windowed --add-data "Static;Static" --distpath $dist
+pyinstaller Python\GeneratePDF.py     --onefile --noconfirm --windowed --add-data "Static;Static" --add-data "Static\Templates;Static\Templates" --distpath $dist
+pyinstaller Python\Excelify2.py       --onefile --noconfirm --windowed --add-data "Static;Static" --distpath $dist
+
+
+pyinstaller Launcher.py --onedir --noconfirm --windowed `
+    --icon "Static\themes\leaf.ico" `
+    --add-data "Static;Static" `
+    --add-data "Static\Templates;Static\Templates" `
+    --distpath "dist"         # → dist\Launcher\…
