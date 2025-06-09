@@ -8,7 +8,7 @@ This branch is a simplified version of the full Plant Guide toolchain. It is des
 
 ✅ **Generate PDF**: Creates a printable plant guide with sections, photos, and formatting.
 
-✅ **Export to Excel**: Produces a styled Excel file with filters, highlights, and version notes.
+✅ **Export to Excel**: Produces a styled Excel file with filters, highlights, and version notes uses python from Static\Python_full for source relevance.
 
 🚫 **Find Links (GetLinks.py)**: **Removed** in this branch. It is assumed your master list already contains necessary links.
 
