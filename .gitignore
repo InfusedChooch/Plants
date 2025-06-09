@@ -1,22 +1,3 @@
-# Ignore output files
-Static/Outputs/Plants_Nolinks_example.csv
-Static/Outputs/png_images/
-# Ignore local Chrome install
-Static/GoogleChromePortable/
-
-# Ignore compiled Python files
-__pycache__/
-*.pyc
-build
-dist/Launcher 1.0/_internal/
-dist/Launcher 1.0/Outputs/pdf_images/jpeg
-
-Test Build Folder/Static/GoogleChromePortable
-Test Build Folder/Static/GoogleChromePortable/App
-Test Build Folder/Outputs/pdf_images/jpeg
-Test Build Folder/_internal
-
-# Ignore environment and IDE settings
-.venv/
-.vscode/
-.idea/
+Static/GoogleChromePortable
+.venv
+_internal
