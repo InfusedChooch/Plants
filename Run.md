@@ -46,7 +46,7 @@ dist\
 $helpers = "PDFScraper.py","GeneratePDF.py","Excelify2.py"
 $dest    = "dist/Launcher/_internal/helpers"
 foreach ($h in $helpers) {
-    pyinstaller "Python/$h" --onefile --noconfirm --windowed `
+    pyinstaller "Python_lite/$h" --onefile --noconfirm --windowed `
         --add-data "Static;Static" `
         --distpath  $dest
 }
