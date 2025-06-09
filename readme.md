@@ -37,7 +37,7 @@ Each script can be run from the command line or through the included GUI launche
 Extract plant names and images from a source PDF.
 
 ```bash
-python Static/Python/PDFScraper.py \
+python Static/Python_lite/PDFScraper.py \
     --in_pdf Templates/Plant\ Guide\ 2025\ Update.pdf \
     --out_csv Outputs/Plants_NeedLinks.csv \
     --img_dir Outputs/pdf_images \
@@ -49,7 +49,7 @@ python Static/Python/PDFScraper.py \
 Generate a styled PDF from your filled CSV and images.
 
 ```bash
-python Static/Python/GeneratePDF.py \
+python Static/Python_lite/GeneratePDF.py \
     --in_csv Outputs/Plants_Linked_Filled.csv \
     --out_pdf Outputs/Plant_Guide_EXPORT.pdf \
     --img_dir Outputs/pdf_images/jpeg \
@@ -61,7 +61,7 @@ python Static/Python/GeneratePDF.py \
 Export a formatted Excel workbook for easy filtering and review.
 
 ```bash
-python Static/Python/Excelify2.py \
+python Static/Python_lite/Excelify2.py \
     --in_csv Outputs/Plants_Linked_Filled.csv \
     --out_xlsx Outputs/Plants_Linked_Filled_Review.xlsx \
     --template_csv Templates/Plants_Linked_Filled_Master.csv
@@ -72,7 +72,7 @@ python Static/Python/Excelify2.py \
 Provides a simple GUI interface for the tools above:
 
 ```bash
-python Launcher.py
+python Launcher_lite.py
 ```
 
 ---
@@ -82,11 +82,11 @@ python Launcher.py
 If you'd like to build standalone executables using PyInstaller:
 
 ```bash
-pyinstaller --onefile --distpath helpers Static/Python/PDFScraper.py
-pyinstaller --onefile --distpath helpers Static/Python/GeneratePDF.py
-pyinstaller --onefile --distpath helpers Static/Python/Excelify2.py
+pyinstaller --onefile --distpath helpers Static/Python_lite/PDFScraper.py
+pyinstaller --onefile --distpath helpers Static/Python_lite/GeneratePDF.py
+pyinstaller --onefile --distpath helpers Static/Python_lite/Excelify2.py
 
-pyinstaller Launcher.py --onedir --noconfirm --windowed \
+pyinstaller Launcher_lite.py --onedir --noconfirm --windowed \
   --add-data "Static;Static" \
   --add-data "Templates;Templates" \
   --add-data "helpers;helpers" \
@@ -98,7 +98,7 @@ pyinstaller Launcher.py --onedir --noconfirm --windowed \
 ## Folder Layout
 
 ```
-├── Launcher.py
+├── Launcher_lite.py
 ├── Static/
 │   └── Python_lite/
 │   │    ├── PDFScraper.py
