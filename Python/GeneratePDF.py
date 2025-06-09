@@ -19,17 +19,17 @@ from fpdf.errors import FPDFException
 parser = argparse.ArgumentParser(description="Generate plant guide PDF")
 parser.add_argument(
     "--in_csv",
-    default="Outputs/Plants_Linked_Filled.csv",           # ← moved
+    default="Outputs/Plants_Linked_Filled.csv",  # ← moved
     help="Input CSV file with filled data",
 )
 parser.add_argument(
     "--out_pdf",
-    default="Outputs/Plant_Guide_EXPORT.pdf",             # ← moved
+    default="Outputs/Plant_Guide_EXPORT.pdf",  # ← moved
     help="Output PDF file",
 )
 parser.add_argument(
     "--img_dir",
-    default="Outputs/pdf_images/jpeg",                    # ← moved
+    default="Outputs/pdf_images/jpeg",  # ← moved
     help="Folder that holds plant JPEGs",
 )
 parser.add_argument(
@@ -43,17 +43,18 @@ args = parser.parse_args()
 # ─── Path helpers ─────────────────────────────────────────────────────────
 def repo_dir() -> Path:
     """Return bundle root when frozen, or repo root when running from source."""
-    if getattr(sys, "frozen", False):          # PyInstaller helper EXE
-        return Path(sys.executable).resolve().parent
-    # source layout: Static/Python/GeneratePDF.py → ../../ (repo root)
-    return Path(__file__).resolve().parent.parent.parent
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent
+        return exe_dir.parent if exe_dir.name.lower() == "helpers" else exe_dir
+    # scripts are in `Python/`, so repo root is two parents up
+    return Path(__file__).resolve().parent.parent
 
 
 REPO = repo_dir()
-CSV_FILE      = (REPO / args.in_csv).resolve()
-IMG_DIR       = (REPO / args.img_dir).resolve()
-OUTPUT        = (REPO / args.out_pdf).resolve()
-TEMPLATE_CSV  = (REPO / args.template_csv).resolve()
+CSV_FILE = (REPO / args.in_csv).resolve()
+IMG_DIR = (REPO / args.img_dir).resolve()
+OUTPUT = (REPO / args.out_pdf).resolve()
+TEMPLATE_CSV = (REPO / args.template_csv).resolve()
 
 # auto-create Outputs on first run from a clean flash-drive
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)

@@ -19,35 +19,39 @@ from PIL import Image
 parser = argparse.ArgumentParser(description="Extract plant data from a PDF guide.")
 parser.add_argument(
     "--in_pdf",
-    default="Templates/Plant Guide 2025 Update.pdf",          # ← moved
+    default="Templates/Plant Guide 2025 Update.pdf",  # ← moved
     help="PDF input file",
 )
 parser.add_argument(
     "--out_csv",
-    default="Outputs/Plants_NeedLinks.csv",                    # ← moved
+    default="Outputs/Plants_NeedLinks.csv",  # ← moved
     help="CSV output file",
 )
 parser.add_argument(
     "--img_dir",
-    default="Outputs/pdf_images",                             # ← moved
+    default="Outputs/pdf_images",  # ← moved
     help="Directory for PNG dump",
 )
 parser.add_argument(
     "--map_csv",
-    default="Outputs/image_map.csv",                          # ← moved
+    default="Outputs/image_map.csv",  # ← moved
     help="Image → plant map CSV",
 )
 args = parser.parse_args()
 
+
 # ─── Path helpers ────────────────────────────────────────────────────────
 def repo_dir() -> Path:
-    """Return bundle root if frozen, else repo root when running from source."""
-    if getattr(sys, "frozen", False):              # running as PDFScraper.exe
-        return Path(sys.executable).resolve().parent
-    # source layout: Static/Python/PDFScraper.py  →  ../../ (repo root)
-    return Path(__file__).resolve().parent.parent.parent
+    """Return bundle root when frozen, or repo root when running from source."""
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent
+        return exe_dir.parent if exe_dir.name.lower() == "helpers" else exe_dir
+    # scripts now live in `Python/` → repo is two parents up
+    return Path(__file__).resolve().parent.parent
+
 
 REPO = repo_dir()
+
 
 def repo_path(rel: str | Path) -> Path:
     """
@@ -63,10 +67,11 @@ def repo_path(rel: str | Path) -> Path:
     cand = (Path(__file__).resolve().parent / p).resolve()
     return cand if cand.exists() else (REPO / p).resolve()
 
+
 PDF_PATH = repo_path(args.in_pdf)
-OUT_CSV  = repo_path(args.out_csv)
-IMG_DIR  = repo_path(args.img_dir)
-MAP_CSV  = repo_path(args.map_csv)
+OUT_CSV = repo_path(args.out_csv)
+IMG_DIR = repo_path(args.img_dir)
+MAP_CSV = repo_path(args.map_csv)
 
 # ensure folders exist when running from a fresh flash-drive
 IMG_DIR.mkdir(parents=True, exist_ok=True)
