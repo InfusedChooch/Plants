@@ -137,7 +137,7 @@ def browse_master() -> None:
         master_csv_var.set(f)
 
 def open_chrome_portable() -> None:
-    webbrowser.open("https://portableapps.com/apps/internet/google_chrome_portable", new=1)
+    webbrowser.open("https://github.com/InfusedChooch/Plants/tree/Exemode", new=1)
 
 # Output folder row
 ctk.CTkLabel(hdr, text="Output folder:").grid(row=0, column=0, sticky="e", padx=4, pady=4)
@@ -164,7 +164,7 @@ for r, (label, var, cmd) in enumerate(
     ctk.CTkEntry(hdr, textvariable=var, width=430).grid(row=r, column=1, padx=4)
     ctk.CTkButton(hdr, text="Browse", command=cmd).grid(row=r, column=2)
 
-ctk.CTkButton(hdr, text="Get Chrome Portable (Not for Lite)", width=160,
+ctk.CTkButton(hdr, text="Open Repo", width=160,
               command=open_chrome_portable).grid(row=5, column=1, sticky="w", padx=4, pady=4)
 
 # ── Tabs & tool rows ──────────────────────────────────────────────────────
@@ -174,8 +174,8 @@ builder_tab = tabs.add("Builder")
 
 tabs.pack(fill="both", expand=True, padx=15, pady=(0,6))
 
-b_body = ctk.CTkScrollableFrame(builder_tab, height=420)
-e_body = ctk.CTkScrollableFrame(export_tab,  height=420)
+b_body = ctk.CTkScrollableFrame(builder_tab, height=220)
+e_body = ctk.CTkScrollableFrame(export_tab,  height=220)
 b_body.pack(fill="both", expand=True)
 e_body.pack(fill="both", expand=True)
 

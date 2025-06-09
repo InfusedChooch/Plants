@@ -20,5 +20,3 @@ RU Plant Guide/
 │   └── Plants_Linked_Filled_Review.xlsx
 
 We need to make sure this is getting setup and works as expected, requirements.txt needs to be updated for the lite scripts.
-
-excelify needs to be updated with pulling from Static/Python_full
