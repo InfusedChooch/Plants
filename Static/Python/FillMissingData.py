@@ -4,8 +4,8 @@
 from __future__ import annotations
 import csv, re, time, argparse
 from pathlib import Path
+import sys
 from typing import Dict, Optional
-
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
