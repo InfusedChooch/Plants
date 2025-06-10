@@ -9,3 +9,4 @@ pymupdf
 customtkinter
 pyinstaller
 pyyaml
+pytest
