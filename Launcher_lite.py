@@ -142,7 +142,7 @@ def browse_master() -> None:
         master_csv_var.set(f)
 
 def open_chrome_portable() -> None:
-    webbrowser.open("https://github.com/InfusedChooch/Plants/tree/Exemode", new=1)
+    webbrowser.open("https://github.com/InfusedChooch/Plants/releases/tag/LiteEXE", new=1)
 
 # Output folder row
 ctk.CTkLabel(hdr, text="Output folder:").grid(row=0, column=0, sticky="e", padx=4, pady=4)

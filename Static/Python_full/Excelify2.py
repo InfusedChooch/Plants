@@ -12,6 +12,7 @@ from datetime import datetime
 import black
 
 
+
 # --- CLI ------------------------------------------------------------------
 parser = argparse.ArgumentParser(description="Export formatted Excel from CSV")
 parser.add_argument(
@@ -35,25 +36,26 @@ args = parser.parse_args()
 # --- Path helpers ---------------------------------------------------------
 def repo_dir() -> Path:
     """
-    Return the root of the project folder.
-    Works in both frozen (EXE) and source (.py) mode.
+    Return the root of the project folder containing Templates/ and Outputs/.
+    Works even if the exe is buried inside _internal/helpers or run from anywhere.
     """
     if getattr(sys, "frozen", False):
-        exe_dir = Path(sys.executable).resolve().parent
-        return exe_dir.parent if exe_dir.name.lower() == "helpers" else exe_dir
+        exe_path = Path(sys.executable).resolve()
+    else:
+        exe_path = Path(__file__).resolve()
 
-    # Script location
-    here = Path(__file__).resolve()
-
-    # Search up for project root by looking for "Templates" and "Outputs"
-    for parent in here.parents:
-        has_templates = (parent / "Templates").is_dir()
-        has_outputs = (parent / "Outputs").is_dir()
-        if has_templates and has_outputs:
+    # Look 1–4 levels up to find the actual project root
+    for parent in exe_path.parents:
+        if (parent / "Templates").is_dir() and (parent / "Outputs").is_dir():
+            print(f"[repo_dir] Using detected repo root: {parent}")
             return parent
 
-    # Fallback (last resort)
-    return here.parent.parent
+    # Final fallback (will probably fail if this hits)
+    fallback = exe_path.parent
+    print(f"[repo_dir] Fallback to: {fallback}")
+    return fallback
+
+
 
 
 REPO = repo_dir()
@@ -124,6 +126,7 @@ link_map = {
 }
 
 
+# --- Step 4: Format Cells (no shorthand hyperlinks) -----------------------
 def style_sheet(ws: Worksheet, df: pd.DataFrame, header: list[str]) -> None:
     red_fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
 
@@ -132,31 +135,21 @@ def style_sheet(ws: Worksheet, df: pd.DataFrame, header: list[str]) -> None:
             cell: Cell = ws.cell(row=row_idx, column=col_idx)
             value = str(value).strip()
 
-            if col_name in link_map and value.startswith("http"):
-                cell.value = link_map[col_name]
-                cell.hyperlink = value
-                cell.style = "Hyperlink"
+            if not value:
+                cell.value = "Needs Review"
+                cell.fill = red_fill
             else:
                 cell.value = value
+                if value.startswith("http"):
+                    cell.hyperlink = value
+                    cell.style = "Hyperlink"
+                    cell.alignment = cell.alignment.copy(wrap_text=True, shrink_to_fit=True)
 
             if col_name == "Botanical Name":
                 cell.font = Font(italic=True)
-            if not value:
-                cell.fill = red_fill
-
 
 style_sheet(ws, df, header)
 
-# --- Step 4B: Add raw export sheet with full link data ---------------------
-raw_sheet = wb.create_sheet("Plant Data CSV - No Short Links")
-for col_idx, col_name in enumerate(df.columns, start=1):
-    cell = raw_sheet.cell(row=1, column=col_idx)
-    cell.value = col_name
-    cell.font = BOLD_FONT
-
-for row_idx, row in enumerate(df.itertuples(index=False, name=None), start=2):
-    for col_idx, value in enumerate(row, start=1):
-        raw_sheet.cell(row=row_idx, column=col_idx).value = value
 
 # --- Step 4C: Set Column Widths -------------------------------------------
 excel_widths = {
@@ -184,9 +177,6 @@ excel_widths = {
     "W": 15,
 }
 
-for sheet in (ws, raw_sheet):
-    for letter, width in excel_widths.items():
-        sheet.column_dimensions[letter].width = width
 
 # --- Step 5: README Sheet -------------------------------------------------
 readme = wb.create_sheet("README")
@@ -213,27 +203,24 @@ readme["A17"] = (
 )
 readme["A18"] = "Static/GoogleChromePortable"
 
-# --- Step 6: Script Version Info ------------------------------------------
-script_descriptions = {
-    "Static/Python_full/PDFScraper.py": "Extracts plant data from the PDF guide",
-    "Static/Python_full/GetLinks.py": "Finds official MBG & WF URLs for each plant",
-    "Static/Python_full/FillMissingData.py": "Populates missing fields using those links",
-    "Static/Python_full/GeneratePDF.py": "Creates printable PDF guide with images and sections",
-    "Static/Python_full/Excelify2.py": "Creates formatted Excel output with filters & highlights",
+
+# --- Step 6: Script-version info -----------------------------------------
+# ─── Step 6 · Script-version info ─────────────────────────────────────────
+def find_script_root(repo: Path) -> Path:
+    # Always use <REPO>/_internal/Static/Python_full
+    return (repo / "_internal" / "Static" / "Python_full").resolve()
+
+PYTHON_FULL: Path = find_script_root(REPO)
+
+# List every helper you want copied into the workbook
+script_descriptions: dict[str, str] = {
+    "PDFScraper.py":      "Extract plant data from the source PDF",
+    "GetLinks.py":        "Find MBG & Wildflower links for each plant",
+    "FillMissingData.py": "Populate any missing fields using those links",
+    "GeneratePDF.py":     "Produce the formatted PDF guide with images",
+    "Excelify2.py":       "Create the styled Excel workbook (this file)",
 }
-row_start = readme.max_row + 2
-readme[f"A{row_start}"] = "Folder: Script Version Info (Last Modified):"
-for i, (script_path, description) in enumerate(
-    script_descriptions.items(), start=row_start + 1
-):
-    full_path = REPO / script_path
-    if full_path.exists():
-        modified = datetime.fromtimestamp(full_path.stat().st_mtime).strftime(
-            "%Y-%m-%d %H:%M"
-        )
-        readme[f"A{i}"] = f"{script_path:<40} -> {modified}    {description}"
-    else:
-        readme[f"A{i}"] = f"{script_path:<40} -> MISSING        {description}"
+
 
 # --- Step 7: Add pip requirements -----------------------------------------
 req_path = REPO / "requirements.txt"
@@ -248,8 +235,8 @@ except Exception as e:
     readme[f"A{readme_row + 1}"] = f"[WARN] Error reading requirements.txt: {e}"
 
 # --- Step 8: Embed Black-formatted code ----------------------------------
-for script_path, description in script_descriptions.items():
-    full_path = REPO / script_path
+for script_name, description in script_descriptions.items():
+    full_path = PYTHON_FULL / script_name
     if not full_path.exists():
         continue
 
@@ -261,12 +248,13 @@ for script_path, description in script_descriptions.items():
     except Exception:
         formatted_code = raw_code
 
-    ws_embed = wb.create_sheet(Path(script_path).name)
+    ws_embed = wb.create_sheet(script_name)  # <-- this is the fix
     ws_embed.column_dimensions["A"].width = 120
     ws_embed["A1"] = "```python"
     for i, line in enumerate(formatted_code.splitlines(), start=2):
         ws_embed[f"A{i}"] = line
     ws_embed[f"A{i+1}"] = "```"
+
 
 # --- Step 9: Import README.md ---------------------------------------------
 readme_md_path = REPO / "readme.md"

@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['Static\\Python_lite\\Excelify2.py'],
+    ['Static\\Python_full\\Excelify2.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -35,4 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['Static\\themes\\leaf.ico'],
 )
