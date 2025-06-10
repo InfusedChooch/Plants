@@ -36,24 +36,23 @@ args = parser.parse_args()
 def repo_dir() -> Path:
     """
     Return the root of the project folder.
-    Works in both frozen (EXE) and source (.py) mode.
+    Supports:
+    - frozen .exe inside `_internal/helpers`
+    - or running from source
     """
     if getattr(sys, "frozen", False):
         exe_dir = Path(sys.executable).resolve().parent
-        return exe_dir.parent if exe_dir.name.lower() == "helpers" else exe_dir
-
-    # Script location
+        # If we're in .../_internal/helpers/, go up 2
+        if exe_dir.name.lower() == "helpers" and exe_dir.parent.name.lower() == "_internal":
+            return exe_dir.parent.parent
+        return exe_dir.parent  # fallback: go up 1
+    # for source .py files
     here = Path(__file__).resolve()
-
-    # Search up for project root by looking for "Templates" and "Outputs"
     for parent in here.parents:
-        has_templates = (parent / "Templates").is_dir()
-        has_outputs = (parent / "Outputs").is_dir()
-        if has_templates and has_outputs:
+        if (parent / "Templates").is_dir() and (parent / "Outputs").is_dir():
             return parent
-
-    # Fallback (last resort)
     return here.parent.parent
+
 
 
 REPO = repo_dir()
