@@ -20,6 +20,7 @@ RU Plant Guide/
 │   └── Plants_Linked_Filled_Review.xlsx
 
 
-I need to make all the files in Static\Python_full have the same robust def repo_dir() that the Static\Python_lite have
+We need to add another header to the CSV Master. This header is "Conditions Comments" and it is found on Wildflower.org links It should be the Text following the "Conditions Comments:" section. I need to update my toolchain to accept my new CSV formate 
 
-You are to beging the exe structuring for launcher_full
+Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,Tolerates,Maintenance,Native Habitats,Attracts,Soil Description,Condition Comments,Distribution Zone,AGCP Regional Status,Link: Missouri Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com
+
