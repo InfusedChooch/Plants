@@ -354,7 +354,6 @@ def extract_images(df: pd.DataFrame) -> None:
                     "Image Filename": filename,
                     "Page Number": page_index,
                     "Botanical Name": bot_name,
-                    "Common Name": com_name,
                 }
             )
     pd.DataFrame(image_rows).to_csv(MAP_CSV, index=False, na_rep="")
