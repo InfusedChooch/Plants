@@ -22,7 +22,7 @@ def parse_cli_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     p.add_argument(
         "--master_csv",
-        default="Templates/Plants_Linked_Filled_Master.csv",
+        default="Templates/0610_Masterlist_New_Beta_Nodata.csv",
         help="Column template CSV",
     )
     return p.parse_args(argv)
@@ -110,6 +110,9 @@ MBG_COLS = {
     "Maintenance",
     "Attracts",
     "Zone",
+    "Culture",
+    "Uses",
+    "Problems",
 }
 WF_COLS = {
     "Bloom Color",
@@ -120,6 +123,9 @@ WF_COLS = {
     "Water",
     "Attracts",
     "AGCP Regional Status",
+    "Condition Comments",
+    "UseXYZ",
+    "Propagation:Maintenance",
 }
 PR_COLS = {
     "Tolerates",
@@ -326,6 +332,9 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
         "Tolerates": grab(text, r"Tolerate"),
         "Maintenance": grab(text, r"Maintenance"),
         "Attracts": grab(text, r"Attracts"),
+        "Culture": grab(text, r"Culture"),
+        "Uses": grab(text, r"Uses"),
+        "Problems": grab(text, r"Problems"),
         "Zone": (
             f"USDA Hardiness Zone {grab(text, r'Zone')}"
             if grab(text, r"Zone")
@@ -342,12 +351,20 @@ def parse_wf(html: str, mbg_missing: bool = False) -> Dict[str, Optional[str]]:
     soup = BeautifulSoup(html, "lxml")
     status = wf_wetland_status(soup)
     text = soup.get_text("\n", strip=True)
+    prop_section = grab(text, r"Propagation")
+    maint_match = re.search(r"Maintenance\s*:\s*([^\n]+)", prop_section or "", flags=re.I)
     data = {
         "Bloom Color": ", ".join(split_conditions(grab(text, r"Bloom Color"))),
         "Bloom Time": month_rng(grab(text, r"Bloom Time")),
         "Habitats": grab(text, r"Native Habitat"),
         "Soil Description": grab(text, r"Soil Description"),
         "AGCP Regional Status": status,
+        "Condition Comments": grab(text, r"Condition Comments"),
+        "UseXYZ": ", ".join(
+            f"{m.group(1)}: {m.group(2)}"
+            for m in re.finditer(r"Use\s*\"?([^:\"]+)\"?\s*:\s*([^\n]+)", text, flags=re.I)
+        ) or None,
+        "Propagation:Maintenance": maint_match.group(1).strip() if maint_match else None,
     }
     if mbg_missing:
         # fill core fields when MBG had no data
