@@ -59,17 +59,23 @@ def repo_path(rel: str | Path) -> Path:
 def repo_dir() -> Path:
     """
     Return the root of the project folder.
-    Works when frozen (EXE) or running from source.
+    Supports:
+    - frozen .exe inside `_internal/helpers`
+    - or running from source
     """
     if getattr(sys, "frozen", False):
         exe_dir = Path(sys.executable).resolve().parent
-        return exe_dir.parent if exe_dir.name.lower() == "helpers" else exe_dir
-
+        # If we're in .../_internal/helpers/, go up 2
+        if exe_dir.name.lower() == "helpers" and exe_dir.parent.name.lower() == "_internal":
+            return exe_dir.parent.parent
+        return exe_dir.parent  # fallback: go up 1
+    # for source .py files
     here = Path(__file__).resolve()
     for parent in here.parents:
         if (parent / "Templates").is_dir() and (parent / "Outputs").is_dir():
             return parent
-    return here.parent.parent  # fallback
+    return here.parent.parent
+
 
 REPO = repo_dir()
 

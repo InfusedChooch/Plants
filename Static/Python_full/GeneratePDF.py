@@ -13,6 +13,7 @@ import pandas as pd
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 from fpdf.errors import FPDFException
+import yaml, re
 
 
 # --- CLI ------------------------------------------------------------------
@@ -33,6 +34,12 @@ parser.add_argument(
     help="Folder that holds plant JPEGs",
 )
 parser.add_argument(
+    "--logo_dir",
+    default="Outputs/pdf_images",
+    help="Folder that holds Rutgers and NJAES logos"
+)
+
+parser.add_argument(
     "--template_csv",
     default="Templates/Plants_Linked_Filled_Master.csv",  # <- moved
     help="CSV file containing column template",
@@ -44,17 +51,23 @@ args = parser.parse_args()
 def repo_dir() -> Path:
     """
     Return the root of the project folder.
-    Works when frozen (EXE) or from source.
+    Supports:
+    - frozen .exe inside `_internal/helpers`
+    - or running from source
     """
     if getattr(sys, "frozen", False):
         exe_dir = Path(sys.executable).resolve().parent
-        return exe_dir.parent if exe_dir.name.lower() == "helpers" else exe_dir
-
+        # If we're in .../_internal/helpers/, go up 2
+        if exe_dir.name.lower() == "helpers" and exe_dir.parent.name.lower() == "_internal":
+            return exe_dir.parent.parent
+        return exe_dir.parent  # fallback: go up 1
+    # for source .py files
     here = Path(__file__).resolve()
     for parent in here.parents:
         if (parent / "Templates").is_dir() and (parent / "Outputs").is_dir():
             return parent
-    return here.parent.parent  # fallback
+    return here.parent.parent
+
 
 
 
@@ -63,7 +76,7 @@ CSV_FILE = (REPO / args.in_csv).resolve()
 IMG_DIR = (REPO / args.img_dir).resolve()
 OUTPUT = (REPO / args.out_pdf).resolve()
 TEMPLATE_CSV = (REPO / args.template_csv).resolve()
-logo_dir = IMG_DIR.parent
+LOGO_DIR = (REPO / args.logo_dir).resolve()
 
 # auto-create Outputs on first run from a clean flash-drive
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
@@ -72,7 +85,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
 # --- Load and Prepare Data ------------------------------------------------
-df = pd.read_csv(CSV_FILE, dtype=str).fillna("")  # Read CSV, empty cells -> ""
+df = pd.read_csv(CSV_FILE, dtype=str).fillna("").replace("Needs Review", "")  # Read CSV, empty cells -> ""
 template_cols = list(pd.read_csv(TEMPLATE_CSV, nrows=0).columns)
 df = df.reindex(
     columns=template_cols + [c for c in df.columns if c not in template_cols]
@@ -126,6 +139,31 @@ def safe_text(text: str) -> str:
     text = re.sub(r"\s*\n\s*", " ", text)
     text = re.sub(r"[^\x20-\x7E]+", "", text)
     return text.strip()
+
+# --- Style-sheet enforcement ---------------------------------------------
+STYLE_FILE = REPO / "Templates" / "style_rules.yaml"
+_style_rules = []
+
+if STYLE_FILE.exists():
+    with open(STYLE_FILE, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+
+    for pattern, repl in data.items():
+        pat = re.compile(pattern)
+        if repl == "<<lower>>":
+            _style_rules.append((pat, lambda m: m.group(0).lower()))
+        else:
+            _style_rules.append((pat, repl))
+else:
+    logging.warning("Style file not found: %s (continuing without it)", STYLE_FILE)
+
+
+def apply_style(text: str) -> str:
+    """Run the loaded style-sheet rules over a piece of text."""
+    for pat, repl in _style_rules:
+        text = pat.sub(repl, text)
+    return text
+
 
 
 def primary_common_name(name):
@@ -216,9 +254,9 @@ def draw_labeled_parts(pdf, parts, sep=" | ") -> None:
             return
         pdf.set_x(pdf.l_margin)
         for i, (label, segs) in enumerate(line_parts):
-            pdf.set_font("Helvetica", "B", 12)
+            pdf.set_font("Times", "B", 12)
             pdf.write(6, f"{label} ")
-            pdf.set_font("Helvetica", "", 12)
+            pdf.set_font("Times", "", 12)
             for text, color in segs:
                 if color:
                     pdf.set_text_color(*color)
@@ -264,7 +302,7 @@ class PlantPDF(FPDF):
             return
 
         self.set_y(-12)
-        self.set_font("Helvetica", "I", 9)
+        self.set_font("Times", "I", 9)
 
         links = self.footer_links
         page_str = str(self.page_no() - getattr(self, "_ghost_pages", 0))
@@ -309,7 +347,7 @@ class PlantPDF(FPDF):
         link = self.add_link()  # Add internal link target
         self.set_link(link)
         self.section_links.append((plant_type, link))
-        self.set_font("Helvetica", "B", 22)
+        self.set_font("Times", "B", 22)
         self.set_text_color(0, 70, 120)
         self.ln(80)  # Vertical spacing
         self.cell(0, 20, plant_type.title(), align="C")
@@ -321,18 +359,18 @@ class PlantPDF(FPDF):
         self.skip_footer = False
         self.current_plant_type = "Table of Contents"
         self.set_y(20)
-        self.set_font("Helvetica", "B", 16)
+        self.set_font("Times", "B", 16)
         self.cell(0, 12, "Table of Contents", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-        self.set_font("Helvetica", "", 12)
+        self.set_font("Times", "", 12)
         self.ln(4)
         for ptype in PLANT_TYPE_ORDER:
             entries = self.toc.get(ptype, [])
             if entries:
                 # Section header
-                self.set_font("Helvetica", "B", 13)
+                self.set_font("Times", "B", 13)
                 self.set_text_color(0, 0, 128)
                 self.cell(0, 8, ptype.title(), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-                self.set_font("Helvetica", "", 11)
+                self.set_font("Times", "", 11)
                 self.set_text_color(0, 0, 0)
             for name, page, link, links in entries:
                 self.set_x(self.l_margin)
@@ -384,14 +422,14 @@ class PlantPDF(FPDF):
             self.set_link(link)
 
             # Botanical name
-            self.set_font("Helvetica", "I", 18)
+            self.set_font("Times", "I", 18)
             self.set_text_color(22, 92, 34)
             self.multi_cell(0, 8, bot_name, align="C")
 
             # Common name, if present
             common = primary_common_name(safe_text(row.get("Common Name", ""))).strip()
             if common:
-                self.set_font("Helvetica", "B", 13)
+                self.set_font("Times", "B", 13)
                 self.set_text_color(0, 0, 0)
                 try:
                     self.multi_cell(0, 8, common, align="C")
@@ -443,7 +481,7 @@ class PlantPDF(FPDF):
                 "AGCP",
             )
             if any([tolerates, maintenance, agcp]):
-                self.set_font("Helvetica", "B", 13)
+                self.set_font("Times", "B", 13)
                 self.cell(
                     0,
                     8,
@@ -451,7 +489,7 @@ class PlantPDF(FPDF):
                     new_x=XPos.LMARGIN,
                     new_y=YPos.NEXT,
                 )
-                self.set_font("Helvetica", "", 12)
+                self.set_font("Times", "", 12)
                 char_parts = []
                 if tolerates:
                     char_parts.append(("Tolerates:", tolerates))
@@ -463,7 +501,7 @@ class PlantPDF(FPDF):
                 self.ln(2)
 
             # -- Appearance --
-            self.set_font("Helvetica", "B", 13)
+            self.set_font("Times", "B", 13)
             self.cell(
                 0,
                 8,
@@ -471,7 +509,7 @@ class PlantPDF(FPDF):
                 new_x=XPos.LMARGIN,
                 new_y=YPos.NEXT,
             )
-            self.set_font("Helvetica", "", 12)
+            self.set_font("Times", "", 12)
             appearance_parts = []
             color_text = safe_text(row.get("Bloom Color", ""))
             if color_text:
@@ -508,7 +546,7 @@ class PlantPDF(FPDF):
             self.ln(6)
 
             # -- Site & Wildlife Details --
-            self.set_font("Helvetica", "B", 13)
+            self.set_font("Times", "B", 13)
             self.cell(
                 0,
                 8,
@@ -516,7 +554,7 @@ class PlantPDF(FPDF):
                 new_x=XPos.LMARGIN,
                 new_y=YPos.NEXT,
             )
-            self.set_font("Helvetica", "", 12)
+            self.set_font("Times", "", 12)
             site_parts = []
             sun = safe_text(row.get("Sun", ""))
             water = safe_text(row.get("Water", ""))
@@ -543,9 +581,9 @@ class PlantPDF(FPDF):
                 safe_text(row.get("Attracts", "")), max_len, bot_name, "Attracts"
             )
             if attracts:
-                self.set_font("Helvetica", "B", 12)
+                self.set_font("Times", "B", 12)
                 self.write(6, "Attracts: ")
-                self.set_font("Helvetica", "", 12)
+                self.set_font("Times", "", 12)
                 self.multi_cell(0, 6, attracts)
                 self.ln(6)
 
@@ -557,9 +595,9 @@ class PlantPDF(FPDF):
                 "Soil Description",
             )
             if soil:
-                self.set_font("Helvetica", "B", 12)
+                self.set_font("Times", "B", 12)
                 self.write(6, "Soil Description: ")
-                self.set_font("Helvetica", "", 12)
+                self.set_font("Times", "", 12)
                 self.multi_cell(0, 6, soil)
                 self.ln(6)
 
@@ -571,9 +609,9 @@ class PlantPDF(FPDF):
                 "Habitats",
             )
             if habitats:
-                self.set_font("Helvetica", "B", 12)
+                self.set_font("Times", "B", 12)
                 self.write(6, "Habitats: ")
-                self.set_font("Helvetica", "", 12)
+                self.set_font("Times", "", 12)
                 self.multi_cell(0, 6, habitats)
 
             # Verify single-page layout
@@ -601,37 +639,65 @@ pdf = PlantPDF()  # Instantiate PDF generator
 pdf._ghost_pages = 0  # Title page unnumbered
 
 # --- Title Page ----------------------------------------------------------
-pdf.skip_footer = True  # Disable footer on cover
+from pathlib import Path
+import os
+
+pdf.skip_footer = True
 pdf.add_page()
 
-
-def try_image_path(base_dir, filenames):
-    for name in filenames:
-        path = base_dir / name
-        if path.exists():
-            return path
+# ------------------------------------------------------------------------
+# 1.  Robust path lookup ─ tolerate .png/.jpg/.jpeg and missing extension
+# ------------------------------------------------------------------------
+def find_logo(base_dir: Path, basenames: list[str]) -> Path | None:
+    exts = ("", ".png", ".jpg", ".jpeg")
+    for stem in basenames:
+        for ext in exts:
+            p = base_dir / (stem if stem.lower().endswith(ext) else f"{stem}{ext}")
+            if p.exists():
+                return p
     return None
 
 
-left_logo = try_image_path(
-    logo_dir,
-    ["page_1_0.jpg", "page_1_0.png"],
-)
-right_logo = try_image_path(
-    logo_dir,
-    ["page_1_1.jpg", "page_1_1.png"],
-)
-if left_logo:
-    pdf.image(str(left_logo), x=pdf.l_margin, y=20, h=30)
-if right_logo:
-    pdf.image(str(right_logo), x=pdf.w - pdf.r_margin - 50, y=20, h=30)
+left_logo = find_logo(LOGO_DIR, ["Rutgers_Logo"])           # <-- “R” + text
+right_logo = find_logo(LOGO_DIR, ["NJAES_Logo"])              # <-- green swoosh
+
+
+# ------------------------------------------------------------------------
+# 2.  Helper to draw both logos next to each other, centred on the page
+# ------------------------------------------------------------------------
+def draw_logos(pdf: FPDF, left: Path, right: Path, *,
+               y: float = 16, h: float = 24, gap: float = 4) -> None:
+    """Place *left* and *right* logos on one line, centred horizontally."""
+    if not (left and right):
+        return  # quietly skip if either file is missing
+
+    from PIL import Image  # local import to avoid shipping PIL if not needed
+
+    # scaled widths that keep original aspect ratios
+    with Image.open(left) as im:
+        w_left = h * im.width / im.height
+    with Image.open(right) as im:
+        w_right = h * im.width / im.height
+
+    total_w = w_left + gap + w_right
+    x0 = (pdf.w - total_w) / 2  # centre the pair on the page width
+
+    pdf.image(str(left),  x=x0,               y=y, h=h)
+    pdf.image(str(right), x=x0 + w_left + gap, y=y, h=h)
+
+
+# ------------------------------------------------------------------------
+# 3.  Draw the banner (remove the old individual image() calls)
+# ------------------------------------------------------------------------
+draw_logos(pdf, left_logo, right_logo)
+
 
 
 pdf.set_y(70)
-pdf.set_font("Helvetica", "B", 22)
+pdf.set_font("Times", "B", 22)
 pdf.set_text_color(0, 70, 120)
 pdf.cell(0, 12, "PLANT FACT SHEETS", align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-pdf.set_font("Helvetica", "", 16)
+pdf.set_font("Times", "", 16)
 pdf.ln(4)
 pdf.cell(
     0,
@@ -642,7 +708,7 @@ pdf.cell(
     new_y=YPos.NEXT,
 )
 pdf.ln(10)
-pdf.set_font("Helvetica", "", 14)
+pdf.set_font("Times", "", 14)
 pdf.cell(
     0,
     10,
@@ -655,14 +721,15 @@ pdf.cell(
     0, 10, "Water Resources Program", align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT
 )
 pdf.ln(10)
-pdf.set_font("Helvetica", "I", 12)
+pdf.set_font("Times", "I", 12)
 pdf.cell(
     0, 10, f"{datetime.today():%B %Y}", align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT
 )
 pdf.set_text_color(0, 0, 0)
 pdf.ln(4)
-pdf.set_font("Helvetica", "", 11)
+pdf.set_font("Times", "", 10)
 draw_wrapped_legend(pdf)
+pdf.set_font("Times", "", 12)
 
 # --- Reserve TOC pages (2-4) ---------------------------------------------
 pdf.skip_footer = False

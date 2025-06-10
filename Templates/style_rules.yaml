@@ -1,0 +1,20 @@
+substitutions:
+  # One-word terms
+  "\\b[Ss]torm ?[Ww]ater\\b": "STORMWATER"
+  "\\b[Tt]urf ?[Gg]rass\\b": "TURFGRASS"
+  "\\b[Rr]ain ?[Ww]ater\\b": "RAINWATER"
+
+  # Compass directions – de-hyphenate
+  "\\b(North|South|East|West) ?(ern|ernmost|ward|east|west)?-": "\\1\\2"
+
+  # Compass directions – force lower-case (handled in code, see below)
+  "\\b(North|South|East|West|Northwest|Northeast|Southwest|Southeast)\\b": "<<lower>>"
+
+  # Idioms / wordiness
+  "\\b[Ii]n order to\\b": "to"
+
+  # Two spaces after end punctuation
+  "([.!?;:]) ": "\\1  "
+
+  # Oxford comma
+  "([A-Za-z]), (and|or) ": "\\1, \\2 "
