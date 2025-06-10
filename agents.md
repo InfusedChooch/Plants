@@ -19,4 +19,7 @@ RU Plant Guide/
 │   ├── Plant_Guide_EXPORT.pdf
 │   └── Plants_Linked_Filled_Review.xlsx
 
-We need to make sure this is getting setup and works as expected, requirements.txt needs to be updated for the lite scripts.
+
+I need to make all the files in Static\Python_full have the same robust def repo_dir() that the Static\Python_lite have
+
+You are to beging the exe structuring for launcher_full
