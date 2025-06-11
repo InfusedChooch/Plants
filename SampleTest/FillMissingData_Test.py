@@ -128,6 +128,8 @@ MBG_COLS = {
     "Problems",
 }
 WF_COLS = {
+    "Height (ft)",
+    "Spread (ft)",
     "Bloom Color",
     "Bloom Time",
     "Soil Description",
@@ -328,6 +330,8 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
             break
 
     data = {
+        "Height (ft)": rng(char.get("Height")),
+        "Spread (ft)": rng(char.get("Spread")),
         "Bloom Color": clean(char.get("Bloom Color")),
         "Bloom Time": month_list(char.get("Bloom Time") or char.get("Bloom Period")),
         "Soil Description": clean(_section_text(soup, "Soil Description")),
