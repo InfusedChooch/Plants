@@ -206,6 +206,9 @@ def rng(s: str | None) -> str | None:
 def csv_join(parts: list[str]) -> str | None:
     out: list[str] = []
     for p in parts:
+        if not p:
+            continue
+        p = p.strip()
         if p and p not in out:
             out.append(p)
     return ", ".join(out) if out else None
