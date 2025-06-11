@@ -12,6 +12,12 @@ import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
+# ------------------------------------------------------------------------
+#  HTML-cache helper (create SampleTest/html_cache on first run)
+# ------------------------------------------------------------------------
+from urllib.parse import urlparse
+import hashlib, re, os
+
 
 # ───────────────────────────── CLI ────────────────────────────────────────
 def parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
@@ -75,6 +81,27 @@ def get_resource(rel: str | Path) -> Path:
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         return Path(getattr(sys, "_MEIPASS")) / rel
     return REPO / rel
+
+
+# cache lives next to the test CSVs →  <repo>/SampleTest/html_cache
+CACHE_DIR = (REPO / "SampleTest" / "html_cache").resolve()
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _cache_name(url: str) -> Path:
+    """
+    Turn any URL into a safe, unique filename:
+        '<domain>_<path>_<12-char-sha1>.html'
+    The hash guarantees uniqueness; the slugged domain/path is only
+    there to keep things human-readable when you peek in the folder.
+    """
+    h = hashlib.sha1(url.encode("utf-8")).hexdigest()[:12]
+    parsed = urlparse(url)
+    slug = re.sub(r"[^a-zA-Z0-9]+", "_", f"{parsed.netloc}_{parsed.path}").strip("_")
+    slug = slug[:80]  # keep filenames reasonably short for Windows
+    return CACHE_DIR / f"{slug}_{h}.html"
+
+
 
 
 # ───────────────────── CSV diff helper (optional) ─────────────────────────
@@ -191,15 +218,39 @@ def merge_field(a: str | None, b: str | None) -> str | None:
 
 
 # ───────────────────── HTTP fetch helper ──────────────────────────────────
+# ------------------------------------------------------------------------
+#  Cached fetch()
+# ------------------------------------------------------------------------
 def fetch(url: str) -> str | None:
+    """
+    1. Look for <CACHE_DIR>/<slug>.html → return its contents if found.
+    2. Otherwise hit the network, save a copy to the cache, and return it.
+       If the request fails, return None (previous behaviour).
+    """
+    cache_file = _cache_name(url)
+
+    # ---------- 1. serve from cache if we already have it ---------------
+    if cache_file.exists():
+        try:
+            return cache_file.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            pass  # corrupted file? fall back to network
+
+    # ---------- 2. otherwise, fetch & store -----------------------------
     try:
         r = requests.get(url, headers=HEADERS, timeout=12)
         if r.status_code == 403:
             r = requests.get(url, headers=HEADERS_ALT, timeout=12)
         if r.ok:
+            # save a copy for next time (ignore failures silently)
+            try:
+                cache_file.write_text(r.text, encoding="utf-8")
+            except Exception:
+                pass
             return r.text
     except requests.RequestException:
         pass
+
     return None
 
 
