@@ -175,13 +175,13 @@ Bloom Time               : Wildflower.org + MBG + Pinelands/New Moon     : Jan, 
 Sun                      : MBG → WF “Light Requirement”                  : Full sun, Part sun, …
 Water                    : MBG → WF “Soil Moisture”                      : low, medium, high
 AGCP Regional Status     : WF (Wetland Indicator)                        : FACU | OBL | …
-Distribution Zone        : MBG “Zone”                                    : USDA Hardiness Zone X – Y
+USDA Hardiness Zone      : MBG “Zone”                                    : Zone X – Y
 
 Attracts                 : PR + WF + MBG + Pinelands                     : Bees, Butterflies, …
 Tolerates                : MBG + PR + NM + Pinelands                     : Deer, Salt, …
 Soil Description         : WF “Soil Description”                         : paragraph
-Condition Comments       : WF “Comments”                                 : paragraph
-Maintenance              : MBG “Maintenance”                             : Low | Medium | High
+Condition Comments       : WF “Condition Comments”                       : paragraph
+MaintenanceLevel         : MBG “Maintenance”                             : Low | Medium | High
 Native Habitats          : WF “Native Habitat”                           : Prairie, Woodland, …
 Culture                  : MBG “Culture” / “Growing Tips”                : paragraph
 Uses                     : MBG “Uses”                                    : paragraph
@@ -194,3 +194,5 @@ Link: Wildflower.org     : GetLinks (USDA ID)                            : URL
 Link: Pleasant Run       : GetLinks (name match)                         : URL
 Link: New Moon           : GetLinks (name match)                         : URL
 Link: Pinelands          : GetLinks (name match)                         : URL
+
+```

@@ -559,7 +559,7 @@ class PlantPDF(FPDF):
             sun = safe_text(row.get("Sun", ""))
             water = safe_text(row.get("Water", ""))
             zone_raw = safe_text(
-                row.get("Distribution Zone", "") or row.get("Zone", "")
+                row.get("USDA Hardiness Zone", "") or row.get("Zone", "")
             )
             zone_match = re.search(r"(\d+)\s*(?:-|to)\s*(\d+)", zone_raw)
             zone = (

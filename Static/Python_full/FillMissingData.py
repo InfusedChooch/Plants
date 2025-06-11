@@ -119,7 +119,7 @@ MBG_COLS = {
     "Sun",
     "Water",
     "Tolerates",
-    "Maintenance",
+    "MaintenanceLevel",
     "Attracts",
     "Zone",
     "Culture",
@@ -211,7 +211,7 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
         "Sun": _grab(txt, "Sun"),
         "Water": _grab(txt, "Water"),
         "Tolerates": _grab(txt, "Tolerate"),
-        "Maintenance": _grab(txt, "Maintenance"),
+        "MaintenanceLevel": _grab(txt, "Maintenance"),
         "Attracts": _grab(txt, "Attracts"),
         "Culture": _grab(txt, "Culture") or _grab(txt, "Growing Tips"),
         "Uses": _grab(txt, "Uses"),
@@ -379,7 +379,7 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
         "Sun": clean(grab("Sun")),
         "Water": clean(grab("Water")),
         "Tolerates": clean(grab("Tolerate")),
-        "Maintenance": clean(grab("Maintenance")),
+        "MaintenanceLevel": clean(grab("Maintenance")),
         "Attracts": clean(grab("Attracts")),
         "Culture": section("Culture") or section("Growing Tips"),
         "Uses": section("Uses"),
@@ -478,8 +478,8 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             "Link: Pleasantrunnursery.com": "PR Link",
             "Link: Newmoonnursery.com": "NM Link",
             "Link: Pinelandsnursery.com": "PN Link",
-            "Distribution": "Distribution Zone",
-            "Distribution Zone": "Distribution Zone",
+            "Distribution": "USDA Hardiness Zone",
+            "USDA Hardiness Zone": "USDA Hardiness Zone",
         },
         inplace=True,
     )
@@ -568,9 +568,9 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
         df.at[idx, "Bloom Time"] = month_list(df.at[idx, "Bloom Time"])
 
 
-    # final rename Zone → Distribution Zone for export
+    # final rename Zone → USDA Hardiness Zone for export
     if "Zone" in df.columns:
-        df.rename(columns={"Zone": "Distribution Zone"}, inplace=True)
+        df.rename(columns={"Zone": "USDA Hardiness Zone"}, inplace=True)
 
     # reorder to master template
     template_cols = list(pd.read_csv(master_csv, nrows=0).columns)

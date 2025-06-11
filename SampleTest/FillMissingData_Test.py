@@ -147,7 +147,7 @@ MBG_COLS = {
     "Sun",
     "Water",
     "Tolerates",
-    "Maintenance",
+    "MaintenanceLevel",
     "Attracts",
     "Zone",
     "Culture",
@@ -528,7 +528,7 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
         "Native Habitats": clean(char.get("Native Habitat") or char.get("Habitat")),
         "AGCP Regional Status": _wf_wetland(soup),
         "UseXYZ": usexyz and clean(usexyz),
-        "W": clean(maint),
+        "WFMaintenance": clean(maint),
         "Attracts": clean(char.get("Benefit")),
     }
 
@@ -566,7 +566,7 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
         "Sun": clean(grab("Sun")),
         "Water": clean(grab("Water")),
         "Tolerates": clean(grab("Tolerate")),
-        "Maintenance": clean(grab("Maintenance")),
+        "MaintenanceLevel": clean(grab("Maintenance")),
         "Attracts": clean(grab("Attracts")),
         "Culture": section("Culture") or section("Growing Tips"),
         "Uses": section("Uses"),
@@ -662,8 +662,8 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             "Link: Pleasantrunnursery.com": "PR Link",
             "Link: Newmoonnursery.com": "NM Link",
             "Link: Pinelandsnursery.com": "PN Link",
-            "Distribution": "Distribution Zone",
-            "Distribution Zone": "Distribution Zone",
+            "Distribution": "USDA Hardiness Zone",
+            "USDA Hardiness Zone": "USDA Hardiness Zone",
         },
         inplace=True,
     )
@@ -754,14 +754,14 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
 
 
 
-    # finalise Distribution Zone
+    # finalise USDA Hardiness Zone
     if "Zone" in df.columns:
-        if "Distribution Zone" in df.columns:
-            df["Distribution Zone"] = df["Distribution Zone"].where(
-                df["Distribution Zone"].astype(bool), df["Zone"]
+        if "USDA Hardiness Zone" in df.columns:
+            df["USDA Hardiness Zone"] = df["USDA Hardiness Zone"].where(
+                df["USDA Hardiness Zone"].astype(bool), df["Zone"]
             )
         else:
-            df.rename(columns={"Zone": "Distribution Zone"}, inplace=True)
+            df.rename(columns={"Zone": "USDA Hardiness Zone"}, inplace=True)
         if "Zone" in df.columns:
             df.drop(columns=["Zone"], inplace=True)
 
