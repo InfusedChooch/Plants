@@ -1,6 +1,10 @@
 from pathlib import Path
 import ast
 import types
+import pytest
+
+pytest.importorskip("pandas")
+pytest.importorskip("PIL")
 
 
 def load_function(path: str | Path, name: str):

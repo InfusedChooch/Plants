@@ -595,7 +595,8 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
         "Culture": section("Culture") or section("Growing Tips"),
         "Uses": section("Uses"),
         "Problems": section("Problems"),
-        "Zone": (f"USDA Hardiness Zone {grab('Zone')}" if grab("Zone") else None),
+        "Zone": (f"Zone {grab('Zone')}" if grab("Zone") else None
+        ),
     }
 
 

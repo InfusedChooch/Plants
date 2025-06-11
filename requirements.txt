@@ -6,5 +6,8 @@ pyyaml
 pytest
 beautifulsoup4
 requests
-
+rich
+lxml
+tdqm
+pytest
 #test deps
