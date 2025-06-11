@@ -1,6 +1,6 @@
 Templates\0610_Masterlist_New_Beta_Nodata.csv is the new data structure for CSVs
 
-Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,AGCP Regional Status,Distribution Zone,Attracts,Tolerates,Soil Description,Condition Comments,Maintenance,Native Habitats,Culture,Uses,UseXYZ,Propagation:Maintenance,Problems,Link: Missouri,Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com		
+Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,AGCP Regional Status,Distribution Zone,Attracts,Tolerates,Soil Description,Condition Comments,Maintenance,Native Habitats,Culture,Uses,UseXYZ,WFMaintenance,Problems,Link: Missouri,Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com		
 
 I need the output of SampleTest\FillMissingData_Test.py --> SampleTest\Plants_Linked_Filled_Test.csv to match the handfilled example SampleTest\Plants_Linked_FIlled_Manual. To fix the difference we need to change how SampleTest\FillMissingData_Test.py gathers data NOT just change the CSV Files. 
 
@@ -10,7 +10,7 @@ Use SampleTest\html_cache to fine tune how to make the data match using the Fill
 
 It currently doesn't fill and normalize all data correctly. THe following Columns need a look as to why they differ so much. see--> SampleTest\DiffReport.csv
 
-Propagation:Maintenance , Should always start with "Maintenance:.."
+WFMaintenance , Should always start with "Maintenance:.."
 UseXYZ , Should Always start with "Use X : ..... ; Use Y : ....."
 
 
@@ -40,7 +40,7 @@ Native Habitats          : WF “Native Habitat”                           : P
 Culture                  : MBG “Culture” / “Growing Tips”                : paragraph
 Uses                     : MBG “Uses”                                    : paragraph
 UseXYZ                   : WF Benefit list                               : Use Ornamental: …; Use Wildlife: …
-Propagation:Maintenance  : WF "Maintenance:"                             : free-text
+WFMaintenance            : WF "Maintenance:"                             : free-text
 Problems                 : MBG “Problems”                                : paragraph
 
 Link: MBG                : GetLinks (MBG ID)                             : URL

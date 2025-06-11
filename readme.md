@@ -186,7 +186,7 @@ Native Habitats          : WF “Native Habitat”                           : P
 Culture                  : MBG “Culture” / “Growing Tips”                : paragraph
 Uses                     : MBG “Uses”                                    : paragraph
 UseXYZ                   : WF Benefit list                               : Use Ornamental: …; Use Wildlife: …
-Propagation:Maintenance  : WF "Maintenance:"                             : free-text
+WFMaintenance            : WF "Maintenance:"                             : free-text
 Problems                 : MBG “Problems”                                : paragraph
 
 Link: MBG                : GetLinks (MBG ID)                             : URL
