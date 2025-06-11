@@ -315,6 +315,18 @@ def gen_key(botanical: str, used: set[str]) -> str:
     used.add(base + suffix)
     return base + suffix
 
+# ── helper: return plain-text of a Wildflower section ───────────
+def _section_text(soup: BeautifulSoup, header: str) -> str:
+    h = soup.find(lambda t: t.name in ("h2", "h3", "h4")
+                  and header.lower() in t.get_text(strip=True).lower())
+    if not h:
+        return ""
+    out = []
+    for sib in h.find_next_siblings():
+        if sib.name in ("h2", "h3", "h4"):
+            break           # next section – stop
+        out.append(sib.get_text("\n", strip=True))
+    return "\n".join(out)
 
 # --- HTML Parsers for Each Site ------------------------------------------
 def parse_mbg(html: str) -> Dict[str, Optional[str]]:
@@ -342,40 +354,72 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
         ),
     }
 
-
 def parse_wf(html: str, mbg_missing: bool = False) -> Dict[str, Optional[str]]:
-    """
-    Extract Wildflower.org details: bloom color/time and habitats.
-    If MBG data is missing, also pull sun, water, benefits, and characteristics from WF.
-    """
     soup = BeautifulSoup(html, "lxml")
     status = wf_wetland_status(soup)
-    text = soup.get_text("\n", strip=True)
-    prop_section = grab(text, r"Propagation")
-    maint_match = re.search(r"Maintenance\s*:\s*([^\n]+)", prop_section or "", flags=re.I)
+
+    # SECTION HELPERS
+    def get_section_div(header: str):
+        h = soup.find(lambda t: t.name in ("h2", "h3", "h4") and header.lower() in t.get_text(strip=True).lower())
+        if not h:
+            return []
+        container = []
+        for sib in h.find_next_siblings():
+            if sib.name in ("h2", "h3", "h4"):
+                break
+            container.append(sib)
+        return container
+
+    benefit_section = get_section_div("Benefits")
+    propagation_section = get_section_div("Propagation")
+    desc_text = _section_text(soup, "Description") + "\n" + _section_text(soup, "Comments")
+
+    def first_label(text: str, label: str) -> str:
+        m = re.search(rf"{label}\s*[:–-]\s*([^\n]+)", text, flags=re.I)
+        return m.group(1).strip() if m else ""
+
+    # --- UseXYZ (robust across <li><strong>Use X:</strong>...) ---
+    uses = []
+    for li in benefit_section:
+        if li.name != "li":
+            continue
+        strong = li.find("strong")
+        if strong and "use" in strong.get_text(strip=True).lower():
+            cat = strong.get_text(strip=True).replace("Use", "").replace(":", "").strip()
+            li_text = li.get_text(" ", strip=True)
+            full = li_text.replace(strong.get_text(strip=True), "").strip(":–- \n\t")
+            uses.append(f"{cat}: {full}")
+    usexyz = ", ".join(dict.fromkeys(uses)) if uses else None  # preserve order, remove dupes
+
+    # --- Propagation:Maintenance (same structure as above) ---
+    maint = None
+    for li in propagation_section:
+        if li.name != "li":
+            continue
+        strong = li.find("strong")
+        if strong and "maintenance" in strong.get_text(strip=True).lower():
+            maint = li.get_text(" ", strip=True).split(":", 1)[-1].strip()
+            break
+
     data = {
-        "Bloom Color": ", ".join(split_conditions(grab(text, r"Bloom Color"))),
-        "Bloom Time": month_rng(grab(text, r"Bloom Time")),
-        "Habitats": grab(text, r"Native Habitat"),
-        "Soil Description": grab(text, r"Soil Description"),
+        "Bloom Color": ", ".join(split_conditions(first_label(desc_text, "Bloom Color"))),
+        "Bloom Time": month_rng(first_label(desc_text, "Bloom Time")),
+        "Habitats": first_label(desc_text, "Native Habitat") or None,
+        "Soil Description": first_label(desc_text, "Soil Description") or None,
+        "Condition Comments": first_label(desc_text, "Condition Comments") or None,
         "AGCP Regional Status": status,
-        "Condition Comments": grab(text, r"Condition Comments"),
-        "UseXYZ": ", ".join(
-            f"{m.group(1)}: {m.group(2)}"
-            for m in re.finditer(r"Use\s*\"?([^:\"]+)\"?\s*:\s*([^\n]+)", text, flags=re.I)
-        ) or None,
-        "Propagation:Maintenance": maint_match.group(1).strip() if maint_match else None,
+        "UseXYZ": usexyz,
+        "Propagation:Maintenance": maint,
     }
+
     if mbg_missing:
-        # fill core fields when MBG had no data
-        data.update(
-            {
-                "Sun": sun_conditions(grab(text, r"Light Requirement")),
-                "Water": water_conditions(grab(text, r"Soil Moisture")),
-                "Attracts": grab(text, r"Benefit"),
-            }
-        )
-    return data
+        data.update({
+            "Sun": sun_conditions(first_label(desc_text, "Light Requirement")),
+            "Water": water_conditions(first_label(desc_text, "Soil Moisture")),
+            "Attracts": first_label(_section_text(soup, "Benefits"), "Benefit"),
+        })
+
+    return {k: v for k, v in data.items() if v}
 
 
 def parse_pr(html: str) -> Dict[str, Optional[str]]:

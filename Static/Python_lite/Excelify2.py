@@ -204,7 +204,6 @@ readme["A17"] = (
 readme["A18"] = "Static/GoogleChromePortable"
 
 
-# --- Step 6: Script-version info -----------------------------------------
 # ─── Step 6 · Script-version info ─────────────────────────────────────────
 def find_script_root(repo: Path) -> Path:
     # Always use <REPO>/_internal/Static/Python_full

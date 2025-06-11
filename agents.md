@@ -27,7 +27,7 @@ This is a representation of where to get the data and how it is stored
 | Culture                         | MBG                                       |                                                            |
 | Uses                            | MBG                                       |                                                            |
 | UseXYZ                          | Wildflower                                | **Under Benefits List:"Use "X": X, Use"Y":Y..."**         |
-| Propagation\:Maintenance        | Wildflower                                | optional: Might not exist, Under Proptional fieldopagation |
+| Propagation:Maintenance        | Wildflower                                | optional: Might not exist, Under Proptional fieldopagation |
 | Problems                        | MBG                                       |                                                            |
 | Link: Missouri Botanical Garden | from GetLinks                             |                                                            |
 | Link: Wildflower.org            | from GetLinks                             |                                                            |
