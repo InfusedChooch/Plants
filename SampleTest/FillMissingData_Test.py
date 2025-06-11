@@ -308,7 +308,13 @@ def clean(text: str | None) -> str | None:
     text = re.sub(r"\s+", " ", text) # squeeze spaces/newlines
     text = text.replace(" ,", ",").strip(" ,")
     text = text.strip()
-    return NORMALISE.get(text.lower(), text)
+    key = text.lower()
+    if key in NORMALISE:
+        return NORMALISE[key]
+    for val in NORMALISE.values():
+        if key == val.lower():
+            return val
+    return text
 
 MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
 
@@ -316,6 +322,12 @@ MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
 NORMALISE = {
     "full sun to part shade": "Full Sun, Part Shade",
     "dry to medium": "dry, medium",
+    "full sun": "Full Sun",
+    "part shade": "Part Shade",
+    "part shade to full shade": "Part Shade, Full Shade",
+    "medium": "medium",
+    "medium to wet": "medium, wet",
+    "wet": "wet",
 }
 
 def month_list(raw: str | None) -> str | None:
