@@ -10,3 +10,6 @@ customtkinter
 pyinstaller
 pyyaml
 pytest
+beautifulsoup4
+lxml
+requests

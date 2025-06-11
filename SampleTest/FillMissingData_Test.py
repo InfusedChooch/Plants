@@ -362,6 +362,26 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
             if len(tds) >= 2:
                 char[tds[0].rstrip(":")] = tds[1]
 
+    # also check "Distribution" section for a Native Habitat/Habitat row
+    dist = soup.find(
+        lambda t: t.name in ("h2", "h3", "h4")
+        and "distribution" in t.get_text(strip=True).lower()
+    )
+    if dist and (box := dist.find_parent("div")):
+        for strong in box.find_all("strong"):
+            label = strong.get_text(strip=True).rstrip(":")
+            if label in {"Native Habitat", "Habitat"}:
+                val_parts = []
+                for sib in strong.next_siblings:
+                    if getattr(sib, "name", None) == "strong":
+                        break
+                    if isinstance(sib, str):
+                        val_parts.append(sib)
+                    else:
+                        val_parts.append(sib.get_text(" ", strip=True))
+                char[label] = clean(" ".join(val_parts).strip())
+                break
+
     # Benefits → UseXYZ
     uses = [f"{m.group(1).strip()}: {m.group(2).strip()}"
             for m in re.finditer(r"Use\s+([A-Za-z ]+)\s*:\s*([^\n]+)", txt)]
