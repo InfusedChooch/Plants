@@ -2,7 +2,7 @@ Templates\0610_Masterlist_New_Beta_Nodata.csv is the new data structure for CSVs
 
 Plant Type	Key	Botanical Name	Common Name	Height (ft)	Spread (ft)	Bloom Color	Bloom Time	Sun	Water	AGCP Regional Status	Distribution Zone	Attracts	Tolerates	Soil Description	Condition Comments	Maintenance	Native Habitats	Culture	Uses	UseXYZ	Propagation:Maintenance	Problems	Link: Missouri Botanical Garden	Link: Wildflower.org	Link: Pleasantrunnursery.com	Link: Newmoonnursery.com	Link: Pinelandsnursery.com		
 
-I need the output of SampleTest\FillMissingData_Test.py --> SampleTest\Plants_Linked_Filled_Test.csv to match the handfilled example SampleTest\Plants_Linked_FIlled_Manual  
+I need the output of SampleTest\FillMissingData_Test.py --> SampleTest\Plants_Linked_Filled_Test.csv to match the handfilled example SampleTest\Plants_Linked_FIlled_Manual. To fix the difference we need to change how SampleTest\FillMissingData_Test.py gathers data NOT just change the CSV Files. 
 
 We need to make sure the data is getting pulled from the right places. 
 
