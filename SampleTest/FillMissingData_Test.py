@@ -167,7 +167,7 @@ WF_COLS = {
     "Water",
     "Attracts",
     "UseXYZ",
-    "Propagation:Maintenance",
+    "WFMaintenance",
 }
 PR_COLS = {"Tolerates", "Attracts"}
 NM_COLS = {"Sun", "Water", "Bloom Color", "Height (ft)", "Tolerates"}
@@ -185,7 +185,7 @@ ADDITIVE_COLS = {
     "Attracts",
     "Tolerates",
     "UseXYZ",
-    "Propagation:Maintenance",
+    "WFMaintenance",
     "Bloom Time",
     "Bloom Color",
 }
@@ -487,7 +487,7 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
                 uses.append(f"Use {cat}: {body}")
     usexyz = csv_join(uses)
 
-    # Propagation:Maintenance
+    # WFMaintenance
     maint = None
     for li in soup.select("li"):
         strong = li.find(["strong", "b"])
@@ -528,7 +528,7 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
         "Native Habitats": clean(char.get("Native Habitat") or char.get("Habitat")),
         "AGCP Regional Status": _wf_wetland(soup),
         "UseXYZ": usexyz and clean(usexyz),
-        "Propagation:Maintenance": clean(maint),
+        "W": clean(maint),
         "Attracts": clean(char.get("Benefit")),
     }
 
