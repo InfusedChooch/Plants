@@ -362,16 +362,25 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
                 char[tds[0].rstrip(":")] = tds[1]
 
     # Benefits → UseXYZ
-    uses = []
-    for li in soup.select("li"):
-        strong = li.find(["strong", "b"])
-        if not strong:
-            continue
-        head = strong.get_text(strip=True)
-        if head.lower().startswith("use"):
-            cat = head.replace("Use", "").replace(":", "").strip()
-            body = li.get_text(" ", strip=True).replace(head, "").lstrip(":–—- ").strip()
-            uses.append(f"{cat}: {body}")
+    uses = [f"{m.group(1).strip()}: {m.group(2).strip()}"
+            for m in re.finditer(r"Use\s+([A-Za-z ]+)\s*:\s*([^\n]+)", txt)]
+    if not uses:
+        # Benefit section may use <div> with <strong> labels
+        benefit = soup.find("h4", string=lambda x: x and "benefit" in x.lower())
+        if benefit and (box := benefit.find_parent("div")):
+            sect = box.get_text("\n", strip=True)
+            for m in re.finditer(r"Use\s+([^:]+):\s*(.+?)(?:\n|$)", sect, flags=re.I):
+                uses.append(f"{m.group(1).strip()}: {m.group(2).strip()}")
+    if not uses:
+        for li in soup.select("li"):
+            strong = li.find(["strong", "b"])
+            if not strong:
+                continue
+            head = strong.get_text(strip=True)
+            if head.lower().startswith("use"):
+                cat = head.replace("Use", "").replace(":", "").strip()
+                body = li.get_text(" ", strip=True).replace(head, "").lstrip(":–—- ").strip()
+                uses.append(f"{cat}: {body}")
     usexyz = csv_join(uses)
 
     # Propagation:Maintenance
@@ -387,8 +396,12 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
         "Spread (ft)": rng(char.get("Spread")),
         "Bloom Color": clean(char.get("Bloom Color")),
         "Bloom Time": month_list(char.get("Bloom Time") or char.get("Bloom Period")),
-        "Soil Description": clean(_section_text(soup, "Soil Description")),
-        "Condition Comments": clean(_section_text(soup, "Comment")),  # works for Comment / Comments
+        "Soil Description": clean(_grab(txt, "Soil Description") or _section_text(soup, "Soil Description")),
+        "Condition Comments": clean(
+            _grab(txt, "Condition Comments")
+            or _grab(txt, "Conditions Comments")
+            or _section_text(soup, "Comment")
+        ),
         "Native Habitats": clean(char.get("Native Habitat") or char.get("Habitat")),
         "AGCP Regional Status": _wf_wetland(soup),
         "UseXYZ": usexyz and clean(usexyz),
