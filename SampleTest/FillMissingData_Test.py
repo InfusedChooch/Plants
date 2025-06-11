@@ -215,9 +215,12 @@ def csv_join(parts: list[str]) -> str | None:
 
 
 def merge_field(a: str | None, b: str | None) -> str | None:
-    return csv_join(
-        [*(re.split(r"[|,]", a) if a else []), *(re.split(r"[|,]", b) if b else [])]
-    )
+        parts = [
+        *(re.split(r"[|,]", a) if a else []),
+        *(re.split(r"[|,]", b) if b else []),
+    ]
+        items = {p.strip() for p in parts if p and p.strip()}
+        return ", ".join(sorted(items, key=str.casefold)) if items else None
 
 
 # ───────────────────── HTTP fetch helper ──────────────────────────────────
@@ -344,6 +347,18 @@ def month_list(raw: str | None) -> str | None:
     months.sort(key=MONTHS.index)
     return ", ".join(months)
 
+def color_list(raw: str | None) -> str | None:
+    """Normalise a comma/connector separated list of colors."""
+    if not raw:
+        return None
+    s = clean(raw) or ""
+    s = re.sub(r"\s*(?:/|\band\b|\bwith\b|&)\s*", ",", s, flags=re.I)
+    parts = [p.strip().title() for p in s.split(",")]
+    out: list[str] = []
+    for p in parts:
+        if p and p not in out:
+            out.append(p)
+    return ", ".join(out) if out else None
 
 
 def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str]]:

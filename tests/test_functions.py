@@ -37,3 +37,25 @@ def test_month_list_range_handling():
     month_list = load_function("SampleTest/FillMissingData_Test.py", "month_list")
     month_list.__globals__["MONTHS"] = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
     assert month_list("Feb - Jul") == "Feb, Mar, Apr, May, Jun, Jul"
+
+def test_color_list_examples():
+    color_list = load_function("SampleTest/FillMissingData_Test.py", "color_list")
+    clean = load_function("SampleTest/FillMissingData_Test.py", "clean")
+    NORMALISE = {
+        "full sun to part shade": "Full Sun, Part Shade",
+        "dry to medium": "dry, medium",
+    }
+    color_list.__globals__["clean"] = clean
+    clean.__globals__["NORMALISE"] = NORMALISE
+    assert color_list("red and yellow") == "Red, Yellow"
+    assert color_list("white/pink") == "White, Pink"
+    assert color_list("blue with white") == "Blue, White"
+    assert color_list("red, red") == "Red"
+
+
+def test_merge_field_stable_ordering():
+    merge_field = load_function("SampleTest/FillMissingData_Test.py", "merge_field")
+    a = merge_field("Butterflies, Bees", "Birds")
+    b = merge_field("Bees, Butterflies", "Birds")
+    assert a == "Bees, Birds, Butterflies"
+    assert a == b
