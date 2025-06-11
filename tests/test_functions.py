@@ -59,3 +59,50 @@ def test_merge_field_stable_ordering():
     b = merge_field("Bees, Butterflies", "Birds")
     assert a == "Bees, Birds, Butterflies"
     assert a == b
+
+def test_clean_normalizes_variants():
+    clean = load_function("SampleTest/FillMissingData_Test.py", "clean")
+    clean.__globals__["NORMALISE"] = {
+        "full sun to part shade": "Full Sun, Part Shade",
+        "dry to medium": "dry, medium",
+        "full sun": "Full Sun",
+        "part shade": "Part Shade",
+        "part shade to full shade": "Part Shade, Full Shade",
+        "medium": "medium",
+        "medium to wet": "medium, wet",
+        "wet": "wet",
+    }
+    cases = {
+        "full sun to part shade": "Full Sun, Part Shade",
+        "FULL SUN": "Full Sun",
+        "part shade": "Part Shade",
+        "Part shade to full shade": "Part Shade, Full Shade",
+        "MEDIUM": "medium",
+        "medium to wet": "medium, wet",
+        "WET": "wet",
+    }
+    for raw, expected in cases.items():
+        assert clean(raw) == expected
+
+
+def test_clean_matches_manual_csv_values():
+    clean = load_function("SampleTest/FillMissingData_Test.py", "clean")
+    clean.__globals__["NORMALISE"] = {
+        "full sun to part shade": "Full Sun, Part Shade",
+        "dry to medium": "dry, medium",
+        "full sun": "Full Sun",
+        "part shade": "Part Shade",
+        "part shade to full shade": "Part Shade, Full Shade",
+        "medium": "medium",
+        "medium to wet": "medium, wet",
+        "wet": "wet",
+    }
+    manual = Path("SampleTest/Plants_Linked_FIlled_Manual.csv")
+    import csv
+    with manual.open() as f:
+        rows = list(csv.DictReader(f))
+    unique = {val for row in rows for val in (row["Sun"], row["Water"])}
+    for val in unique:
+        assert clean(val.lower()) == val
+        assert clean(val.upper()) == val
+
