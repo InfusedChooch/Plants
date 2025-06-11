@@ -6,9 +6,9 @@ I need the output of SampleTest\FillMissingData_Test.py --> SampleTest\Plants_Li
 
 We need to make sure the data is getting pulled from the right places. and is amde to be repeatable. The goal is to make SampleTest\FillMissingData_Test.py output a file that matches the contents of SampleTest\Plants_Linked_FIlled_Manual.csv
 
-Use SampleTest\html_cache to fine tune how to make the data match using the FillMissingData_Test.py -- SampleTest\Plants_Linked_Filled_Test.csv should match SampleTest\Plants_Linked_FIlled_Manual.csv when outputed. 
+Use SampleTest\html_cache to fine tune how to make the data match using the FillMissingData_Test.py -- SampleTest\Plants_Linked_Filled_Test.csv should match SampleTest\Plants_Linked_FIlled_Manual.csv when outputted.  
 
-It currently does't fill and normalize all data correctly. 
+It currently doesn't fill and normalize all data correctly.  
 
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
