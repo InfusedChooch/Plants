@@ -186,6 +186,8 @@ ADDITIVE_COLS = {
     "Tolerates",
     "UseXYZ",
     "Propagation:Maintenance",
+    "Bloom Time",
+    "Bloom Color",
 }
 
 
@@ -221,6 +223,40 @@ def merge_field(a: str | None, b: str | None) -> str | None:
     ]
         items = {p.strip() for p in parts if p and p.strip()}
         return ", ".join(sorted(items, key=str.casefold)) if items else None
+
+
+def _merge_months(a: str | None, b: str | None) -> str | None:
+    collected: list[str] = []
+    for val in (a, b):
+        parsed = month_list(val)
+        if parsed:
+            for m in [p.strip() for p in parsed.split(',')]:
+                if m and m not in collected:
+                    collected.append(m)
+    if not collected:
+        return None
+    indices = sorted(MONTHS.index(m) for m in collected)
+    start, end = indices[0], indices[-1]
+    return ', '.join(MONTHS[start : end + 1])
+
+
+def _merge_colors(a: str | None, b: str | None) -> str | None:
+    colors: list[str] = []
+    for val in (a, b):
+        parsed = color_list(val)
+        if parsed:
+            for c in [p.strip() for p in parsed.split(',')]:
+                if c and c not in colors:
+                    colors.append(c)
+    return ', '.join(colors) if colors else None
+
+
+def merge_additive(field: str, a: str | None, b: str | None) -> str | None:
+    if field == "Bloom Time":
+        return _merge_months(a, b)
+    if field == "Bloom Color":
+        return _merge_colors(a, b)
+    return merge_field(a, b)
 
 
 # ───────────────────── HTTP fetch helper ──────────────────────────────────
@@ -630,7 +666,7 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_mbg(html).items():
                     if k in ADDITIVE_COLS:
-                        df.at[idx, k] = merge_field(df.at[idx, k], v)
+                        df.at[idx, k] = merge_additive(k, df.at[idx, k], v)
                     elif missing(df.at[idx, k]):
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
@@ -643,7 +679,7 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
                 wf_data = parse_wf(html, want_fallback_sun_water=missing(row["Sun"]))
                 for k, v in wf_data.items():
                     if k in ADDITIVE_COLS:
-                        df.at[idx, k] = merge_field(df.at[idx, k], v)
+                        df.at[idx, k] = merge_additive(k, df.at[idx, k], v)
                     elif missing(df.at[idx, k]):
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
@@ -655,7 +691,7 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_pr(html).items():
                     if k in ADDITIVE_COLS:
-                        df.at[idx, k] = merge_field(df.at[idx, k], v)
+                        df.at[idx, k] = merge_additive(k, df.at[idx, k], v)
                     elif missing(df.at[idx, k]):
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
@@ -667,7 +703,7 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_nm(html).items():
                     if k in ADDITIVE_COLS:
-                        df.at[idx, k] = merge_field(df.at[idx, k], v)
+                        df.at[idx, k] = merge_additive(k, df.at[idx, k], v)
                     elif missing(df.at[idx, k]):
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
@@ -679,7 +715,7 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_pn(html).items():
                     if k in ADDITIVE_COLS:
-                        df.at[idx, k] = merge_field(df.at[idx, k], v)
+                        df.at[idx, k] = merge_additive(k, df.at[idx, k], v)
                     elif missing(df.at[idx, k]):
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
@@ -689,8 +725,14 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
         df.at[idx, "Water"] = clean(df.at[idx, "Water"])
         df.at[idx, "Tolerates"] = clean(df.at[idx, "Tolerates"])
         df.at[idx, "Soil Description"] = clean(df.at[idx, "Soil Description"])
-        df.at[idx, "Bloom Color"] = color_list(df.at[idx, "Bloom Color"])
-        df.at[idx, "Bloom Time"] = month_list(df.at[idx, "Bloom Time"])
+
+        df.at[idx, "Bloom Time"] = merge_additive(
+            "Bloom Time", df.at[idx, "Bloom Time"], None
+        )
+        df.at[idx, "Bloom Color"] = merge_additive(
+            "Bloom Color", df.at[idx, "Bloom Color"], None
+        )
+
 
 
     # finalise Distribution Zone
