@@ -331,7 +331,14 @@ def month_list(raw: str | None) -> str | None:
         a, b = MONTHS.index(rng[0][:3]), MONTHS.index(rng[1][:3])
         if a <= b:
             return ", ".join(MONTHS[a : b + 1])
-    return ", ".join({m[:3] for m in rng if m[:3] in MONTHS})
+
+    months = []
+    for m in rng:
+        abbr = m[:3]
+        if abbr in MONTHS and abbr not in months:
+            months.append(abbr)
+    months.sort(key=MONTHS.index)
+    return ", ".join(months)
 
 
 
