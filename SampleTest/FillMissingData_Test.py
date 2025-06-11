@@ -280,6 +280,12 @@ def clean(text: str | None) -> str | None:
 
 MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
 
+# normalisation map for common phrasing tweaks
+NORMALISE = {
+    "full sun to part shade": "Full Sun, Part Shade",
+    "dry to medium": "dry, medium",
+}
+
 def month_list(raw: str | None) -> str | None:
     """
     Convert any 'Apr-May' · 'April to May' · 'Apr through Jun'
