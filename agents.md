@@ -8,7 +8,7 @@ We need to make sure the data is getting pulled from the right places. and is ma
 
 Use SampleTest\html_cache to fine tune how to make the data match using the FillMissingData_Test.py -- SampleTest\Plants_Linked_Filled_Test.csv should match SampleTest\Plants_Linked_FIlled_Manual.csv when outputted.  
 
-It currently doesn't fill and normalize all data correctly. Some Columns need a look as to why they differ so much. see--> SampleTest\DiffReport.csv
+It currently doesn't fill and normalize all data correctly. see--> SampleTest\DiffReport.csv and read into Rev note to see my comment; I think most issues are a minor formatting error, They could be overlooked. The most important little mistake is not having uniform Capitalization
 
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
@@ -16,7 +16,7 @@ It currently doesn't fill and normalize all data correctly. Some Columns need a 
 CSV header               : data source path                              : expected format
 Plant Type               : Masterlist                                    : Perennial | Shrub | …
 Key                      : Masterlist (generated)                        : 2-3 letter unique code
-Botanical Name           : Masterlist                                    : Genus species (italics)
+Botanical Name           : Masterlist                                    : Genus species 'Variety' (italics)
 Common Name              : Masterlist                                    : ALL CAPS
 
 Height (ft)              : MBG → Wildflower.org → Pinelands              : X - Y

@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse, csv, re, sys, time
 from pathlib import Path
 from typing import Dict, Optional
-
+from collections import OrderedDict
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
@@ -222,8 +222,11 @@ def merge_field(a: str | None, b: str | None) -> str | None:
         *(re.split(r"[|,]", a) if a else []),
         *(re.split(r"[|,]", b) if b else []),
     ]
-    items = {p.strip() for p in parts if p and p.strip()}
-    return ", ".join(sorted(items, key=str.casefold)) if items else None
+    items = OrderedDict.fromkeys(
+        p.strip() for p in parts if p and p.strip()
+    )
+    return ", ".join(items.keys()) if items else None
+
 
 
 def _merge_months(a: str | None, b: str | None) -> str | None:

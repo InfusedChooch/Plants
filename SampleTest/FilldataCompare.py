@@ -92,7 +92,7 @@ def write_csv(rows: list[tuple], out_file: Path) -> None:
     out_file.parent.mkdir(parents=True, exist_ok=True)
     with out_file.open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["Key / Botanical", "Column", "Gold value", "Scraper value"])
+        w.writerow(["Key / Botanical", "Column", "Gold value", "Scraper value","Rev Note"])
         w.writerows(rows)
     console.print(f"[cyan]Diff written → {out_file}[/cyan]")
 

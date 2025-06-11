@@ -165,7 +165,7 @@ RU Plant Guide/
 CSV header               : data source path                              : expected format
 Plant Type               : Masterlist                                    : Perennial | Shrub | …
 Key                      : Masterlist (generated)                        : 2-3 letter unique code
-Botanical Name           : Masterlist                                    : Genus species (italics)
+Botanical Name           : Masterlist                                    : Genus species 'Variety' (italics)
 Common Name              : Masterlist                                    : ALL CAPS
 
 Height (ft)              : MBG → Wildflower.org → Pinelands              : X - Y
