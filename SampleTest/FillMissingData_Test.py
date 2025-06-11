@@ -482,11 +482,8 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             url = row.get("MBG Link", "").strip()
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_mbg(html).items():
-                    df.at[idx, k] = (
-                        v
-                        if missing(df.at[idx, k])
-                        else merge_field(df.at[idx, k], v)
-                    )
+                    if missing(df.at[idx, k]):
+                        df.at[idx, k] = v
                 time.sleep(SLEEP)
 
         # Wildflower -------------------------------------------------------
@@ -496,11 +493,8 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             if url.startswith("http") and (html := fetch(url)):
                 wf_data = parse_wf(html, want_fallback_sun_water=missing(row["Sun"]))
                 for k, v in wf_data.items():
-                    df.at[idx, k] = (
-                        v
-                        if missing(df.at[idx, k])
-                        else merge_field(df.at[idx, k], v)
-                    )
+                    if missing(df.at[idx, k]):
+                        df.at[idx, k] = v
                 time.sleep(SLEEP)
 
         # Pleasant Run -----------------------------------------------------
@@ -509,11 +503,8 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             url = row.get("PR Link", "").strip()
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_pr(html).items():
-                    df.at[idx, k] = (
-                        v
-                        if missing(df.at[idx, k])
-                        else merge_field(df.at[idx, k], v)
-                    )
+                    if missing(df.at[idx, k]):
+                        df.at[idx, k] = v
                 time.sleep(SLEEP)
 
         # New Moon ---------------------------------------------------------
@@ -522,11 +513,8 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             url = row.get("NM Link", "").strip()
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_nm(html).items():
-                    df.at[idx, k] = (
-                        v
-                        if missing(df.at[idx, k])
-                        else merge_field(df.at[idx, k], v)
-                    )
+                    if missing(df.at[idx, k]):
+                        df.at[idx, k] = v
                 time.sleep(SLEEP)
 
         # Pinelands --------------------------------------------------------
@@ -535,11 +523,8 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             url = row.get("PN Link", "").strip()
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_pn(html).items():
-                    df.at[idx, k] = (
-                        v
-                        if missing(df.at[idx, k])
-                        else merge_field(df.at[idx, k], v)
-                    )
+                    if missing(df.at[idx, k]):
+                        df.at[idx, k] = v
                 time.sleep(SLEEP)
 
                         # --- post-merge cleanup on additive fields -----------------------
@@ -550,16 +535,35 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
         df.at[idx, "Bloom Time"] = month_list(df.at[idx, "Bloom Time"])
 
 
-    # final rename Zone → Distribution Zone for export
+    # finalise Distribution Zone
     if "Zone" in df.columns:
-        df.rename(columns={"Zone": "Distribution Zone"}, inplace=True)
+        if "Distribution Zone" in df.columns:
+            df["Distribution Zone"] = df["Distribution Zone"].where(
+                df["Distribution Zone"].astype(bool), df["Zone"]
+            )
+        else:
+            df.rename(columns={"Zone": "Distribution Zone"}, inplace=True)
+        if "Zone" in df.columns:
+            df.drop(columns=["Zone"], inplace=True)
+
+    # restore original link column names
+    df.rename(
+        columns={
+            "MBG Link": "Link: Missouri Botanical Garden",
+            "WF Link": "Link: Wildflower.org",
+            "PR Link": "Link: Pleasantrunnursery.com",
+            "NM Link": "Link: Newmoonnursery.com",
+            "PN Link": "Link: Pinelandsnursery.com",
+        },
+        inplace=True,
+    )
 
     # reorder to master template
     template_cols = list(pd.read_csv(master_csv, nrows=0).columns)
     for col in template_cols:
         if col not in df.columns:
             df[col] = ""
-    df = df[template_cols + [c for c in df.columns if c not in template_cols]]
+    df = df.loc[:, [c for c in template_cols if c in df.columns]]
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out_csv, index=False, quoting=csv.QUOTE_MINIMAL, na_rep="")
