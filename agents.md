@@ -8,6 +8,11 @@ We need to make sure the data is getting pulled from the right places. and is am
 
 Use SampleTest\html_cache to fine tune how to make the data match using the FillMissingData_Test.py -- SampleTest\Plants_Linked_Filled_Test.csv should match SampleTest\Plants_Linked_FIlled_Manual.csv when outputed. 
 
+It currently does't find and fill at all
+-Soil Description
+-Condition Comments
+-UseXYZ
+
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
 ```
 CSV header               : data source path                              : expected format
