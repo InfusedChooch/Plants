@@ -84,3 +84,4 @@ def test_clean_matches_manual_csv_values():
     for val in unique:
         assert clean(val.lower()) == val
         assert clean(val.upper()) == val
+
