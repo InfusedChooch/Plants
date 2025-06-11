@@ -145,9 +145,8 @@ RU Plant Guide/
 │   └── Plants_Linked_Filled_Review.xlsx
 ```
 
-```
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
-
+```
 CSV header               : data source path                              : expected format
 Plant Type               : Masterlist                                    : Perennial | Shrub | …
 Key                      : Masterlist (generated)                        : 2-3 letter unique code
@@ -156,8 +155,8 @@ Common Name              : Masterlist                                    : ALL C
 
 Height (ft)              : MBG → Wildflower.org → Pinelands              : X - Y
 Spread (ft)              : MBG → Wildflower.org → Pinelands              : X - Y
-Bloom Color              : Wildflower.org → MBG → Pinelands/New Moon     : Color1, Color2, …
-Bloom Time               : Wildflower.org → MBG → Pinelands/New Moon     : Jan, Feb, …
+Bloom Color              : Wildflower.org + MBG + Pinelands/New Moon     : Color1, Color2, …
+Bloom Time               : Wildflower.org + MBG + Pinelands/New Moon     : Jan, Feb, …
 Sun                      : MBG → WF “Light Requirement”                  : Full sun, Part sun, …
 Water                    : MBG → WF “Soil Moisture”                      : low, medium, high
 AGCP Regional Status     : WF (Wetland Indicator)                        : FACU | OBL | …
@@ -172,7 +171,7 @@ Native Habitats          : WF “Native Habitat”                           : P
 Culture                  : MBG “Culture” / “Growing Tips”                : paragraph
 Uses                     : MBG “Uses”                                    : paragraph
 UseXYZ                   : WF Benefit list                               : Use Ornamental: …; Use Wildlife: …
-Propagation:Maintenance  : WF Propagation → Maintenance:                 : free-text
+Propagation:Maintenance  : WF "Maintenance:"                             : free-text
 Problems                 : MBG “Problems”                                : paragraph
 
 Link: MBG                : GetLinks (MBG ID)                             : URL
@@ -180,4 +179,3 @@ Link: Wildflower.org     : GetLinks (USDA ID)                            : URL
 Link: Pleasant Run       : GetLinks (name match)                         : URL
 Link: New Moon           : GetLinks (name match)                         : URL
 Link: Pinelands          : GetLinks (name match)                         : URL
-```
