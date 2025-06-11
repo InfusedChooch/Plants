@@ -4,39 +4,41 @@ Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bl
 
 I need the output of SampleTest\FillMissingData_Test.py --> SampleTest\Plants_Linked_Filled_Test.csv to match the handfilled example SampleTest\Plants_Linked_FIlled_Manual. To fix the difference we need to change how SampleTest\FillMissingData_Test.py gathers data NOT just change the CSV Files. 
 
-We need to make sure the data is getting pulled from the right places. and is amde to be repeatable. The goal is to make SampleTest\FillMissingData_Test.py output a file that matches the contents ofSampleTest\Plants_Linked_FIlled_Manual.csv
+We need to make sure the data is getting pulled from the right places. and is amde to be repeatable. The goal is to make SampleTest\FillMissingData_Test.py output a file that matches the contents of SampleTest\Plants_Linked_FIlled_Manual.csv
 
-**CSV → Source chain (left‑to‑right = first place we look, fallbacks follow)**
+**CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
 ```
-Plant Type                : Masterlist
-Key                       : generated from Botanical Name (first‐letter code)
-Botanical Name            : Masterlist
-Common Name               : Masterlist
+CSV header               : data source path                              : expected format
+Plant Type               : Masterlist                                    : Perennial | Shrub | …
+Key                      : Masterlist (generated)                        : 2-3 letter unique code
+Botanical Name           : Masterlist                                    : Genus species (italics)
+Common Name              : Masterlist                                    : ALL CAPS
 
-Height (ft)               : MBG ➜ Wildflower.org ➜ Pinelands
-Spread (ft)               : MBG ➜ Wildflower.org ➜ Pinelands
-Bloom Color               : Wildflower.org ➜ MBG ➜ Pinelands / New Moon
-Bloom Time                : Wildflower.org ➜ MBG ➜ Pinelands / New Moon
-Sun                       : MBG ➜ Wildflower.org ("Light Requirement")
-Water                     : MBG ➜ Wildflower.org ("Soil Moisture")
-AGCP Regional Status      : Wildflower.org (National Wetland Indicator table)
-Distribution Zone         : MBG ("Zone" → USDA Hardiness)
+Height (ft)              : MBG → Wildflower.org → Pinelands              : X - Y
+Spread (ft)              : MBG → Wildflower.org → Pinelands              : X - Y
+Bloom Color              : Wildflower.org → MBG → Pinelands/New Moon     : Color1, Color2, …
+Bloom Time               : Wildflower.org → MBG → Pinelands/New Moon     : Jan, Feb, …
+Sun                      : MBG → WF “Light Requirement”                  : Full sun, Part sun, …
+Water                    : MBG → WF “Soil Moisture”                      : low, medium, high
+AGCP Regional Status     : WF (Wetland Indicator)                        : FACU | OBL | …
+Distribution Zone        : MBG “Zone”                                    : USDA Hardiness Zone X – Y
 
-Attracts                  : Pleasant Run ➜ Wildflower.org (Benefit) ➜ MBG ➜ Pinelands
-Tolerates                 : MBG ➜ Pleasant Run ➜ New Moon ➜ Pinelands
-Soil Description          : Wildflower.org ("Soil Description" section)
-Condition Comments        : Wildflower.org ("Comments" section)
-Maintenance               : MBG ("Maintenance" field)
-Native Habitats           : Wildflower.org (Plant Characteristics – Native Habitat)
-Culture                   : MBG ("Culture" or "Growing Tips" paragraph)
-Uses                      : MBG (Uses section)
-UseXYZ                    : Wildflower.org (Benefits list – "Use X: /br" | "Use Y: /br" | ...)
-Propagation:Maintenance   : Wildflower.org (Propagation list – "Maintenance:")
-Problems                  : MBG (Problems section)
+Attracts                 : PR + WF + MBG + Pinelands                     : Bees, Butterflies, …
+Tolerates                : MBG + PR + NM + Pinelands                     : Deer, Salt, …
+Soil Description         : WF “Soil Description”                         : paragraph
+Condition Comments       : WF “Comments”                                 : paragraph
+Maintenance              : MBG “Maintenance”                             : Low | Medium | High
+Native Habitats          : WF “Native Habitat”                           : Prairie, Woodland, …
+Culture                  : MBG “Culture” / “Growing Tips”                : paragraph
+Uses                     : MBG “Uses”                                    : paragraph
+UseXYZ                   : WF Benefit list                               : Use Ornamental: …; Use Wildlife: …
+Propagation:Maintenance  : WF Propagation → Maintenance:                 : free-text
+Problems                 : MBG “Problems”                                : paragraph
 
-Link: Missouri Botanical Garden   : GetLinks.py (MBG ID)
-Link: Wildflower.org              : GetLinks.py (USDA ID)
-Link: Pleasantrunnursery.com      : GetLinks.py (Name match)
-Link: Newmoonnursery.com          : GetLinks.py (Name match)
-Link: Pinelandsnursery.com        : GetLinks.py (Name match)
+Link: MBG                : GetLinks (MBG ID)                             : URL
+Link: Wildflower.org     : GetLinks (USDA ID)                            : URL
+Link: Pleasant Run       : GetLinks (name match)                         : URL
+Link: New Moon           : GetLinks (name match)                         : URL
+Link: Pinelands          : GetLinks (name match)                         : URL
+
 ```
