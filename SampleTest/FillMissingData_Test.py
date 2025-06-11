@@ -458,25 +458,36 @@ def parse_pr(html: str) -> Dict[str, Optional[str]]:
 
 def parse_nm(html: str) -> Dict[str, Optional[str]]:
     soup = BeautifulSoup(html, "lxml")
+
+    def next_div_text(title: str) -> Optional[str]:
+        h = soup.find("h4", string=lambda x: x and title.lower() in x.lower())
+        if not h:
+            return None
+        box = h.find_parent("div")
+        if not box:
+            return None
+        nxt = box.find_next_sibling("div")
+        if not nxt:
+            return None
+        inner = nxt.find("div", class_="et_pb_text_inner")
+        return inner.get_text(strip=True) if inner else None
+
     txt = soup.get_text("\n", strip=True)
     flat = txt.replace("\n", " ")
 
-    def lbl(l: str) -> Optional[str]:
-        m = re.search(rf"{l}\s*:?\s*([^\n]+)", txt, flags=re.I)
-        return m.group(1).strip() if m else None
-
     data = {
-        "Sun": lbl("Exposure"),
-        "Water": lbl("Soil Moisture Preference"),
-        "Bloom Color": lbl("Bloom Colors"),
+        "Sun": next_div_text("Exposure"),
+        "Water": next_div_text("Soil Moisture Preference"),
+        "Bloom Color": next_div_text("Bloom Colors"),
+        "Bloom Time": next_div_text("Bloom Time") or next_div_text("Bloom Period"),
     }
     if m := re.search(r"Height\s*:\s*([\d\s\-]+)\s*ft", flat, flags=re.I):
         data["Height (ft)"] = rng(m.group(1))
 
     tol = []
-    if s := lbl("Salt Tolerance"):
+    if s := next_div_text("Salt Tolerance"):
         tol.append(f"Salt Tolerance: {s}")
-    if (j := lbl("Juglans nigra")) and j.lower().startswith("yes"):
+    if (j := next_div_text("Juglans nigra")) and j.lower().startswith("yes"):
         tol.append("Black Walnut Tolerant")
     if tol:
         data["Tolerates"] = csv_join(tol)
