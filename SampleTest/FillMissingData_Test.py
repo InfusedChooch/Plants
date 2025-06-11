@@ -466,7 +466,7 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
                 break
 
     # Benefits → UseXYZ
-    uses = [f"{m.group(1).strip()}: {m.group(2).strip()}"
+    uses = [f"Use: {m.group(1).strip()}: {m.group(2).strip()}"
             for m in re.finditer(r"Use\s+([A-Za-z ]+)\s*:\s*([^\n]+)", txt)]
     if not uses:
         # Benefit section may use <div> with <strong> labels
@@ -474,7 +474,7 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
         if benefit and (box := benefit.find_parent("div")):
             sect = box.get_text("\n", strip=True)
             for m in re.finditer(r"Use\s+([^:]+):\s*(.+?)(?:\n|$)", sect, flags=re.I):
-                uses.append(f"{m.group(1).strip()}: {m.group(2).strip()}")
+                uses.append(f"Use: {m.group(1).strip()}: {m.group(2).strip()}")
     if not uses:
         for li in soup.select("li"):
             strong = li.find(["strong", "b"])
@@ -484,7 +484,7 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
             if head.lower().startswith("use"):
                 cat = head.replace("Use", "").replace(":", "").strip()
                 body = li.get_text(" ", strip=True).replace(head, "").lstrip(":–—- ").strip()
-                uses.append(f"{cat}: {body}")
+                uses.append(f"Use: {cat}: {body}")
     usexyz = csv_join(uses)
 
     # Propagation:Maintenance
@@ -498,7 +498,7 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
     data = {
         "Height (ft)": rng(char.get("Height")),
         "Spread (ft)": rng(char.get("Spread")),
-        "Bloom Color": clean(char.get("Bloom Color")),
+        "Bloom Color": color_list(char.get("Bloom Color")),
         "Bloom Time": month_list(char.get("Bloom Time") or char.get("Bloom Period")),
         "Soil Description": clean(_grab(txt, "Soil Description") or _section_text(soup, "Soil Description")),
         "Condition Comments": clean(
@@ -595,7 +595,7 @@ def parse_nm(html: str) -> Dict[str, Optional[str]]:
     data = {
         "Sun": next_div_text("Exposure"),
         "Water": next_div_text("Soil Moisture Preference"),
-        "Bloom Color": next_div_text("Bloom Colors"),
+        "Bloom Color": color_list(next_div_text("Bloom Colors")),
         "Bloom Time": next_div_text("Bloom Time") or next_div_text("Bloom Period"),
     }
     if m := re.search(r"Height\s*:\s*([\d\s\-]+)\s*ft", flat, flags=re.I):
@@ -619,7 +619,7 @@ def parse_pn(html: str) -> Dict[str, Optional[str]]:
         if i.find("span") and i.find("p")
     }
     data = {
-        "Bloom Color": info.get("Bloom Color"),
+        "Bloom Color": color_list(info.get("Bloom Color")),
         "Bloom Time": info.get("Bloom Period"),
         "Height (ft)": rng(info.get("Max Mature Height") or info.get("Height")),
         "Spread (ft)": rng(info.get("Spread")),
@@ -725,12 +725,14 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
         df.at[idx, "Water"] = clean(df.at[idx, "Water"])
         df.at[idx, "Tolerates"] = clean(df.at[idx, "Tolerates"])
         df.at[idx, "Soil Description"] = clean(df.at[idx, "Soil Description"])
+
         df.at[idx, "Bloom Time"] = merge_additive(
             "Bloom Time", df.at[idx, "Bloom Time"], None
         )
         df.at[idx, "Bloom Color"] = merge_additive(
             "Bloom Color", df.at[idx, "Bloom Color"], None
         )
+
 
 
     # finalise Distribution Zone
