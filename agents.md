@@ -8,7 +8,10 @@ We need to make sure the data is getting pulled from the right places. and is am
 
 Use SampleTest\html_cache to fine tune how to make the data match using the FillMissingData_Test.py -- SampleTest\Plants_Linked_Filled_Test.csv should match SampleTest\Plants_Linked_FIlled_Manual.csv when outputted.  
 
-It currently doesn't fill and normalize all data correctly.  
+It currently doesn't fill and normalize all data correctly. THe following Columns need a look as to why they differ so much. see--> SampleTest\DiffReport.csv
+-Bloom Time
+-Bloom Color
+-UseXYZ
 
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
