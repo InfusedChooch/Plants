@@ -391,6 +391,24 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
             if len(tds) >= 2:
                 char[tds[0].rstrip(":")] = tds[1]
 
+    if not char:
+        bloom = soup.find(
+            "h4", string=lambda x: x and "bloom information" in x.lower()
+        )
+        if bloom and (box := bloom.find_parent("div")):
+            for strong in box.find_all("strong"):
+                label = strong.get_text(strip=True).rstrip(":")
+                if label in {"Bloom Color", "Bloom Time"}:
+                    val_parts = []
+                    for sib in strong.next_siblings:
+                        if getattr(sib, "name", None) == "strong":
+                            break
+                        if isinstance(sib, str):
+                            val_parts.append(sib)
+                        else:
+                            val_parts.append(sib.get_text(" ", strip=True))
+                    char[label] = clean(" ".join(val_parts).strip())
+
     # also check "Distribution" section for a Native Habitat/Habitat row
     dist = soup.find(
         lambda t: t.name in ("h2", "h3", "h4")
