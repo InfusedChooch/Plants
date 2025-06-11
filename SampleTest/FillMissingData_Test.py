@@ -453,7 +453,6 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
         ),
     }
 
-
 def parse_pr(html: str) -> Dict[str, Optional[str]]:
     soup = BeautifulSoup(html, "lxml")
 
@@ -469,7 +468,6 @@ def parse_pr(html: str) -> Dict[str, Optional[str]]:
         return csv_join(vals)
 
     return {"Attracts": collect("Attracts Wildlife"), "Tolerates": collect("Tolerance")}
-
 
 def parse_nm(html: str) -> Dict[str, Optional[str]]:
     soup = BeautifulSoup(html, "lxml")
@@ -497,7 +495,6 @@ def parse_nm(html: str) -> Dict[str, Optional[str]]:
         data["Tolerates"] = csv_join(tol)
 
     return {k: v for k, v in data.items() if v}
-
 
 def parse_pn(html: str) -> Dict[str, Optional[str]]:
     soup = BeautifulSoup(html, "lxml")
@@ -610,7 +607,7 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
 
                         # --- post-merge cleanup on additive fields -----------------------
         df.at[idx, "Sun"] = clean(df.at[idx, "Sun"])
-        df.at[idx, "Water"] = clean(df.at[idx, "Water"]).lower() if df.at[idx, "Water"] else ""
+        df.at[idx, "Water"] = clean(df.at[idx, "Water"])
         df.at[idx, "Tolerates"] = clean(df.at[idx, "Tolerates"])
         df.at[idx, "Soil Description"] = clean(df.at[idx, "Soil Description"])
         df.at[idx, "Bloom Time"] = month_list(df.at[idx, "Bloom Time"])
