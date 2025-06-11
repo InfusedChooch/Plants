@@ -10,6 +10,8 @@ Use SampleTest\html_cache to fine tune how to make the data match using the Fill
 
 It currently doesn't fill and normalize all data correctly. THe following Columns need a look as to why they differ so much. see--> SampleTest\DiffReport.csv
 
+Propagation:Maintenance is not populating. 
+
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
 ```
