@@ -2,35 +2,41 @@ Templates\0610_Masterlist_New_Beta_Nodata.csv is the new data structure for CSVs
 
 Plant Type	Key	Botanical Name	Common Name	Height (ft)	Spread (ft)	Bloom Color	Bloom Time	Sun	Water	AGCP Regional Status	Distribution Zone	Attracts	Tolerates	Soil Description	Condition Comments	Maintenance	Native Habitats	Culture	Uses	UseXYZ	Propagation:Maintenance	Problems	Link: Missouri Botanical Garden	Link: Wildflower.org	Link: Pleasantrunnursery.com	Link: Newmoonnursery.com	Link: Pinelandsnursery.com		
 
+I need the output of SampleTest\FillMissingData_Test.py --> SampleTest\Plants_Linked_Filled_Test.csv to match the handfilled example SampleTest\Plants_Linked_FIlled_Manual  
 
-This is a representation of where to get the data and how it is stored
-| **Column**                      | **Data Hierarchy**                        | **Formatting / Notes**                                     |
-| ------------------------------- | ----------------------------------------- | ---------------------------------------------------------- |
-| Plant Type                      | Given                                     |                                                            |
-| Key                             | generated from Botanical Name             |                                                            |
-| Botanical Name                  | Given                                     | Italics                                                    |
-| Common Name                     | Given                                     | stored in ALL CAPS                                         |
-| Height (ft)                     | MBG → Wildflower                          | `X - Y`                                                    |
-| Spread (ft)                     | MBG → Wildflower                          | `X - Y`                                                    |
-| Bloom Color                     | Wildflower → MBG → Pinelands/New Moon     | `Color1, Color2, ...`                                      |
-| Bloom Time                      | Wildflower → MBG → Pinelands/New Moon     | `Month1, Month2, ...`                                      |
-| Sun                             | MBG → Wildflower                          | `Full sun, Part sun, Part Shade, Full Shade`               |
-| Water                           | MBG → Wildflower                          | `Low, Medium, High`                                        |
-| AGCP Regional Status            | Wildflower                                | from "National Wetland Indicator Status"                   |
-| Distribution Zone               | MBG                                       |                                                            |
-| Attracts                        | Pleasant Run + WF + MBG + Pinelands       |                                                            |
-| Tolerates                       | MBG + Pleasant Run + New Moon + Pinelands | comma-separated list                                       |
-| Soil Description                | Wildflower                                |                                                            |
-| Condition Comments              | Wildflower                                |                                                            |
-| Maintenance                     | MBG                                       | `Low, Medium, High`                                        |
-| Native Habitats                 | Wildflower                                | comma-separated list                                       |
-| Culture                         | MBG                                       |                                                            |
-| Uses                            | MBG                                       |                                                            |
-| UseXYZ                          | Wildflower                                | **Under Benefits List:"Use "X": X, Use"Y":Y..."**         |
-| Propagation:Maintenance        | Wildflower                                | optional: Might not exist, Under Proptional fieldopagation |
-| Problems                        | MBG                                       |                                                            |
-| Link: Missouri Botanical Garden | from GetLinks                             |                                                            |
-| Link: Wildflower.org            | from GetLinks                             |                                                            |
-| Link: Pleasantrunnursery.com    | from GetLinks                             |                                                            |
-| Link: Newmoonnursery.com        | from GetLinks                             |                                                            |
-| Link: Pinelandsnursery.com      | from GetLinks                             |                                                            |
+We need to make sure the data is getting pulled from the right places. 
+
+**CSV → Source chain (left‑to‑right = first place we look, fallbacks follow)**
+```
+Plant Type                : given (PDF page‑range mapping)
+Key                       : generated from Botanical Name (first‐letter code)
+Botanical Name            : given (PDF / seed CSV)
+Common Name               : given (PDF / seed CSV, ALL CAPS)
+
+Height (ft)               : MBG ➜ Wildflower.org ➜ Pinelands
+Spread (ft)               : MBG ➜ Wildflower.org ➜ Pinelands
+Bloom Color               : Wildflower.org ➜ MBG ➜ Pinelands / New Moon
+Bloom Time                : Wildflower.org ➜ MBG ➜ Pinelands / New Moon
+Sun                       : MBG ➜ Wildflower.org ("Light Requirement")
+Water                     : MBG ➜ Wildflower.org ("Soil Moisture")
+AGCP Regional Status      : Wildflower.org (National Wetland Indicator table)
+Distribution Zone         : MBG ("Zone" → USDA Hardiness)
+
+Attracts                  : Pleasant Run ➜ Wildflower.org (Benefit) ➜ MBG ➜ Pinelands
+Tolerates                 : MBG ➜ Pleasant Run ➜ New Moon ➜ Pinelands
+Soil Description          : Wildflower.org ("Soil Description" section)
+Condition Comments        : Wildflower.org ("Comments" section)
+Maintenance               : MBG ("Maintenance" field)
+Native Habitats           : Wildflower.org (Plant Characteristics – Native Habitat)
+Culture                   : MBG ("Culture" or "Growing Tips" paragraph)
+Uses                      : MBG (Uses section)
+UseXYZ                    : Wildflower.org (Benefits list – "Use X:" bullets)
+Propagation:Maintenance   : Wildflower.org (Propagation list – "Maintenance:")
+Problems                  : MBG (Problems section)
+
+Link: Missouri Botanical Garden   : GetLinks.py (MBG ID)
+Link: Wildflower.org              : GetLinks.py (USDA ID)
+Link: Pleasantrunnursery.com      : GetLinks.py (Name match)
+Link: Newmoonnursery.com          : GetLinks.py (Name match)
+Link: Pinelandsnursery.com        : GetLinks.py (Name match)
+```

@@ -19,8 +19,8 @@ def parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
         description="Fill missing plant-guide fields from MBG, Wildflower.org "
         "and nursery sites."
     )
-    p.add_argument("--in_csv", default="Outputs/Plants_Linked.csv")
-    p.add_argument("--out_csv", default="Outputs/Plants_Linked_Filled.csv")
+    p.add_argument("--in_csv", default="SampleTest/Plants_Linked.csv")
+    p.add_argument("--out_csv", default="SampleTest/Plants_Linked_Filled_Test.csv")
     p.add_argument(
         "--master_csv",
         default="Templates/0610_Masterlist_New_Beta_Nodata.csv",
