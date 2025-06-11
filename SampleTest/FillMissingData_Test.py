@@ -325,7 +325,9 @@ def month_list(raw: str | None) -> str | None:
     """
     if not raw:
         return None
-    s = raw.title().replace("Through", "to").replace("–", "-")
+    s = raw.title().replace("Through", "to")
+    for dash in ("\u2013", "\u2014"):
+        s = s.replace(dash, "-")
     s = re.sub(r"\bto\b", "-", s)
     s = re.sub(r"\s*-\s*", "-", s)
     rng = re.split(r"[\s,/]+", s)
