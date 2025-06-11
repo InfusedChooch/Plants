@@ -60,6 +60,22 @@ def test_merge_field_stable_ordering():
     assert a == "Bees, Birds, Butterflies"
     assert a == b
 
+
+def test_merge_additive_months():
+    merge_additive = load_function(
+        "SampleTest/FillMissingData_Test.py", "merge_additive"
+    )
+    month_list = load_function("SampleTest/FillMissingData_Test.py", "month_list")
+    _merge_months = load_function("SampleTest/FillMissingData_Test.py", "_merge_months")
+    merge_additive.__globals__["month_list"] = month_list
+    merge_additive.__globals__["MONTHS"] = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
+    merge_additive.__globals__["_merge_months"] = _merge_months
+    _merge_months.__globals__["month_list"] = month_list
+    _merge_months.__globals__["MONTHS"] = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
+    month_list.__globals__["MONTHS"] = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
+    result = merge_additive("Bloom Time", "Apr-May", "Feb")
+    assert result == "Feb, Mar, Apr, May"
+
 def test_clean_normalizes_variants():
     clean = load_function("SampleTest/FillMissingData_Test.py", "clean")
     clean.__globals__["NORMALISE"] = {
