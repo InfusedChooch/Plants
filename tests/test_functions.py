@@ -37,3 +37,5 @@ def test_month_list_range_handling():
     month_list = load_function("SampleTest/FillMissingData_Test.py", "month_list")
     month_list.__globals__["MONTHS"] = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
     assert month_list("Feb - Jul") == "Feb, Mar, Apr, May, Jun, Jul"
+    assert month_list("Apr – Jun") == "Apr, May, Jun"
+    assert month_list("Nov—Dec") == "Nov, Dec"
