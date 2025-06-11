@@ -4,14 +4,11 @@ Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bl
 
 I need the output of SampleTest\FillMissingData_Test.py --> SampleTest\Plants_Linked_Filled_Test.csv to match the handfilled example SampleTest\Plants_Linked_FIlled_Manual. To fix the difference we need to change how SampleTest\FillMissingData_Test.py gathers data NOT just change the CSV Files. 
 
-We need to make sure the data is getting pulled from the right places. and is amde to be repeatable. The goal is to make SampleTest\FillMissingData_Test.py output a file that matches the contents of SampleTest\Plants_Linked_FIlled_Manual.csv
+We need to make sure the data is getting pulled from the right places. and is made repeatable. The goal is to make SampleTest\FillMissingData_Test.py output a file that matches the contents of SampleTest\Plants_Linked_FIlled_Manual.csv
 
 Use SampleTest\html_cache to fine tune how to make the data match using the FillMissingData_Test.py -- SampleTest\Plants_Linked_Filled_Test.csv should match SampleTest\Plants_Linked_FIlled_Manual.csv when outputted.  
 
 It currently doesn't fill and normalize all data correctly. THe following Columns need a look as to why they differ so much. see--> SampleTest\DiffReport.csv
--Bloom Time
--Bloom Color
--UseXYZ
 
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**

@@ -466,7 +466,7 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
                 break
 
     # Benefits → UseXYZ
-    uses = [f"Use: {m.group(1).strip()}: {m.group(2).strip()}"
+    uses = [f"Use {m.group(1).strip()}: {m.group(2).strip()}"
             for m in re.finditer(r"Use\s+([A-Za-z ]+)\s*:\s*([^\n]+)", txt)]
     if not uses:
         # Benefit section may use <div> with <strong> labels
@@ -474,7 +474,7 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
         if benefit and (box := benefit.find_parent("div")):
             sect = box.get_text("\n", strip=True)
             for m in re.finditer(r"Use\s+([^:]+):\s*(.+?)(?:\n|$)", sect, flags=re.I):
-                uses.append(f"Use: {m.group(1).strip()}: {m.group(2).strip()}")
+                uses.append(f"Use {m.group(1).strip()}: {m.group(2).strip()}")
     if not uses:
         for li in soup.select("li"):
             strong = li.find(["strong", "b"])
@@ -484,7 +484,7 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
             if head.lower().startswith("use"):
                 cat = head.replace("Use", "").replace(":", "").strip()
                 body = li.get_text(" ", strip=True).replace(head, "").lstrip(":–—- ").strip()
-                uses.append(f"Use: {cat}: {body}")
+                uses.append(f"Use {cat}: {body}")
     usexyz = csv_join(uses)
 
     # Propagation:Maintenance
