@@ -153,6 +153,14 @@ PN_COLS = {
     "Tolerates",
 }
 
+# Columns where data from multiple sources should be combined
+ADDITIVE_COLS = {
+    "Attracts",
+    "Tolerates",
+    "UseXYZ",
+    "Propagation:Maintenance",
+}
+
 
 # ────────────────────── generic text helpers ──────────────────────────────
 def missing(v: str | None) -> bool:
@@ -487,7 +495,9 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             url = row.get("MBG Link", "").strip()
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_mbg(html).items():
-                    if missing(df.at[idx, k]):
+                    if k in ADDITIVE_COLS:
+                        df.at[idx, k] = merge_field(df.at[idx, k], v)
+                    elif missing(df.at[idx, k]):
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
 
@@ -498,7 +508,9 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             if url.startswith("http") and (html := fetch(url)):
                 wf_data = parse_wf(html, want_fallback_sun_water=missing(row["Sun"]))
                 for k, v in wf_data.items():
-                    if missing(df.at[idx, k]):
+                    if k in ADDITIVE_COLS:
+                        df.at[idx, k] = merge_field(df.at[idx, k], v)
+                    elif missing(df.at[idx, k]):
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
 
@@ -508,7 +520,9 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             url = row.get("PR Link", "").strip()
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_pr(html).items():
-                    if missing(df.at[idx, k]):
+                    if k in ADDITIVE_COLS:
+                        df.at[idx, k] = merge_field(df.at[idx, k], v)
+                    elif missing(df.at[idx, k]):
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
 
@@ -518,7 +532,9 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             url = row.get("NM Link", "").strip()
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_nm(html).items():
-                    if missing(df.at[idx, k]):
+                    if k in ADDITIVE_COLS:
+                        df.at[idx, k] = merge_field(df.at[idx, k], v)
+                    elif missing(df.at[idx, k]):
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
 
@@ -528,7 +544,9 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
             url = row.get("PN Link", "").strip()
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_pn(html).items():
-                    if missing(df.at[idx, k]):
+                    if k in ADDITIVE_COLS:
+                        df.at[idx, k] = merge_field(df.at[idx, k], v)
+                    elif missing(df.at[idx, k]):
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
 
