@@ -1,21 +1,3 @@
-#!/usr/bin/env python3
-# tests/FilldataReverse.py
-#
-# Diff two plant CSVs cell-by-cell, ignoring the Link columns.
-# Default inputs:
-#   Outputs/Plants_Linked_Filled.csv       ← scraper output
-#   Templates/Plants_Linked_Handfilled.csv ← hand-filled gold standard
-#
-# New in this version
-# -------------------
-#   • --out  Outputs/DiffReport.csv   → write mismatches to CSV
-#   • exit-code 0 = no diffs, 1 = at least one diff
-#
-# Usage examples
-# --------------
-#   python tests/FilldataReverse.py
-#   python tests/FilldataReverse.py new.csv gold.csv --out reports/diff.csv
-#   python tests/FilldataReverse.py --max 25            # show first 25 only
 
 from __future__ import annotations
 import argparse, sys, csv
@@ -33,18 +15,18 @@ def parse_cli() -> argparse.Namespace:
     p.add_argument(
         "test_csv",
         nargs="?",
-        default="Outputs/Plants_Linked_Filled.csv",
+        default="SampleTest\Plants_Linked_Filled_Test.csv",
         help="Scraper output CSV (default: %(default)s)",
     )
     p.add_argument(
         "gold_csv",
         nargs="?",
-        default="Templates/Plants_Linked_Handfilled.csv",
+        default="SampleTest\Plants_Linked_FIlled_Manual.csv",
         help="Hand-filled gold standard CSV (default: %(default)s)",
     )
     p.add_argument(
         "--out",
-        default="Outputs/DiffReport.csv",
+        default="SampleTest/DiffReport.csv",
         metavar="FILE",
         help="Write mismatches to CSV (default: %(default)s)",
     )

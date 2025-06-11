@@ -1,17 +1,17 @@
 Templates\0610_Masterlist_New_Beta_Nodata.csv is the new data structure for CSVs
 
-Plant Type	Key	Botanical Name	Common Name	Height (ft)	Spread (ft)	Bloom Color	Bloom Time	Sun	Water	AGCP Regional Status	Distribution Zone	Attracts	Tolerates	Soil Description	Condition Comments	Maintenance	Native Habitats	Culture	Uses	UseXYZ	Propagation:Maintenance	Problems	Link: Missouri Botanical Garden	Link: Wildflower.org	Link: Pleasantrunnursery.com	Link: Newmoonnursery.com	Link: Pinelandsnursery.com		
+Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,AGCP Regional Status,Distribution Zone,Attracts,Tolerates,Soil Description,Condition Comments,Maintenance,Native Habitats,Culture,Uses,UseXYZ,Propagation:Maintenance,Problems,Link: Missouri,Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com		
 
 I need the output of SampleTest\FillMissingData_Test.py --> SampleTest\Plants_Linked_Filled_Test.csv to match the handfilled example SampleTest\Plants_Linked_FIlled_Manual. To fix the difference we need to change how SampleTest\FillMissingData_Test.py gathers data NOT just change the CSV Files. 
 
-We need to make sure the data is getting pulled from the right places. 
+We need to make sure the data is getting pulled from the right places. and is amde to be repeatable. The goal is to make SampleTest\FillMissingData_Test.py output a file that matches the contents ofSampleTest\Plants_Linked_FIlled_Manual.csv
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow)**
 ```
-Plant Type                : given (PDF page‑range mapping)
+Plant Type                : Masterlist
 Key                       : generated from Botanical Name (first‐letter code)
-Botanical Name            : given (PDF / seed CSV)
-Common Name               : given (PDF / seed CSV, ALL CAPS)
+Botanical Name            : Masterlist
+Common Name               : Masterlist
 
 Height (ft)               : MBG ➜ Wildflower.org ➜ Pinelands
 Spread (ft)               : MBG ➜ Wildflower.org ➜ Pinelands
@@ -30,7 +30,7 @@ Maintenance               : MBG ("Maintenance" field)
 Native Habitats           : Wildflower.org (Plant Characteristics – Native Habitat)
 Culture                   : MBG ("Culture" or "Growing Tips" paragraph)
 Uses                      : MBG (Uses section)
-UseXYZ                    : Wildflower.org (Benefits list – "Use X:" bullets)
+UseXYZ                    : Wildflower.org (Benefits list – "Use X: /br" | "Use Y: /br" | ...)
 Propagation:Maintenance   : Wildflower.org (Propagation list – "Maintenance:")
 Problems                  : MBG (Problems section)
 
