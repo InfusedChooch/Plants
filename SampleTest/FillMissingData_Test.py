@@ -263,29 +263,6 @@ def _grab(text: str, label: str) -> str:
     )
     return m.group(1).strip() if m else ""
 
-
-def parse_mbg(html: str) -> Dict[str, Optional[str]]:
-    soup = BeautifulSoup(html, "lxml")
-    txt = soup.get_text("\n", strip=True)
-    return {
-        "Height (ft)": rng(_grab(txt, "Height")),
-        "Spread (ft)": rng(_grab(txt, "Spread")),
-        "Sun": _grab(txt, "Sun"),
-        "Water": _grab(txt, "Water"),
-        "Tolerates": _grab(txt, "Tolerate"),
-        "Maintenance": _grab(txt, "Maintenance"),
-        "Attracts": _grab(txt, "Attracts"),
-        "Culture": _grab(txt, "Culture") or _grab(txt, "Growing Tips"),
-        "Uses": _grab(txt, "Uses"),
-        "Problems": _grab(txt, "Problems"),
-        "Zone": (
-            f"USDA Hardiness Zone {_grab(txt, 'Zone')}"
-            if _grab(txt, "Zone")
-            else None
-        ),
-    }
-
-
 # Wildflower helpers
 def _section_text(soup: BeautifulSoup, hdr: str) -> str:
     h = soup.find(
