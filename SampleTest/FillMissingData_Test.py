@@ -25,7 +25,7 @@ def parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
         description="Fill missing plant-guide fields from MBG, Wildflower.org "
         "and nursery sites."
     )
-    p.add_argument("--in_csv",  default="Plants_Linked.csv")           # forward slash not needed
+    p.add_argument("--in_csv", default="Plants_Linked.csv")  # forward slash not needed
     p.add_argument("--out_csv", default="Plants_Linked_Filled_Test.csv")
 
     p.add_argument(
@@ -50,7 +50,10 @@ def repo_dir() -> Path:
     """
     if getattr(sys, "frozen", False):
         exe = Path(sys.executable).resolve()
-        if exe.parent.name.lower() == "helpers" and exe.parent.parent.name == "_internal":
+        if (
+            exe.parent.name.lower() == "helpers"
+            and exe.parent.parent.name == "_internal"
+        ):
             return exe.parent.parent.parent
         return exe.parent
     here = Path(__file__).resolve()
@@ -100,8 +103,6 @@ def _cache_name(url: str) -> Path:
     slug = re.sub(r"[^a-zA-Z0-9]+", "_", f"{parsed.netloc}_{parsed.path}").strip("_")
     slug = slug[:80]  # keep filenames reasonably short for Windows
     return CACHE_DIR / f"{slug}_{h}.html"
-
-
 
 
 # ───────────────────── CSV diff helper (optional) ─────────────────────────
@@ -217,12 +218,12 @@ def csv_join(parts: list[str]) -> str | None:
 
 
 def merge_field(a: str | None, b: str | None) -> str | None:
-        parts = [
+    parts = [
         *(re.split(r"[|,]", a) if a else []),
         *(re.split(r"[|,]", b) if b else []),
     ]
-        items = {p.strip() for p in parts if p and p.strip()}
-        return ", ".join(sorted(items, key=str.casefold)) if items else None
+    items = {p.strip() for p in parts if p and p.strip()}
+    return ", ".join(sorted(items, key=str.casefold)) if items else None
 
 
 def _merge_months(a: str | None, b: str | None) -> str | None:
@@ -230,14 +231,14 @@ def _merge_months(a: str | None, b: str | None) -> str | None:
     for val in (a, b):
         parsed = month_list(val)
         if parsed:
-            for m in [p.strip() for p in parsed.split(',')]:
+            for m in [p.strip() for p in parsed.split(",")]:
                 if m and m not in collected:
                     collected.append(m)
     if not collected:
         return None
     indices = sorted(MONTHS.index(m) for m in collected)
     start, end = indices[0], indices[-1]
-    return ', '.join(MONTHS[start : end + 1])
+    return ", ".join(MONTHS[start : end + 1])
 
 
 def _merge_colors(a: str | None, b: str | None) -> str | None:
@@ -245,10 +246,10 @@ def _merge_colors(a: str | None, b: str | None) -> str | None:
     for val in (a, b):
         parsed = color_list(val)
         if parsed:
-            for c in [p.strip() for p in parsed.split(',')]:
+            for c in [p.strip() for p in parsed.split(",")]:
                 if c and c not in colors:
                     colors.append(c)
-    return ', '.join(colors) if colors else None
+    return ", ".join(colors) if colors else None
 
 
 def merge_additive(field: str, a: str | None, b: str | None) -> str | None:
@@ -305,6 +306,7 @@ def _grab(text: str, label: str) -> str:
     )
     return m.group(1).strip() if m else ""
 
+
 # Wildflower helpers
 def _section_text(soup: BeautifulSoup, hdr: str) -> str:
     h = soup.find(
@@ -339,12 +341,13 @@ def _wf_wetland(soup: BeautifulSoup, region: str = "AGCP") -> Optional[str]:
         vals = vals[1:]
     return {h: v for h, v in zip(hdrs, vals)}.get(region)
 
+
 # --- text normalisation helpers ------------------------------------------
 def clean(text: str | None) -> str | None:
     """Normalise whitespace/punctuation and map common phrasing."""
     if not text:
         return None
-    text = re.sub(r"\s+", " ", text) # squeeze spaces/newlines
+    text = re.sub(r"\s+", " ", text)  # squeeze spaces/newlines
     text = text.replace(" ,", ",").strip(" ,")
     text = text.strip()
     key = text.lower()
@@ -354,6 +357,7 @@ def clean(text: str | None) -> str | None:
         if key == val.lower():
             return val
     return text
+
 
 MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
 
@@ -368,6 +372,7 @@ NORMALISE = {
     "medium to wet": "medium, wet",
     "wet": "wet",
 }
+
 
 def month_list(raw: str | None) -> str | None:
     """
@@ -396,6 +401,7 @@ def month_list(raw: str | None) -> str | None:
             months.append(abbr)
     months.sort(key=MONTHS.index)
     return ", ".join(months)
+
 
 def color_list(raw: str | None) -> str | None:
     """Normalise a comma/connector separated list of colors."""
@@ -428,9 +434,7 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
                 char[tds[0].rstrip(":")] = tds[1]
 
     if not char:
-        bloom = soup.find(
-            "h4", string=lambda x: x and "bloom information" in x.lower()
-        )
+        bloom = soup.find("h4", string=lambda x: x and "bloom information" in x.lower())
         if bloom and (box := bloom.find_parent("div")):
             for strong in box.find_all("strong"):
                 label = strong.get_text(strip=True).rstrip(":")
@@ -466,8 +470,10 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
                 break
 
     # Benefits → UseXYZ
-    uses = [f"Use {m.group(1).strip()}: {m.group(2).strip()}"
-            for m in re.finditer(r"Use\s+([A-Za-z ]+)\s*:\s*([^\n]+)", txt)]
+    uses = [
+        f"Use {m.group(1).strip()}: {m.group(2).strip()}"
+        for m in re.finditer(r"Use\s+([A-Za-z ]+)\s*:\s*([^\n]+)", txt)
+    ]
     if not uses:
         # Benefit section may use <div> with <strong> labels
         benefit = soup.find("h4", string=lambda x: x and "benefit" in x.lower())
@@ -483,7 +489,12 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
             head = strong.get_text(strip=True)
             if head.lower().startswith("use"):
                 cat = head.replace("Use", "").replace(":", "").strip()
-                body = li.get_text(" ", strip=True).replace(head, "").lstrip(":–—- ").strip()
+                body = (
+                    li.get_text(" ", strip=True)
+                    .replace(head, "")
+                    .lstrip(":–—- ")
+                    .strip()
+                )
                 uses.append(f"Use {cat}: {body}")
     usexyz = csv_join(uses)
 
@@ -509,7 +520,9 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
                 if getattr(sib, "name", None) == "br":
                     break
                 parts.append(
-                    sib.get_text(" ", strip=True) if hasattr(sib, "get_text") else str(sib)
+                    sib.get_text(" ", strip=True)
+                    if hasattr(sib, "get_text")
+                    else str(sib)
                 )
             text = " ".join(parts).strip()
             maint = f"Maintenance: {text}" if text else None
@@ -519,7 +532,9 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
         "Spread (ft)": rng(char.get("Spread")),
         "Bloom Color": color_list(char.get("Bloom Color")),
         "Bloom Time": month_list(char.get("Bloom Time") or char.get("Bloom Period")),
-        "Soil Description": clean(_grab(txt, "Soil Description") or _section_text(soup, "Soil Description")),
+        "Soil Description": clean(
+            _grab(txt, "Soil Description") or _section_text(soup, "Soil Description")
+        ),
         "Condition Comments": clean(
             _grab(txt, "Condition Comments")
             or _grab(txt, "Conditions Comments")
@@ -538,12 +553,16 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
 
     return {k: v for k, v in data.items() if v}
 
+
 def parse_mbg(html: str) -> Dict[str, Optional[str]]:
     soup = BeautifulSoup(html, "lxml")
 
     # helper: return concatenated <p> text that follows an <h3>/<h4> header
     def section(lbl: str) -> str:
-        h = soup.find(lambda t: t.name in ("h3", "h4") and lbl.lower() in t.get_text(strip=True).lower())
+        h = soup.find(
+            lambda t: t.name in ("h3", "h4")
+            and lbl.lower() in t.get_text(strip=True).lower()
+        )
         if not h:
             return ""
         out = []
@@ -556,8 +575,13 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
 
     # key/value table at top of page
     plain = soup.get_text("\n", strip=True)
+
     def grab(label: str) -> str:  # first line only (for numeric stuff)
-        m = re.search(rf"{re.escape(label)}\s*[:\-\u2013\u2014]?\s*(.+?)(?:\n|$)", plain, flags=re.I)
+        m = re.search(
+            rf"{re.escape(label)}\s*[:\-\u2013\u2014]?\s*(.+?)(?:\n|$)",
+            plain,
+            flags=re.I,
+        )
         return clean(m.group(1)) if m else ""
 
     return {
@@ -571,10 +595,9 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
         "Culture": section("Culture") or section("Growing Tips"),
         "Uses": section("Uses"),
         "Problems": section("Problems"),
-        "Zone": (
-            f"USDA Hardiness Zone {grab('Zone')}" if grab("Zone") else None
-        ),
+        "Zone": (f"USDA Hardiness Zone {grab('Zone')}" if grab("Zone") else None),
     }
+
 
 def parse_pr(html: str) -> Dict[str, Optional[str]]:
     soup = BeautifulSoup(html, "lxml")
@@ -591,6 +614,7 @@ def parse_pr(html: str) -> Dict[str, Optional[str]]:
         return csv_join(vals)
 
     return {"Attracts": collect("Attracts Wildlife"), "Tolerates": collect("Tolerance")}
+
 
 def parse_nm(html: str) -> Dict[str, Optional[str]]:
     soup = BeautifulSoup(html, "lxml")
@@ -629,6 +653,7 @@ def parse_nm(html: str) -> Dict[str, Optional[str]]:
         data["Tolerates"] = csv_join(tol)
 
     return {k: v for k, v in data.items() if v}
+
 
 def parse_pn(html: str) -> Dict[str, Optional[str]]:
     soup = BeautifulSoup(html, "lxml")
@@ -739,7 +764,7 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
 
-                        # --- post-merge cleanup on additive fields -----------------------
+                # --- post-merge cleanup on additive fields -----------------------
         df.at[idx, "Sun"] = clean(df.at[idx, "Sun"])
         df.at[idx, "Water"] = clean(df.at[idx, "Water"])
         df.at[idx, "Tolerates"] = clean(df.at[idx, "Tolerates"])
@@ -751,8 +776,6 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
         df.at[idx, "Bloom Color"] = merge_additive(
             "Bloom Color", df.at[idx, "Bloom Color"], None
         )
-
-
 
     # finalise USDA Hardiness Zone
     if "Zone" in df.columns:
