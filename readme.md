@@ -21,6 +21,21 @@ This branch is a simplified version of the full Plant Guide toolchain. It is des
 * **Python** 3.10 or higher
 * `pip` for installing packages
 * Python dependencies from `requirements.txt`
+* pandas
+openpyxl
+black
+tqdm
+pillow
+fpdf2
+pdfplumber
+pymupdf
+customtkinter
+pyinstaller
+pyyaml
+pytest
+beautifulsoup4
+lxml
+requests
 
 ```bash
 pip install -r requirements.txt

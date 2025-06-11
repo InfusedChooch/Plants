@@ -1,15 +1,10 @@
 pandas
-openpyxl
-black
-tqdm
 pillow
 fpdf2
-pdfplumber
-pymupdf
 customtkinter
-pyinstaller
 pyyaml
 pytest
 beautifulsoup4
-lxml
 requests
+
+#test deps
