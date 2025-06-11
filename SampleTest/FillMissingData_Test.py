@@ -492,8 +492,27 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
     for li in soup.select("li"):
         strong = li.find(["strong", "b"])
         if strong and "maintenance" in strong.get_text(strip=True).lower():
-            maint = li.get_text(" ", strip=True).split(":", 1)[-1].strip()
+            text = li.get_text(" ", strip=True).split(":", 1)[-1].strip()
+            maint = f"Maintenance: {text}" if text else None
             break
+
+    if not maint:
+        strong = soup.find(
+            lambda t: t.name in ("strong", "b")
+            and "maintenance" in t.get_text(strip=True).lower()
+        )
+        if strong:
+            parts = []
+            for sib in strong.next_siblings:
+                if getattr(sib, "name", None) in {"strong", "b"}:
+                    break
+                if getattr(sib, "name", None) == "br":
+                    break
+                parts.append(
+                    sib.get_text(" ", strip=True) if hasattr(sib, "get_text") else str(sib)
+                )
+            text = " ".join(parts).strip()
+            maint = f"Maintenance: {text}" if text else None
 
     data = {
         "Height (ft)": rng(char.get("Height")),
