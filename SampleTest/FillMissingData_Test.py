@@ -322,12 +322,13 @@ def _wf_wetland(soup: BeautifulSoup, region: str = "AGCP") -> Optional[str]:
 
 # --- text normalisation helpers ------------------------------------------
 def clean(text: str | None) -> str | None:
-    """Collapse multiple spaces, strip, and standard-ise punctuation."""
+    """Normalise whitespace/punctuation and map common phrasing."""
     if not text:
         return None
-    text = re.sub(r"\s+", " ", text)          # squeeze spaces/newlines
+    text = re.sub(r"\s+", " ", text) # squeeze spaces/newlines
     text = text.replace(" ,", ",").strip(" ,")
-    return text.strip()
+    text = text.strip()
+    return NORMALISE.get(text.lower(), text)
 
 MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
 
