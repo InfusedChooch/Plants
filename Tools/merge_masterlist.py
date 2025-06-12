@@ -25,7 +25,7 @@ COLUMN_ORDER = [
     "UseXYZ","WFMaintenance","Problems",
     "Link: Missouri Botanical Garden","Link: Wildflower.org",
     "Link: Pleasantrunnursery.com","Link: Newmoonnursery.com",
-    "Link: Pinelandsnursery.com",
+    "Link: Pinelandsnursery.com","Rev",
 ]
 LINK_COLS = COLUMN_ORDER[-5:]                # the five link columns
 

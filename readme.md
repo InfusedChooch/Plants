@@ -164,7 +164,7 @@ RU Plant Guide/
 ```
 CSV header               : data source path                              : expected format
 Plant Type               : Masterlist                                    : Perennial | Shrub | …
-Key                      : Masterlist (generated)                        : 2-3 letter unique code
+Key                      : FillMissingData                               : 2-3 letter unique code
 Botanical Name           : Masterlist                                    : Genus species 'Variety' (italics)
 Common Name              : Masterlist                                    : ALL CAPS
 
@@ -194,9 +194,10 @@ Link: Wildflower.org     : GetLinks (USDA ID)                            : URL
 Link: Pleasant Run       : GetLinks (name match)                         : URL
 Link: New Moon           : GetLinks (name match)                         : URL
 Link: Pinelands          : GetLinks (name match)                         : URL
+Rev                      : User Input (YYYYMMDD_FL)                      : YYYYMMDD_FirstinitalLastinital 
 
 ```
 
 ```
-Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,AGCP Regional Status,USDA Hardiness Zone,Attracts,Tolerates,Soil Description,Condition Comments,MaintenanceLevel,Native Habitats,Culture,Uses,UseXYZ,WFMaintenance,Problems,Link: Missouri,Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com
+Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,AGCP Regional Status,USDA Hardiness Zone,Attracts,Tolerates,Soil Description,Condition Comments,MaintenanceLevel,Native Habitats,Culture,Uses,UseXYZ,WFMaintenance,Problems,Link: Missouri,Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com,Rev
 ```

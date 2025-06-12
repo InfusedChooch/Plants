@@ -103,8 +103,8 @@ def _cache_name(url: str) -> Path:
 
 # ───────────────────── CSV diff helper (optional) ─────────────────────────
 def csv_diff(old_csv: Path, new_csv: Path) -> None:
-    a = pd.read_csv(old_csv, dtype=str).fillna("")
-    b = pd.read_csv(new_csv, dtype=str).fillna("")
+    a = pd.read_csv(old_csv, dtype=str, keep_default_na=False)
+    b = pd.read_csv(new_csv, dtype=str, keep_default_na=False)
     if a.shape != b.shape:
         print(f"[!] shape changed: {a.shape} → {b.shape}")
     mask = (a != b).any(axis=1)
@@ -808,7 +808,8 @@ def normalise_botanical(name: str) -> str:
 
 # ──────────────────────────── main routine ────────────────────────────────
 def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
-    df = pd.read_csv(in_csv, dtype=str).fillna("")
+    # NEW – keep_default_na=False preserves the literal text “NA”
+    df = (pd.read_csv(in_csv, dtype=str, keep_default_na=False).fillna(""))
 
     # Ensure link aliases & required columns exist
     df.rename(columns={
