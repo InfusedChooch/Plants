@@ -81,7 +81,7 @@ def clean_csv_from_excel(input_csv: Path, template_csv: Path, output_csv: Path) 
                 log.append({
                     "Action": "STRIPPED",
                     "Botanical": df.at[row_idx, "Botanical Name"] if "Botanical Name" in df.columns else "",
-                    "Note": f"Cleared '{col}'"
+                    "Note": f"Cleared '{col}' (was: \"{val}\")"
                 })
                 df.at[row_idx, col] = ""
 
@@ -101,13 +101,13 @@ def clean_csv_from_excel(input_csv: Path, template_csv: Path, output_csv: Path) 
         stripped = no_rev & df[col].eq("NA")
         for idx in df[stripped].index:
             log.append({"Action": "CLEANED", "Botanical": df.at[idx, "Botanical Name"],
-                        "Note": f"Cleared '{col}' (NA not allowed without Rev)"})
+                        "Note": f"Cleared '{col}' (was: \"NA\", no Rev)"})
         df.loc[stripped, col] = ""
 
         inserted = has_rev & df[col].eq("")
         for idx in df[inserted].index:
             log.append({"Action": "INSERTED", "Botanical": df.at[idx, "Botanical Name"],
-                        "Note": f"Inserted NA in '{col}' (Rev present)"})
+                        "Note": f"Inserted 'NA' into '{col}' (Rev present)"})
         df.loc[inserted, col] = "NA"
 
     # Step 5: Reorder and fill missing columns
@@ -118,13 +118,13 @@ def clean_csv_from_excel(input_csv: Path, template_csv: Path, output_csv: Path) 
 
     output_csv.parent.mkdir(exist_ok=True)
     df.to_csv(output_csv, index=False, na_rep="")
-    print(f"✅ Cleaned CSV saved to: {output_csv}")
+    print(f"Cleaned CSV saved to: {output_csv}")
 
     # Step 6: Save log
     if log:
         log_path = NEW_DIR / "Plants_Linked_Filled_Reviewed_Clean_log.md"
         log_path.write_text(to_md(log), encoding="utf-8")
-        print(f"📄 Clean log saved to: {log_path}")
+        print(f"Clean log saved to: {log_path}")
     else:
         print("No cleaning log to save — no changes found.")
 
