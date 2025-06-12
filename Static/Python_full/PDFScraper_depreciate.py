@@ -29,7 +29,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--img_dir",
-    default="Outputs/pdf_images",  # <- moved
+    default="Outputs/Images",  # <- moved
     help="Directory for PNG dump",
 )
 parser.add_argument(
@@ -360,15 +360,15 @@ def extract_images(df: pd.DataFrame) -> None:
     safe_print(f"[IMG] Extracted {len(image_rows)} images to {IMG_DIR}")
     safe_print(f"[MAP]  Mapping written to {MAP_CSV}")
 
-    jpeg_dir = IMG_DIR / "jpeg"
-    jpeg_dir.mkdir(exist_ok=True)
+    Plants_dir = IMG_DIR / "Plants"
+    Plants_dir.mkdir(exist_ok=True)
     converted = 0
     for png_file in IMG_DIR.glob("*.png"):
         img = Image.open(png_file).convert("RGB")
-        jpg_file = jpeg_dir / (png_file.stem + ".jpg")
+        jpg_file = Plants_dir / (png_file.stem + ".jpg")
         img.save(jpg_file, "JPEG", quality=85)
         converted += 1
-    safe_print(f"[IMG] Converted {converted} PNG images to JPEGs in {jpeg_dir}")
+    safe_print(f"[IMG] Converted {converted} PNG images to JPEGs in {Plants_dir}")
 
 
 # --- Main ----------------------------------------------------------------

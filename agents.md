@@ -1,14 +1,5 @@
 Templates\0611_Masterlist_New_Beta_Nodata.csv is the new data structure for CSVs
 
-	
-
-I need the output of SampleTest\FillMissingData_Test.py --> SampleTest\Plants_Linked_Filled_Test.csv to match the handfilled example SampleTest\Plants_Linked_FIlled_Manual. To fix the difference we need to change how SampleTest\FillMissingData_Test.py gathers data NOT just change the CSV Files. 
-
-We need to make sure the data is getting pulled from the right places. and is made repeatable. The goal is to make SampleTest\FillMissingData_Test.py output a file that matches the contents of SampleTest\Plants_Linked_FIlled_Manual.csv
-
-Use SampleTest\html_cache to fine tune how to make the data match using the FillMissingData_Test.py -- SampleTest\Plants_Linked_Filled_Test.csv should match SampleTest\Plants_Linked_FIlled_Manual.csv when outputted.  
-
-It currently doesn't fill and normalize all data correctly. see--> SampleTest\DiffReport.csv and read into Rev note to see my comment; I think most issues are a minor formatting error, They could be overlooked. The most important little mistake is not having uniform Capitalization
 
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
@@ -45,7 +36,7 @@ Link: Wildflower.org     : GetLinks (USDA ID)                            : URL
 Link: Pleasant Run       : GetLinks (name match)                         : URL
 Link: New Moon           : GetLinks (name match)                         : URL
 Link: Pinelands          : GetLinks (name match)                         : URL
-Rev                      : User Input (YYYYMMDD_FL)                      : YYYYMMDD_FirstinitalLastinital 
+Rev                      : User Input (YYYYMMDD_FL)                      : "YYYYMMDD_FirstinitalLastinital" 
 
 ```
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Launcher_full.py – CTk GUI for the plant-database tool-chain
+# Launcher_lite.py – CTk GUI for the plant-database tool-chain
 # 2025-06-09  portable-layout & resizable console edition
 
 import sys, subprocess, threading, queue, customtkinter as ctk
@@ -34,7 +34,7 @@ HELPERS = prefer(INTERNAL / "helpers", BASE / "helpers")
 STATIC  = prefer(INTERNAL / "Static",  BASE / "Static")
 SCRIPTS = prefer(BASE / "Static" / "Python_full", STATIC / "Python_full")                            # dev-only
 TEMPL   = prefer(BASE / "Templates",  STATIC / "Templates")
-OUTDEF  = prefer(BASE / "Outputs",    STATIC / "Outputs")
+OUTDEF  = prefer(BASE / "Outputs")
 OUTDEF.mkdir(exist_ok=True, parents=True)
 
 # ── Appearance / theme ────────────────────────────────────────────────────
@@ -93,9 +93,9 @@ today          = datetime.now().strftime("%Y%m%d")
 out_dir_var    = ctk.StringVar(value=nice_path(OUTDEF))
 pre_var        = ctk.StringVar(value=f"{today}_")
 suf_var        = ctk.StringVar(value="")
-img_dir_var    = ctk.StringVar(value=nice_path(OUTDEF / "pdf_images"))
+img_dir_var    = ctk.StringVar(value=nice_path(OUTDEF / "Images"))
 guide_pdf_var  = ctk.StringVar(value=nice_path(TEMPL / "Plant Guide 2025 Update.pdf"))
-master_csv_var = ctk.StringVar(value=nice_path(TEMPL / "Plants_Linked_Filled_Master.csv"))
+master_csv_var = ctk.StringVar(value=nice_path(TEMPL / "0611_Masterlist_Nodata_Readonly.csv"))
 _img_user_set  = False
 _prev_out_dir  = out_dir_var.get()
 
@@ -127,7 +127,7 @@ def browse_output() -> None:
         out_dir_var.set(folder)
         _rewrite_inputs_for_new_folder(folder)
         if not _img_user_set:
-            img_dir_var.set(str(Path(folder) / "pdf_images"))
+            img_dir_var.set(str(Path(folder) / "Images"))
         refresh_out_labels()
 
 def browse_img() -> None:
@@ -241,8 +241,8 @@ def run_tool(script, in_flag, out_flag, stem, ext):
 
     elif script == "GeneratePDF.py":
         # builder needs the JPEG folder itself
-        jpeg_dir = Path(img_dir_var.get()) / "jpeg"
-        cmd += ["--img_dir", str(jpeg_dir)]
+        Plants_dir = Path(img_dir_var.get()) / "Plants"
+        cmd += ["--img_dir", str(Plants_dir)]
         cmd += ["--template_csv", master_csv_var.get()]
 
     # 5. background worker

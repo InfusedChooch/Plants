@@ -30,12 +30,12 @@ parser.add_argument(
 )
 parser.add_argument(
     "--img_dir",
-    default="Outputs/pdf_images/jpeg",  # <- moved
+    default="Outputs/Images/Plants",  # <- moved
     help="Folder that holds plant JPEGs",
 )
 parser.add_argument(
     "--logo_dir",
-    default="Outputs/pdf_images",
+    default="Outputs/Images",
     help="Folder that holds Rutgers and NJAES logos"
 )
 
