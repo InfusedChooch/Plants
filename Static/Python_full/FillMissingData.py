@@ -189,8 +189,12 @@ ADDITIVE_COLS = {
 
 
 # ────────────────────── generic text helpers ──────────────────────────────
-def missing(v: str | None) -> bool:
-    return not str(v or "").strip()
+def missing(v: str | None, rev: str | None = None) -> bool:
+    s = str(v or "").strip()
+    if s.upper() == "NA":
+        return not rev or not str(rev).strip()  # treat as missing if Rev is empty
+    return not s
+
 
 
 def rng(s: str | None) -> str | None:
@@ -815,10 +819,8 @@ def normalise_botanical(name: str) -> str:
 
 # ──────────────────────────── main routine ────────────────────────────────
 def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
-    # NEW – keep_default_na=False preserves the literal text “NA”
-    df = (pd.read_csv(in_csv, dtype=str, keep_default_na=False).fillna(""))
+    df = pd.read_csv(in_csv, dtype=str, keep_default_na=False).fillna("")
 
-    # Ensure link aliases & required columns exist
     df.rename(columns={
         "Link: Missouri Botanical Garden": "MBG Link",
         "Link: Wildflower.org": "WF Link",
@@ -838,6 +840,7 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
 
     for idx, _ in tqdm(df.iterrows(), total=len(df), desc="Fill"):
         row = df.loc[idx]
+        rev = str(row.get("Rev", "")).strip()
 
         if not row.get("Botanical Name", "").strip():
             continue
@@ -850,68 +853,67 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
         if not str(row.get("Key", "")).strip():
             df.at[idx, "Key"] = gen_key(cleaned, used_keys)
 
-        # ───────── Existing scraping / merge logic below ─────────
-        # MBG
-        if any(missing(row[c]) for c in MBG_COLS):
+        # ───────── MBG
+        if any(missing(row[c], rev) for c in MBG_COLS):
             url = row.get("MBG Link", "").strip()
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_mbg(html).items():
                     if k in ADDITIVE_COLS:
                         df.at[idx, k] = merge_additive(k, df.at[idx, k], v)
-                    elif missing(df.at[idx, k]):
+                    elif missing(df.at[idx, k], rev):
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
 
-        # WF
+        # ───────── WF
         row = df.loc[idx]
-        if any(missing(row[c]) for c in WF_COLS):
+        if any(missing(row[c], rev) for c in WF_COLS):
             url = row.get("WF Link", "").strip()
             if url.startswith("http") and (html := fetch(url)):
-                data = parse_wf(html, want_fallback_sun_water=missing(row["Sun"]))
+                data = parse_wf(html, want_fallback_sun_water=missing(row["Sun"], rev))
                 for k, v in data.items():
                     if k in ADDITIVE_COLS:
                         df.at[idx, k] = merge_additive(k, df.at[idx, k], v)
-                    elif missing(df.at[idx, k]):
+                    elif missing(df.at[idx, k], rev):
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
 
-        # PR
+        # ───────── PR
         row = df.loc[idx]
-        if any(missing(row[c]) for c in PR_COLS):
+        if any(missing(row[c], rev) for c in PR_COLS):
             url = row.get("PR Link", "").strip()
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_pr(html).items():
                     if k in ADDITIVE_COLS:
                         df.at[idx, k] = merge_additive(k, df.at[idx, k], v)
-                    elif missing(df.at[idx, k]):
+                    elif missing(df.at[idx, k], rev):
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
 
-        # NM
+        # ───────── NM
         row = df.loc[idx]
-        if any(missing(row[c]) for c in NM_COLS):
+        if any(missing(row[c], rev) for c in NM_COLS):
             url = row.get("NM Link", "").strip()
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_nm(html).items():
                     if k in ADDITIVE_COLS:
                         df.at[idx, k] = merge_additive(k, df.at[idx, k], v)
-                    elif missing(df.at[idx, k]):
+                    elif missing(df.at[idx, k], rev):
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
 
-        # PN
+        # ───────── PN
         row = df.loc[idx]
-        if any(missing(row[c]) for c in PN_COLS):
+        if any(missing(row[c], rev) for c in PN_COLS):
             url = row.get("PN Link", "").strip()
             if url.startswith("http") and (html := fetch(url)):
                 for k, v in parse_pn(html).items():
                     if k in ADDITIVE_COLS:
                         df.at[idx, k] = merge_additive(k, df.at[idx, k], v)
-                    elif missing(df.at[idx, k]):
+                    elif missing(df.at[idx, k], rev):
                         df.at[idx, k] = v
                 time.sleep(SLEEP)
 
-        # Quick clean-ups
+        # Clean + additive recheck
         df.at[idx, "Sun"] = clean(df.at[idx, "Sun"])
         df.at[idx, "Water"] = clean(df.at[idx, "Water"])
         df.at[idx, "Tolerates"] = clean(df.at[idx, "Tolerates"])
@@ -919,7 +921,6 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
         df.at[idx, "Bloom Time"] = merge_additive("Bloom Time", df.at[idx, "Bloom Time"], None)
         df.at[idx, "Bloom Color"] = merge_additive("Bloom Color", df.at[idx, "Bloom Color"], None)
 
-    # Zone alias, column order, save
     if "Zone" in df.columns:
         if "USDA Hardiness Zone" in df.columns:
             df["USDA Hardiness Zone"] = df["USDA Hardiness Zone"].where(

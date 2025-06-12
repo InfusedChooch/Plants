@@ -13,6 +13,50 @@
 ✅**Fill Missing Data (FillMissingData.py)**: **Updating** Fills based on Scraped HTML and Grabs, Need to refine column grabs for long chains. 
 
 ---
+### 🔄 How to Run Clean & Merge
+
+This script supports two modes: `clean` and `merge`.
+Use it to prepare and merge plant data into the masterlist.
+
+---
+
+#### 📦 Default Behavior (Clean Mode)
+
+```
+python CleanMerge.py
+```
+
+* Cleans `Outputs/Plants_Linked_Filled_Reviewed.csv`
+* Outputs cleaned file to: `Outputs/Plants_Linked_Filled_Reviewed_Clean.csv`
+* Logs all changes to: `Outputs/NewMaster/Plants_Linked_Filled_Reviewed_Clean_log.md`
+
+---
+
+#### 🔁 To Run Merge Mode
+
+```
+python CleanMerge.py --mode merge
+```
+
+* Merges `Outputs/Plants_Linked_Filled_Reviewed_Clean.csv`
+  into `Templates/0612_Masterlist_RO.csv`
+* Outputs merged file to: `Outputs/NewMaster/YYYYMMDD_Masterlist_Merged.csv`
+* Logs all merge actions to: `Outputs/NewMaster/YYYYMMDD_Masterlist_Merged_merge_log.md`
+
+---
+
+#### ⚙️ Optional Arguments
+
+| Flag         | Description                                     |
+| ------------ | ----------------------------------------------- |
+| `--mode`     | `clean` (default) or `merge`                    |
+| `--input`    | Source file for cleaning (default reviewed CSV) |
+| `--verified` | File to merge into master (default cleaned CSV) |
+| `--master`   | Target masterlist file                          |
+| `--template` | CSV defining column structure                   |
+| `--out`      | Output filename for merged CSV                  |
+
+> **Tip:** Make sure you are in the same folder as `CleanMerge.py` when running commands. Otherwise, use the full path to the script.
 
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
@@ -55,6 +99,12 @@ Rev                      : User Input (YYYYMMDD_FL)                      : "YYYY
 ## Master CSV Headers
 ```
 Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,AGCP Regional Status,USDA Hardiness Zone,Attracts,Tolerates,Soil Description,Condition Comments,MaintenanceLevel,Native Habitats,Culture,Uses,UseXYZ,WFMaintenance,Problems,Link: Missouri,Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com,Rev
+```
+## Important Note
+```
+Any pd.read_csv needs to have "keep_default_na=False" added to work! 
+
+  df = ( pd.read_csv(CSV_FILE, dtype=str, encoding="utf-8-sig", keep_default_na=False,  ).fillna("") )
 ```
 
 ## Prerequisites

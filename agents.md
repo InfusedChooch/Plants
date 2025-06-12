@@ -1,3 +1,12 @@
+## Important Notes
+```
+Any pd.read_csv needs to have "keep_default_na=False" added to keep "NA" fields in CSV
+
+  df = ( pd.read_csv(CSV_FILE, dtype=str, encoding="utf-8-sig", keep_default_na=False,  ).fillna("") )
+```
+
+
+
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
 ```
 CSV header               : data source path                              : expected format
