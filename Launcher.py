@@ -95,7 +95,7 @@ pre_var        = ctk.StringVar(value=f"{today}_")
 suf_var        = ctk.StringVar(value="")
 img_dir_var    = ctk.StringVar(value=nice_path(OUTDEF / "Images"))
 guide_pdf_var  = ctk.StringVar(value=nice_path(TEMPL / "Plant Guide 2025 Update.pdf"))
-master_csv_var = ctk.StringVar(value=nice_path(TEMPL / "0611_Masterlist_Nodata_Readonly.csv"))
+master_csv_var = ctk.StringVar(value=nice_path(TEMPL / "0612_Masterlist.csv"))
 _img_user_set  = False
 _prev_out_dir  = out_dir_var.get()
 
@@ -149,7 +149,7 @@ def browse_master() -> None:
     if f:
         master_csv_var.set(f)
 
-def open_chrome_portable() -> None:
+def open_repo() -> None:
     webbrowser.open("https://github.com/InfusedChooch/Plants/releases/tag/LiteEXE", new=1)
 
 # Output folder row
@@ -178,7 +178,7 @@ for r, (label, var, cmd) in enumerate(
     ctk.CTkButton(hdr, text="Browse", command=cmd).grid(row=r, column=2)
 
 ctk.CTkButton(hdr, text="Open Repo", width=160,
-              command=open_chrome_portable).grid(row=5, column=1, sticky="w", padx=4, pady=4)
+              command=open_repo).grid(row=5, column=1, sticky="w", padx=4, pady=4)
 
 # ── Tabs & tool rows ──────────────────────────────────────────────────────
 tabs = ctk.CTkTabview(app)

@@ -47,9 +47,19 @@ def to_md(records):
             for r in records]
     return "\n".join(hdr + rows)
 
+def parse_rev_date(rev: str) -> datetime | None:
+    """Extract YYYYMMDD from Rev field like 20250611_AN and convert to datetime."""
+    rev = rev.strip()
+    if len(rev) >= 8 and rev[:8].isdigit():
+        try:
+            return datetime.strptime(rev[:8], "%Y%m%d")
+        except ValueError:
+            return None
+    return None
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--master",   default="Templates/0611_Masterlist_New_Beta_Nodata.csv")
+    ap.add_argument("--master",   default="Templates/0611_Masterlist_Nodata_Readonly.csv")
     ap.add_argument("--verified", default="Templates/Plants_Linked_Verified.csv")
     tag = datetime.now().strftime("%m%d")
     ap.add_argument("--out",      default=f"{tag}_Masterlist_New_Beta_Nodata_NEW.csv")
@@ -74,7 +84,11 @@ def main(argv=None):
         rev_m = m_idx.at[bn, "Rev"].strip()
         rev_v = v_idx.at[bn, "Rev"].strip()
 
-        if not rev_m or not rev_v:
+        date_m = parse_rev_date(rev_m)
+        date_v = parse_rev_date(rev_v)
+
+        if not rev_m or not rev_v or not date_m or not date_v:
+            # Fill in missing values if either Rev is empty or invalid
             for col in v_idx.columns:
                 if col not in m_idx.columns:
                     continue
@@ -82,24 +96,10 @@ def main(argv=None):
                 val_verified = str(v_idx.at[bn, col]).strip()
                 if (not val_master or val_master in MISSING) and val_verified and val_verified not in MISSING:
                     m_idx.at[bn, col] = val_verified
+                    reason = "Rev missing" if not rev_m or not rev_v else "Rev parse failed"
                     log.append(dict(Action="UPDATED", Botanical=bn,
-                                    Note=f"Filled missing field: {col}"))
+                                    Note=f"Filled missing field ({reason}): {col}"))
         else:
-            try:
-                date_m = datetime.strptime(rev_m, "%Y-%m-%d")
-                date_v = datetime.strptime(rev_v, "%Y-%m-%d")
-            except ValueError:
-                for col in v_idx.columns:
-                    if col not in m_idx.columns:
-                        continue
-                    val_master = str(m_idx.at[bn, col]).strip()
-                    val_verified = str(v_idx.at[bn, col]).strip()
-                    if (not val_master or val_master in MISSING) and val_verified and val_verified not in MISSING:
-                        m_idx.at[bn, col] = val_verified
-                        log.append(dict(Action="UPDATED", Botanical=bn,
-                                        Note=f"Filled missing field (bad Rev format): {col}"))
-                continue
-
             if date_v > date_m:
                 m_idx.loc[bn] = v_idx.loc[bn]
                 log.append(dict(Action="OVERWRITTEN", Botanical=bn,
@@ -135,10 +135,10 @@ def main(argv=None):
         merged[col] = merged[col].fillna("").astype(str).str.strip()
         merged["Rev"] = merged["Rev"].fillna("").astype(str).str.strip()
 
-        no_rev = merged["Rev"] == ""
+        no_rev = merged["Rev"].str.len() == 0
         has_rev = ~no_rev
 
-        # Remove 'NA' from rows with no Rev
+        # Remove 'NA' from rows that lack Rev
         stripped = (no_rev & (merged[col] == "NA"))
         for idx in merged[stripped].index:
             log.append(dict(Action="CLEANED", Botanical=merged.at[idx, "Botanical Name"],

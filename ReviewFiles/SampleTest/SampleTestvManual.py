@@ -15,13 +15,13 @@ def parse_cli() -> argparse.Namespace:
     p.add_argument(
         "test_csv",
         nargs="?",
-        default="SampleTest\Plants_Linked_Filled_Test.csv",
+        default="ReviewFiles\SampleTest\Plants_Linked_Filled_Test.csv",
         help="Scraper output CSV (default: %(default)s)",
     )
     p.add_argument(
         "gold_csv",
         nargs="?",
-        default="SampleTest\Plants_Linked_FIlled_Manual.csv",
+        default="ReviewFiles\SampleTest\Plants_Linked_FIlled_Manual.csv",
         help="Hand-filled gold standard CSV (default: %(default)s)",
     )
     p.add_argument(

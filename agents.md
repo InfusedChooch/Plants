@@ -1,6 +1,3 @@
-Templates\0611_Masterlist_New_Beta_Nodata.csv is the new data structure for CSVs
-
-
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
 ```
 CSV header               : data source path                              : expected format
