@@ -194,12 +194,19 @@ def missing(v: str | None) -> bool:
 
 
 def rng(s: str | None) -> str | None:
-    """“1–3 ft” → “1 - 3” (or None)."""
+    """“1–3 ft” → “1 - 3” (or None), skip invalid floats like '.' """
     if not s:
         return None
     nums = re.findall(r"[\d.]+", s)
-    nums = [str(int(float(n))) if float(n).is_integer() else n for n in nums]
-    return " - ".join(nums) if nums else None
+    out = []
+    for n in nums:
+        try:
+            f = float(n)
+            out.append(str(int(f)) if f.is_integer() else str(f))
+        except ValueError:
+            continue  # skip invalid float like '.'
+    return " - ".join(out) if out else None
+
 
 
 def csv_join(parts: list[str]) -> str | None:

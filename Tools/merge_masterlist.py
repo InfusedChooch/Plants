@@ -68,12 +68,48 @@ def main(argv=None):
     v_idx = verified.set_index(MATCH_KEY)
     log   = []
 
-    # ▸ Overwrite rows whose Botanical Name appears in verified
+# ▸ Overwrite or merge rows based on Rev date
     overlap = m_idx.index.intersection(v_idx.index)
     for bn in overlap:
-        m_idx.loc[bn] = v_idx.loc[bn]
-        log.append(dict(Action="OVERWRITTEN", Botanical=bn,
-                        Note="Row replaced from verified file"))
+            rev_m = m_idx.at[bn, "Rev"].strip()
+            rev_v = v_idx.at[bn, "Rev"].strip()
+
+            if not rev_m or not rev_v:
+                # Fill in missing values from verified into master
+                for col in v_idx.columns:
+                    if col not in m_idx.columns:
+                        continue
+                    val_master = str(m_idx.at[bn, col]).strip()
+                    val_verified = str(v_idx.at[bn, col]).strip()
+                    if (not val_master or val_master in MISSING) and val_verified and val_verified not in MISSING:
+                        m_idx.at[bn, col] = val_verified
+                        log.append(dict(Action="UPDATED", Botanical=bn,
+                                        Note=f"Filled missing field: {col}"))
+            else:
+                try:
+                    date_m = datetime.strptime(rev_m, "%Y-%m-%d")
+                    date_v = datetime.strptime(rev_v, "%Y-%m-%d")
+                except ValueError:
+                    # On malformed dates, fallback to merging missing fields
+                    for col in v_idx.columns:
+                        if col not in m_idx.columns:
+                            continue
+                        val_master = str(m_idx.at[bn, col]).strip()
+                        val_verified = str(v_idx.at[bn, col]).strip()
+                        if (not val_master or val_master in MISSING) and val_verified and val_verified not in MISSING:
+                            m_idx.at[bn, col] = val_verified
+                            log.append(dict(Action="UPDATED", Botanical=bn,
+                                            Note=f"Filled missing field (bad Rev format): {col}"))
+                    continue
+
+                if date_v > date_m:
+                    m_idx.loc[bn] = v_idx.loc[bn]
+                    log.append(dict(Action="OVERWRITTEN", Botanical=bn,
+                                    Note=f"Replaced (newer Rev: {rev_v} > {rev_m})"))
+                else:
+                    log.append(dict(Action="SKIPPED", Botanical=bn,
+                                    Note=f"Kept (older or equal Rev: {rev_v} <= {rev_m})"))
+
 
     # ▸ Append completely new plants
     new_rows = v_idx.loc[v_idx.index.difference(m_idx.index)]
