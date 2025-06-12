@@ -42,7 +42,7 @@ def repo_dir() -> Path:
     """
     Return project root whether running from source or a PyInstaller bundle:
         • source tree …/Templates, …/Outputs present
-        • frozen exe  …/_internal/helpers/<tool>.exe  → go up three
+        • frozen exe  …/_internal/helpers/<tool>.exe  -> go up three
     """
     if getattr(sys, "frozen", False):
         exe = Path(sys.executable).resolve()
@@ -82,7 +82,7 @@ def get_resource(rel: str | Path) -> Path:
     return REPO / rel
 
 
-# cache lives next to the test CSVs →  <repo>/SampleTest/html_cache
+# cache lives next to the test CSVs ->  <repo>/SampleTest/html_cache
 CACHE_DIR = (REPO / "Outputs" / "html_cache").resolve()
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -106,7 +106,7 @@ def csv_diff(old_csv: Path, new_csv: Path) -> None:
     a = pd.read_csv(old_csv, dtype=str, keep_default_na=False)
     b = pd.read_csv(new_csv, dtype=str, keep_default_na=False)
     if a.shape != b.shape:
-        print(f"[!] shape changed: {a.shape} → {b.shape}")
+        print(f"[!] shape changed: {a.shape} -> {b.shape}")
     mask = (a != b).any(axis=1)
     if not mask.any():
         print("No cell-level differences found.")
@@ -116,7 +116,7 @@ def csv_diff(old_csv: Path, new_csv: Path) -> None:
             if a.at[idx, col] != b.at[idx, col]:
                 print(
                     f"row {idx:>4}  {col}: "
-                    f"'{a.at[idx, col]}'  →  '{b.at[idx, col]}'"
+                    f"'{a.at[idx, col]}'  ->  '{b.at[idx, col]}'"
                 )
     print("Diff complete.")
 
@@ -194,7 +194,7 @@ def missing(v: str | None) -> bool:
 
 
 def rng(s: str | None) -> str | None:
-    """“1–3 ft” → “1 - 3” (or None), skip invalid floats like '.' """
+    """“1–3 ft” -> “1 - 3” (or None), skip invalid floats like '.' """
     if not s:
         return None
     nums = re.findall(r"[\d.]+", s)
@@ -269,9 +269,9 @@ def normalise_botanical(name: str) -> str:
     """
     Force “Genus species 'Cultivar'” capitalisation.
 
-      • Genus → first letter upper-case, rest lower.
-      • Species → always lower-case.
-      • Cultivar / variety → kept inside single quotes and Title-cased.
+      • Genus -> first letter upper-case, rest lower.
+      • Species -> always lower-case.
+      • Cultivar / variety -> kept inside single quotes and Title-cased.
       • Any accidental extra whitespace is collapsed.
 
     If the incoming string doesn’t look like a botanical binomial
@@ -286,7 +286,7 @@ def normalise_botanical(name: str) -> str:
     # Grab Genus + species (optionally followed by anything else)
     m = re.match(r"^([A-Za-z×\-]+)\s+([A-Za-z×\-]+)(.*)$", name)
     if not m:
-        return name          # unknown format → leave untouched
+        return name          # unknown format -> leave untouched
 
     genus, species, rest = m.groups()
     genus   = genus.capitalize()       # Acer, Quercus, ×Chrysanthemum
@@ -316,9 +316,9 @@ def gen_key(botanical: str, used: set[str]) -> str:
 
     Examples
     --------
-    Achillea millefolium 'Paprika'  →  AMP
-    Acer rubrum                     →  AR   (first unused; AR1, AR2 … if needed)
-    Ilex ×meserveae 'Blue Girl'     →  IMB
+    Achillea millefolium 'Paprika'  ->  AMP
+    Acer rubrum                     ->  AR   (first unused; AR1, AR2 … if needed)
+    Ilex ×meserveae 'Blue Girl'     ->  IMB
     """
     if not botanical:
         base = "XX"        # fallback for badly-formed rows
@@ -462,7 +462,7 @@ NORMALISE = {
 def month_list(raw: str | None) -> str | None:
     """
     Convert any 'Apr-May' · 'April to May' · 'Apr through Jun'
-    → 'Apr, May' (plus extra months when range > 2).
+    -> 'Apr, May' (plus extra months when range > 2).
     """
     if not raw:
         return None
@@ -554,7 +554,7 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
                 char[label] = clean(" ".join(val_parts).strip())
                 break
 
-    # Benefits → UseXYZ
+    # Benefits -> UseXYZ
     uses = [
         f"Use {m.group(1).strip()}: {m.group(2).strip()}"
         for m in re.finditer(r"Use\s+([A-Za-z ]+)\s*:\s*([^\n]+)", txt)
@@ -783,9 +783,9 @@ def normalise_botanical(name: str) -> str:
     """
     Return botanical name as “Genus species 'Cultivar'”.
 
-    • Genus  → first letter capital, rest lower.
-    • species → all lower-case.
-    • Cultivar (if any) → single-quoted and Title-cased.
+    • Genus  -> first letter capital, rest lower.
+    • species -> all lower-case.
+    • Cultivar (if any) -> single-quoted and Title-cased.
     """
     if not isinstance(name, str):
         return name
@@ -944,7 +944,7 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out_csv, index=False, quoting=csv.QUOTE_MINIMAL, na_rep="")
-    print(f"[OK] saved → {out_csv.relative_to(REPO)}")
+    print(f"[OK] saved -> {out_csv.relative_to(REPO)}")
 
 # ────────────────────────── entrypoint ────────────────────────────────────
 if __name__ == "__main__":

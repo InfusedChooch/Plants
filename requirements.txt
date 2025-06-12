@@ -9,5 +9,3 @@ requests
 rich
 lxml
 tdqm
-pytest
-#test deps

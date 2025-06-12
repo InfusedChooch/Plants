@@ -2,103 +2,18 @@
 
 ## Features in this Version
 
-✅ **PDF Scraper**: Still available to extract plant data from a guide PDF.
+❌**PDF Scraper**: **Broken** **OLD** Going to be Phased out / Retooled. 
 
-✅ **Generate PDF**: Creates a printable plant guide with sections, photos, and formatting.
+❌**Generate PDF**: **Broken** **Updating** Creates a printable plant guide with sections, photos, and formatting. Needs to be updated to fit new CSV Layout. 
 
-✅ **Export to Excel**: Produces a styled Excel file with filters, highlights, and version notes uses python from Static\Python_full for source relevance.
+✅**Export to Excel**: Produces a styled Excel file with filters, highlights, and version notes uses python from Static\Python_full for source relevance.
 
-🚫 **Find Links (GetLinks.py)**: **Removed** in this branch. It is assumed your master list already contains necessary links.
+❌**Find Links (GetLinks.py)**: **Broken**. Needs to Update Link Finding Logic to suit ""Genus species 'Variety'""
 
-🚫 **Fill Missing Data (FillMissingData.py)**: **Removed** in this branch. No online enrichment is performed.
-
----
-
-## Prerequisites
-
-```bash
-pip install -r requirements.txt
-```
-* `pip` for installing packages
-* Python dependencies from `requirements.txt`
-        pandas
-        openpyxl
-        black
-        tqdm
-        pillow
-        fpdf2
-        pdfplumber
-        pymupdf
-        customtkinter
-        pyinstaller
-        pyyaml
-        pytest
-        beautifulsoup4
-        lxml
-        requests
-
-
-## Building Executables (Optional)
-
-
-```bash
-pyinstaller --onefile --distpath helpers Static/Python_full/PDFScraper.py
-pyinstaller --onefile --distpath helpers Static/Python_full/GeneratePDF.py
-pyinstaller --onefile --distpath helpers Static/Python_full/Excelify2.py
-pyinstaller --onefile --distpath helpers Static/Python_full/FillMissingData.py
-
-pyinstaller Launcher_lite.py --onedir --noconfirm --windowed \
-  --add-data "Static;Static" \
-  --add-data "Templates;Templates" \
-  --add-data "helpers;helpers" \
-  --icon "Static/themes/leaf.ico"
-```
+✅**Fill Missing Data (FillMissingData.py)**: **Updating** Fills based on Scraped HTML and Grabs, Need to refine column grabs for long chains. 
 
 ---
 
-## Folder Layout
-
-```
-├── Launcher_lite.py
-├── Static/
-│   └── Python_lite/
-│        ├── PDFScraper.py
-│        ├── GeneratePDF.py
-│        └── Excelify2.py
-├── Templates/
-├── Outputs/
-│   
-```
-
-## Expected EXE Folder Layout
-
-```
-RU Plant Guide/
-├── Launcher.exe                     # <- main GUI
-├── _internal/
-│   ├── Static/
-│   │   └── themes/
-│   │   │    └── leaf.ico
-│   │   └── Python_full/
-│   │       ├── PDFScraper.py
-│   │       ├── GeneratePDF.py
-│   │       ├── Excelify2.py
-│   │       ├── FillMissingData.py
-│   │       └── GetLinks.py
-│   ├── helpers/
-│   │   ├── PDFScraper.exe
-│   │   ├── GeneratePDF.exe
-│   │   └── Excelify2.exe
-├── Templates/
-│   ├── Plants_Linked_Filled_Master.csv
-│   ├── Plant Guide 2025 Update.pdf
-│   └── MASTER_MASTER_20250605.csv
-├── Outputs/
-│   ├── pdf_images/
-│   ├── Plants_Linked_Filled.csv
-│   ├── Plant_Guide_EXPORT.pdf
-│   └── Plants_Linked_Filled_Review.xlsx
-```
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
 ```
@@ -137,7 +52,135 @@ Link: Pinelands          : GetLinks (name match)                         : URL
 Rev                      : User Input (YYYYMMDD_FL)                      : "YYYYMMDD_FirstinitalLastinital"
 
 ```
-
+## Master CSV Headers
 ```
 Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,AGCP Regional Status,USDA Hardiness Zone,Attracts,Tolerates,Soil Description,Condition Comments,MaintenanceLevel,Native Habitats,Culture,Uses,UseXYZ,WFMaintenance,Problems,Link: Missouri,Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com,Rev
+```
+
+## Prerequisites
+
+```bash
+pip install -r requirements.txt
+```
+* `pip` for installing packages
+* Python dependencies from `requirements.txt`
+        pandas
+        openpyxl
+        black
+        tqdm
+        pillow
+        fpdf2
+        pdfplumber
+        pymupdf
+        customtkinter
+        pyinstaller
+        pyyaml
+        pytest
+        beautifulsoup4
+        lxml
+        requests
+
+
+## Building Executables (Optional)
+```
+pyinstaller --onefile --distpath helpers Static/Python_full/PDFScraper.py
+pyinstaller --onefile --distpath helpers Static/Python_full/GeneratePDF.py
+pyinstaller --onefile --distpath helpers Static/Python_full/Excelify2.py
+pyinstaller --onefile --distpath helpers Static/Python_full/FillMissingData.py
+
+pyinstaller Launcher_lite.py --onedir --noconfirm --windowed \
+  --add-data "Static;Static" \
+  --add-data "Templates;Templates" \
+  --add-data "helpers;helpers" \
+  --icon "Static/themes/leaf.ico"
+```
+
+## Folder Layout
+```
+├── agents.md
+├── Launcher.py
+├── readme.md
+├── requirements.txt
+├── .github/
+│ └── workflows/
+│ └── tests.yml
+├── NEW/
+│ ├── 0611_Masterlist_New_Beta_Nodata_NEW.csv
+│ └── 0611_Masterlist_New_Beta_Nodata_NEW_merge_log.md
+├── Outputs/
+│ ├── 0611_Masterlist_Nodata.csv
+│ ├── 20250612_Plants_Linked_Filled_JG.csv
+│ ├── Fixed_Plant_Guide_EXPORT_JG_TimesLogos.pdf
+│ ├── Plants_Linked.csv
+│ ├── Plants_Linked_30.csv
+│ ├── Plants_Linked_Filled_Review_30Rev.xlsx
+│ ├── html_cache/
+│ └── Images/
+│ ├── NJAES_Logo.jpeg
+│ ├── Rutgers_Logo.png
+│ └── Plants/
+├── SampleTest/
+│ ├── Plants_Linked_FIlled_Manual.csv
+│ ├── Plants_Linked_Filled_Test.csv
+│ └── SampleTestvManual.py
+├── Static/
+│ ├── GoogleChromePortable/
+│ ├── Python_full/
+│ │ ├── chromedriver.exe
+│ │ ├── Excelify2.py
+│ │ ├── FillMissingData.py
+│ │ ├── GeneratePDF.py
+│ │ ├── GetLinks.py
+│ │ ├── PDFScraper_depreciate.py
+│ │ └── requirements_full.txt
+│ └── themes/
+│ ├── leaf.ico
+│ └── rutgers.json
+├── Templates/
+│ ├── 0611_Masterlist_Nodata_Readonly.csv
+│ ├── 20250612_Plants_Linked_Filled_Review_JG.xlsx
+│ ├── Plant Guide 2025 Update.pdf
+│ ├── Plants_Linked_Verified.csv
+│ ├── Plants_Template.csv
+│ ├── ReviewedLinks.csv
+│ └── style_rules.yaml
+├── Tools/
+│ ├── list_files.py
+│ └── merge_masterlist.py
+```
+
+## Expected EXE Folder Layout
+```
+RU Plant Guide/
+├── Launcher.exe                     # ← main GUI
+├── _internal/
+│   ├── Static/
+│   │   ├── themes/
+│   │   │   └── leaf.ico
+│   │   └── Python_full/
+│   │       ├── chromedriver.exe
+│   │       ├── Excelify2.py
+│   │       ├── FillMissingData.py
+│   │       ├── GeneratePDF.py
+│   │       ├── GetLinks.py
+│   │       ├── PDFScraper_depreciate.py
+│   ├── helpers/
+│   │   ├── PDFScraper.exe
+│   │   ├── GeneratePDF.exe
+│   │   ├── Excelify2.exe
+│   │   └── FillMissingData.exe      # ← if compiled
+├── Templates/
+│   ├── DATE_Masterlist_Nodata_Readonly.csv
+│   ├── Plant Guide 2025 Update.pdf
+│   ├── Plants_Template.csv
+│   ├── ReviewedLinks.csv
+│   └── style_rules.yaml
+├── Outputs/
+│   ├── pdf_images/
+│   ├── html_cache/
+│   ├── Images/
+│   │   ├── NJAES_Logo.jpeg
+│   │   ├── Rutgers_Logo.png
+│   │   └── Plants/
+│   ├── Plants_Linked.csv
 ```
