@@ -172,8 +172,8 @@ Height (ft)              : MBG → Wildflower.org → Pinelands              : X
 Spread (ft)              : MBG → Wildflower.org → Pinelands              : X - Y
 Bloom Color              : Wildflower.org + MBG + Pinelands/New Moon     : Color1, Color2, …
 Bloom Time               : Wildflower.org + MBG + Pinelands/New Moon     : Jan, Feb, …
-Sun                      : MBG → WF “Light Requirement”                  : Full sun, Part sun, …
-Water                    : MBG → WF “Soil Moisture”                      : low, medium, high
+Sun                      : MBG → WF “Light Requirement”                  : Full Sun, Part Sun, …
+Water                    : MBG → WF “Soil Moisture”                      : Low | Medium | High
 AGCP Regional Status     : WF (Wetland Indicator)                        : FACU | OBL | …
 USDA Hardiness Zone      : MBG “Zone”                                    : Zone X – Y
 
@@ -195,4 +195,8 @@ Link: Pleasant Run       : GetLinks (name match)                         : URL
 Link: New Moon           : GetLinks (name match)                         : URL
 Link: Pinelands          : GetLinks (name match)                         : URL
 
+```
+
+```
+Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,AGCP Regional Status,USDA Hardiness Zone,Attracts,Tolerates,Soil Description,Condition Comments,MaintenanceLevel,Native Habitats,Culture,Uses,UseXYZ,WFMaintenance,Problems,Link: Missouri,Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com
 ```
