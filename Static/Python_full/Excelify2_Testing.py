@@ -68,7 +68,7 @@ DEFAULT_WIDTH: int = 18
 # ── CLI ------------------------------------------------------------------
 parser = argparse.ArgumentParser(description="Export formatted Excel from CSV")
 parser.add_argument("--in_csv",      default="Templates/ExcelTestTemplate.csv")
-parser.add_argument("--out_xlsx",    default="ReviewFiles/Plants_Linked_Filled_NeedsReview.xlsx")
+parser.add_argument("--out_xlsx",    default="ReviewFiles/Plants_Reformat_Test.xlsx")
 parser.add_argument("--template_csv",default="Templates/Plants_Template.csv")
 args = parser.parse_args()
 
