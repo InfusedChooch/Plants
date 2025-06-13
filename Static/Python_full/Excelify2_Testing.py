@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 # Excelify2.py – Create a styled Excel workbook from the fully populated plant CSV.
 # 2025-06-13 · Adds blanket COLUMN_WIDTHS dict, keep_default_na, and cleans up width logic.
-# todo I need to make the first sheet the "pretty sheet that you can interface with, There needs to be an appended "RAW CSV" tab the houses the data we are going to export.
-# todo I need to make the "RAW CSV" editable/viewable from the first page
-# todo "Link: Others" needs to be autopopulated on the first sheet split up into columns for each entry:
+# todo I need to make the first sheet the "pretty sheet that you can interface with, This data should mirror the "RAW CSV" sheet. When A user edits the "Plant Data Sheet" it should reflect the changes onto the "RAW CSV". 
 # todo CSV Format: [Tag1,"URL1","Label1"];[Tag2,"URL2","Label2"] : "[T1,""https://Test.com"",""Test 1""];[T2,""https://Test.com"",""Test 2""];[T3,""https://Test.com"",""Test 3""]"
-# todo 
-# todo Excel Format   -- Maybe a Searchable/appendable list
-# todo   |    aa    |     ab     |      ac    |   
-# todo   |          Other : Links             |
-# todo   |  Label1  |    URL1    |    Tag1    |
-# todo   |  Label2  |    URL2    |    Tag2    |
+# todo New Workbook order: [Readme!][Pretty Data"Plant Data"][Other Links Add/Sub][RAW CSV Export][Imported .py codes][Dir Readme.md]
+# todo Excel Format   -- Maybe a Searchable/appendable list 
+# todo  0 |    aa    |     ab     |      ac    |   
+# todo  1 |      Bot Name   |  Common Name     | : This should be a selectable drop down for each plant entry
+# todo  2 |          Other : Links             | : This should be a merged Column
+# todo  3 |  Label1  |    URL1    |    Tag1    | : Editing this should change the RAW CSV String for "Link: Others" in the ROW [Tag1,"URL1","Label1"];[Tag2,"URL2","Label2"]
+# todo  4 |  Label2  |    URL2    |    Tag2    |
 # ? I need to figure out how to get urls added and edited from the CSV header
 
 
@@ -68,8 +67,8 @@ DEFAULT_WIDTH: int = 18
 
 # ── CLI ------------------------------------------------------------------
 parser = argparse.ArgumentParser(description="Export formatted Excel from CSV")
-parser.add_argument("--in_csv",      default="Outputs/Plants_Linked_Filled.csv")
-parser.add_argument("--out_xlsx",    default="Outputs/Plants_Linked_Filled_NeedsReview.xlsx")
+parser.add_argument("--in_csv",      default="Templates/ExcelTestTemplate.csv")
+parser.add_argument("--out_xlsx",    default="ReviewFiles/Plants_Linked_Filled_NeedsReview.xlsx")
 parser.add_argument("--template_csv",default="Templates/Plants_Template.csv")
 args = parser.parse_args()
 
