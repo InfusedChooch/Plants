@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 # Excelify2.py – Create a styled Excel workbook from the fully populated plant CSV.
 # 2025-06-13 · Adds blanket COLUMN_WIDTHS dict, keep_default_na, and cleans up width logic.
+# todo I need to make the first sheet the "pretty sheet that you can interface with, There needs to be an appended "RAW CSV" tab
+# todo I need to make the "RAW CSV" editable/viewable from the first page
+# todo "Link: Others" needs to be autopopulated on the first sheet split up into columns for each entry:
+# todo CSV Format: [Tag1,"URL1","Label1"];[Tag2,"URL2","Label2"] 
+# todo 
+# todo Excel Format   
+# todo   |    aa    |     ab     |      ac    |   
+# todo   |          Other : Links             |
+# todo   |  Label1  |    URL1    |    Tag1    |
+# todo   |  Label2  |    URL2    |    Tag2    |
+# ? I need to figure out how to get urls added and edited from the CSV header
+
 
 from pathlib import Path
 import sys, argparse, pandas as pd

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # GeneratePDF.py - Produce a printable plant-guide PDF (2025-06-05, portable paths)
+#todo Needs to be updated to fit new master csv
+#! Wont work as is
+
 """
 Generate a title page, TOC and a page per plant with images using fpdf2.
 """

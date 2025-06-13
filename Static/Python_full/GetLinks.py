@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # GetLinks.py - Prefill from master first, launch Chrome only if needed (rev-patched)
+#! Might retire
+#todo Needs to be revamped a bit -- maybe combined with FillMissingData
 """Search web resources to populate missing plant links in the CSV.
 
 Existing links from the master sheet are reused. Any remaining gaps are

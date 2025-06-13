@@ -99,7 +99,7 @@ Rev                      : User Input (YYYYMMDD_FL)         : "YYYYMMDD_Firstini
 
 ## Master CSV Headers
 ```
-Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,AGCP Regional Status,USDA Hardiness Zone,Attracts,Tolerates,Soil Description,Condition Comments,MaintenanceLevel,Native Habitats,Culture,Uses,UseXYZ,WFMaintenance,Problems,Link: Missouri,Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com,Rev
+Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,AGCP Regional Status,USDA Hardiness Zone,Attracts,Tolerates,Soil Description,Condition Comments,MaintenanceLevel,Native Habitats,Culture,Uses,UseXYZ,WFMaintenance,Problems,Link: Missouri,Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com,Link: Others,Rev
 ```
 ## Important Note
 
@@ -189,3 +189,7 @@ RU Plant Guide/
 ├── Templates/
 ├── Outputs/
 ```
+
+
+
+"[GM,""www.google.maps.com"",""Google Maps""];[YT,""https://youtube.com"",""YouTube""];[TEST,""Test.com"",""Test Ref""];["" ]"
