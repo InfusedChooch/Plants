@@ -93,7 +93,7 @@ Link: Wildflower.org     : GetLinks                         : URL
 Link: Pleasant Run       : GetLinks                         : URL
 Link: New Moon           : GetLinks                         : URL
 Link: Pinelands          : GetLinks                         : URL
-Link: Other              : [Tag,"URL","Label"]              : Entry list [Tag,"URL","Label"];[T2,"U2","L2]
+Link: Other              : [Tag,"URL","Label"]              : Entry list "[Tag,""URL"",""Label""]" : [T1,""https://Test.com"",""Test 1""];
 Rev                      : User Input (YYYYMMDD_FL)         : "YYYYMMDD_FirstinitalLastinital" 
 ```
 

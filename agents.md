@@ -1,8 +1,10 @@
-## Important Notes
+## Start
 ```
-Any pd.read_csv needs to have "keep_default_na=False" added to keep "NA" fields in CSV
+I need my code base commented out for basic functions, and it should be updated to expect comments for the Better COmments VS Code Extension "better-comments.
 
-  df = ( pd.read_csv(CSV_FILE, dtype=str, encoding="utf-8-sig", keep_default_na=False,  ).fillna("") )
+You need to help execute the todo comments in Static\Python_full\Excelify2_Testing.py we are using a sample input to see how it works that is Templates\ExcelTestTemplate.csv
+
+Make sure to update the comments at the top when they are finished, You can use the // tag and append finished on the line, or Needs Testing
 ```
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
@@ -39,17 +41,13 @@ Link: Wildflower.org     : GetLinks                         : URL
 Link: Pleasant Run       : GetLinks                         : URL
 Link: New Moon           : GetLinks                         : URL
 Link: Pinelands          : GetLinks                         : URL
-Link: Other              : [Tag,"URL","Label"]              : Entry list [Tag,"URL","Label"] : [T1,""https://Test.com"",""Test 1""];
+Link: Other              : [Tag,"URL","Label"]              : Entry list "[Tag,""URL"",""Label""]" : [T1,""https://Test.com"",""Test 1""];
 Rev                      : User Input (YYYYMMDD_FL)         : "YYYYMMDD_FirstinitalLastinital" 
 ```
 
 ```
 Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,AGCP Regional Status,USDA Hardiness Zone,Attracts,Tolerates,Soil Description,Condition Comments,MaintenanceLevel,Native Habitats,Culture,Uses,UseXYZ,WFMaintenance,Problems,Link: Missouri,Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com,Link: Others,Rev
 ```
-
-I need my code base commented out for basic functions, and it should be updated to expect comments for the Better COmments VS Code Extension "better-comments.
-
-You need to help execute the todo comments in Static\Python_full\Excelify2_Testing.py we are using a sample input to see how it works that is Templates\ExcelTestTemplate.csv
 
 ```
 Comment Style Guide Meaning -- This repo uses better-comments (VS Code) -- key functions
