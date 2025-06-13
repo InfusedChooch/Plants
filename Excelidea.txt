@@ -1,0 +1,9 @@
+  0 |    aa    |     ab     |      ac    |   
+  1 |      Bot Name   |  Common Name     | : This should be a selectable drop down for each plant entry
+  2 |          Other : Links             | : This should be a merged Column
+  3 |  Label1  |    URL1    |    Tag1    | : Editing this should change the RAW CSV String for "Link: Others" in the ROW [Tag1,"URL1","Label1"];[Tag2,"URL2","Label2"]
+  4 |  Label2  |    URL2    |    Tag2    |
+
+
+
+CSV Format: [Tag1,""URL1"",""Label1""];[Tag2,""URL2"",""Label2""] : "[T1,""https://Test.com"",""Test 1""];[T2,""https://Test.com"",""Test 2""];[T3,""https://Test.com"",""Test 3""]"
