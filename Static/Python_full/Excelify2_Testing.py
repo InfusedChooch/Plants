@@ -31,7 +31,7 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.cell.cell import Cell
 from openpyxl.worksheet.datavalidation import DataValidation
-import black
+import black 
 
 # ── Column widths (characters) -------------------------------------------
 # Tweak values here to resize any column on export.
