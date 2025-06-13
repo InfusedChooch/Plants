@@ -2,7 +2,7 @@
 # Excelify2.py – Create a styled Excel workbook from the fully populated plant CSV.
 # 2025-06-13 · Adds blanket COLUMN_WIDTHS dict, keep_default_na, and cleans up width logic.
 # todo I need to make the first sheet the "pretty sheet that you can interface with, This data should mirror the "RAW CSV" sheet. When A user edits the "Plant Data Sheet" it should reflect the changes onto the "RAW CSV". 
-# todo CSV Format: [Tag1,"URL1","Label1"];[Tag2,"URL2","Label2"] : "[T1,""https://Test.com"",""Test 1""];[T2,""https://Test.com"",""Test 2""];[T3,""https://Test.com"",""Test 3""]"
+# todo CSV Format: [Tag1,""URL1"",""Label1""];[Tag2,""URL2"",""Label2""] : "[T1,""https://Test.com"",""Test 1""];[T2,""https://Test.com"",""Test 2""];[T3,""https://Test.com"",""Test 3""]"
 # todo New Workbook order: [Readme!][Pretty Data"Plant Data"][Other Links Add/Sub][RAW CSV Export][Imported .py codes][Dir Readme.md]
 # todo Excel Format   -- Maybe a Searchable/appendable list 
 # todo  0 |    aa    |     ab     |      ac    |   
