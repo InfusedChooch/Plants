@@ -9,7 +9,7 @@
 # *  0 |    aa    |     ab     |      ac    |   
 # *  1 |      Bot Name   |  Common Name     | : This should be a selectable drop down for each plant entry
 # *  2 |          Other : Links             | : This should be a merged Column
-# *  3 |  Label1  |    URL1    |    Tag1    | : Editing this should change the RAW CSV String for "Link: Others" in the ROW [Tag1,"URL1","Label1"];[Tag2,"URL2","Label2"]
+# *  3 |  Label1  |    URL1    |    Tag1    | : Editing this should change the RAW CSV String for "Link: Others" in the ROW [Tag1,"URL1","Label1"];[Tag2,"URL2","Label2"] // finished
 # *  4 |  Label2  |    URL2    |    Tag2    |
 
 # *   Link data =[E1,"D1","C1"];[H1,"G1","F1"];[K1,"J1","I1"]
@@ -118,6 +118,21 @@ def _parse_other_links(text: str) -> list[tuple[str, str, str]]:
 
     pattern = r"\[(?P<tag>[^,\]]+),\"(?P<url>[^\"]+)\",\"(?P<label>[^\"]+)\"\]"
     return re.findall(pattern, text or "")
+
+# * Helper: build TEXTJOIN formula for Other Links AddSub rows
+def build_link_formula(row: int, max_links: int) -> str:
+    """Return Excel TEXTJOIN formula referencing Label/URL/Tag cells."""
+    pieces: list[str] = []
+    for idx in range(1, max_links + 1):
+        l_col = get_column_letter(3 + (idx - 1) * 3)
+        u_col = get_column_letter(3 + (idx - 1) * 3 + 1)
+        t_col = get_column_letter(3 + (idx - 1) * 3 + 2)
+        pieces.append(
+            f'IF(OR({l_col}{row}="",{u_col}{row}="",{t_col}{row}=""),"",'  # noqa: E501
+            f'"["&{t_col}{row}&","""&{u_col}{row}&""","""&{l_col}{row}&""]")'
+        )
+    joined = ",".join(pieces)
+    return f'=TEXTJOIN(";",TRUE,{joined})'
 
 if "Link: Others" in df.columns:
     links_parsed = df["Link: Others"].apply(_parse_other_links)
@@ -355,6 +370,7 @@ other_ws = wb.create_sheet("Other Links AddSub")
 headers = ["Botanical Name", "Common Name"]
 for idx in range(1, MAX_LINKS + 1):
     headers += [f"Label {idx}", f"URL {idx}", f"Tag {idx}"]
+headers.append("RAW CSV Export Data")
 other_ws.append(headers)
 for i in range(DATA_ROWS):
     row = [
@@ -367,6 +383,8 @@ for i in range(DATA_ROWS):
             df.get(f"Other URL {idx}", [""] * DATA_ROWS)[i],
             df.get(f"Other Tag {idx}", [""] * DATA_ROWS)[i],
         ]
+    formula = build_link_formula(i + 2, MAX_LINKS)
+    row.append(formula)
     other_ws.append(row)
 
 bot_range = f"'Plant Data'!$C$4:$C${DATA_ROWS + 3}"
@@ -377,6 +395,14 @@ other_ws.add_data_validation(dv_bot)
 other_ws.add_data_validation(dv_com)
 dv_bot.add(f"A2:A{DATA_ROWS + 1}")
 dv_com.add(f"B2:B{DATA_ROWS + 1}")
+
+# * Link: Others columns in Plant Data reference the formula column
+others_col_idx = df.columns.get_loc("Link: Others") + 1
+formula_col = get_column_letter(3 * MAX_LINKS + 3)
+for i in range(DATA_ROWS):
+    ws.cell(row=i + 4, column=others_col_idx).value = (
+        f"='Other Links AddSub'!{formula_col}{i + 2}"
+    )
 
 # ── README -------------------------------------------------------------------
 readme = wb.create_sheet("README")
