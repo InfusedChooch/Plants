@@ -20,6 +20,7 @@ from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font, Alignment
 from openpyxl.utils import get_column_letter
+from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.cell.cell import Cell
 import black
@@ -73,6 +74,7 @@ parser.add_argument("--template_csv",default="Templates/Plants_Template.csv")
 args = parser.parse_args()
 
 # ── Paths ----------------------------------------------------------------
+# * Find repository root when running from source or bundle
 def repo_dir() -> Path:
     exe_path = Path(sys.executable if getattr(sys, "frozen", False) else __file__).resolve()
     for parent in exe_path.parents:
@@ -96,8 +98,32 @@ df = (
     )
     .fillna("")
 )
-template_cols = list(pd.read_csv(TEMPLATE_CSV, nrows=0).columns)
+template_cols = list(
+    pd.read_csv(TEMPLATE_CSV, nrows=0, keep_default_na=False).columns
+)
 df = df.reindex(columns=template_cols + [c for c in df.columns if c not in template_cols])
+
+# * Split "Link: Others" into editable columns
+def _parse_other_links(text: str) -> list[tuple[str, str, str]]:
+    """Return list of (tag, url, label) tuples from the Link: Others cell."""
+    import re
+
+    pattern = r"\[(?P<tag>[^,\]]+),\"(?P<url>[^\"]+)\",\"(?P<label>[^\"]+)\"\]"
+    return re.findall(pattern, text or "")
+
+if "Link: Others" in df.columns:
+    links_parsed = df["Link: Others"].apply(_parse_other_links)
+    max_links = links_parsed.map(len).max()
+    for idx in range(max_links):
+        df[f"Other Label {idx+1}"] = links_parsed.apply(
+            lambda lst: lst[idx][2] if idx < len(lst) else ""
+        )
+        df[f"Other URL {idx+1}"] = links_parsed.apply(
+            lambda lst: lst[idx][1] if idx < len(lst) else ""
+        )
+        df[f"Other Tag {idx+1}"] = links_parsed.apply(
+            lambda lst: lst[idx][0] if idx < len(lst) else ""
+        )
 
 # Normalise casing
 if "Common Name" in df.columns:
@@ -115,6 +141,12 @@ df.to_excel(XLSX_FILE, index=False, na_rep="NA")
 wb = load_workbook(XLSX_FILE)
 ws = wb.active
 ws.title = "Plant Data"
+
+# * Raw data sheet for easy CSV export
+from openpyxl.utils.dataframe import dataframe_to_rows
+raw_ws = wb.create_sheet("RAW CSV")
+for r in dataframe_to_rows(df, index=False, header=True):
+    raw_ws.append(list(r))
 
 # ── Source-legend row (unchanged) ----------------------------------------
 DATA_SOURCE = {
@@ -150,28 +182,36 @@ DATA_SOURCE = {
     "Mark Reviewed": "Type Initials; Inserts YYYYMMDD_FL",
 }
 
-ws.insert_rows(2)
-for col_idx, col_name in enumerate([c.value for c in ws[1]], start=1):
-    cell = ws.cell(row=2, column=col_idx)
+# // create a quick-access link to the raw data sheet
+ws.insert_rows(1)
+ws["A1"] = "Edit raw CSV"
+ws["A1"].hyperlink = "#'RAW CSV'!A1"
+ws["A1"].style = "Hyperlink"
+ws["A1"].font = Font(color="0000EE", underline="single")
+
+ws.insert_rows(3)
+for col_idx, col_name in enumerate([c.value for c in ws[2]], start=1):
+    cell = ws.cell(row=3, column=col_idx)
     cell.value = DATA_SOURCE.get(col_name, "")
     cell.font = Font(italic=True, size=8)
     cell.alignment = Alignment(horizontal="center", vertical="top", wrap_text=False, shrink_to_fit=False)
 
 # ── Header formatting + freeze -------------------------------------------
 HEADER_FILL = PatternFill(start_color="CFE2F3", end_color="CFE2F3", fill_type="solid")
-for c in ws[1]:
+for c in ws[2]:
     c.fill = HEADER_FILL
     c.font = Font(bold=True, size=11)
     c.alignment = Alignment(horizontal="center", vertical="center")
-ws.freeze_panes = "E3"
+ws.freeze_panes = "E4"
 
 # ── Autofit helper --------------------------------------------------------
+# * Resize columns to fit content while respecting caps
 def autofit(ws: Worksheet) -> None:
     long_fields = {
         "UseXYZ": 50, "Culture": 50, "Uses": 50,
         "Soil Description": 48, "Condition Comments": 48, "Native Habitats": 42,
     }
-    headers = [c.value for c in ws[1]]
+    headers = [c.value for c in ws[2]]
     for col_cells in ws.iter_cols(min_row=1, max_row=ws.max_row):
         col_idx = col_cells[0].column
         col_letter = get_column_letter(col_idx)
@@ -190,6 +230,7 @@ MISSING_FILL = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="
 NA_LINK_FILL = PatternFill(start_color="B7D7FF", end_color="B7D7FF", fill_type="solid")
 REV_FILLED   = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
 
+# * Apply row-level styling and hyperlink logic
 def style_sheet(ws: Worksheet, df: pd.DataFrame, header: list[str]) -> None:
     REV_MISSING_FILL = PatternFill(start_color="FFF79A", end_color="FFF79A", fill_type="solid")
     ROW_ALT_FILL = PatternFill(start_color="F9F9F9", end_color="F9F9F9", fill_type="solid")
@@ -203,7 +244,7 @@ def style_sheet(ws: Worksheet, df: pd.DataFrame, header: list[str]) -> None:
     }
 
 
-    for r_idx, row in enumerate(df.itertuples(index=False, name=None), start=3):
+    for r_idx, row in enumerate(df.itertuples(index=False, name=None), start=4):
         for c_idx, (col_name, val) in enumerate(zip(header, row), start=1):
             cell = ws.cell(row=r_idx, column=c_idx)
             val = str(val).strip()
@@ -284,13 +325,13 @@ def style_sheet(ws: Worksheet, df: pd.DataFrame, header: list[str]) -> None:
 style_sheet(ws, df, df.columns.tolist())
 autofit(ws)
 
-for hdr_cell in ws[1]:
+for hdr_cell in ws[2]:
     hdr = str(hdr_cell.value).strip()
     col_letter = get_column_letter(hdr_cell.column)
     ws.column_dimensions[col_letter].width = COLUMN_WIDTHS.get(hdr, DEFAULT_WIDTH)
 
 # Row heights
-for row in ws.iter_rows(min_row=3, max_row=ws.max_row):
+for row in ws.iter_rows(min_row=4, max_row=ws.max_row):
     ws.row_dimensions[row[0].row].height = 28
 
 # ── README -------------------------------------------------------------------
@@ -313,12 +354,14 @@ readme["A14"] = "Tools: How to filter by partial match in Excel:"
 readme["A15"] = "1. Click the filter dropdown on the header."
 readme["A16"] = "2. Choose 'Text Filters' ➜ 'Contains...'"
 readme["A17"] = "3. Type part of a word (e.g., 'shade', 'yellow')."
+readme["A19"] = "The 'RAW CSV' sheet holds editable data." 
 
 
 # -- Step 6 · embed helper scripts ----------------------------------------
 from pathlib import Path
 import black
 
+# * Locate Static/Python_full no matter the install layout
 def find_script_root(repo: Path) -> Path:
     """
     Locate the folder that holds the full-version helper scripts.
