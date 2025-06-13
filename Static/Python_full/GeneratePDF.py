@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # GeneratePDF.py - Produce a printable plant-guide PDF (2025-06-05, portable paths)
-
 """
 Generate a title page, TOC and a page per plant with images using fpdf2.
 """
