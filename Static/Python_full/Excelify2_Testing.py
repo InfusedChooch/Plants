@@ -6,19 +6,20 @@
 # todo CSV Format: [Tag1,""URL1"",""Label1""];[Tag2,""URL2"",""Label2""] : "[T1,""https://Test.com"",""Test 1""];[T2,""https://Test.com"",""Test 2""];[T3,""https://Test.com"",""Test 3""]"
 # todo New Workbook order: [Readme!][Pretty Data"Plant Data"][Other Links Add/Sub][RAW CSV Export][Imported .py codes][Dir Readme.md]
 # todo Excel Format   -- Maybe a Searchable/appendable list 
-# *  0 |    aa    |     ab     |      ac    |   
-# *  1 |      Bot Name   |  Common Name     | : This should be a selectable drop down for each plant entry
-# *  2 |          Other : Links             | : This should be a merged Column
-# *  3 |  Label1  |    URL1    |    Tag1    | : Editing this should change the RAW CSV String for "Link: Others" in the ROW [Tag1,"URL1","Label1"];[Tag2,"URL2","Label2"] // finished
-# *  4 |  Label2  |    URL2    |    Tag2    |
-
-# *   Link data =[E1,"D1","C1"];[H1,"G1","F1"];[K1,"J1","I1"]
-
-# *   C      D       E        F     G       H        I       J       K
-# * Label 1	URL 1	Tag 1	Label 2	URL 2	Tag 2	Label 3	URL 3	Tag 3
 
 
 # ? I need to figure out how to get urls added and edited from the CSV header
+# ! This works in excel for Amsonia Hubrichtii	THREADLEAF BLUE STAR	T1	Test 1	https://Test.com	T2	Test 2	https://Test.com	T3	Test 3	https://Test.com
+# ! =TEXTJOIN(
+# ! ";", TRUE,
+# !IF(OR($C3="",$E3="",$D3=""), "",
+# !  CONCAT("[",$C3,",",CHAR(34),$E3,CHAR(34),",",CHAR(34),$D3,CHAR(34),"]")),
+# !IF(OR($F3="",$H3="",$G3=""), "",
+# !   CONCAT("[",$F3,",",CHAR(34),$H3,CHAR(34),",",CHAR(34),$G3,CHAR(34),"]")),
+# !IF(OR($I3="",$K3="",$J3=""), "",
+# !   CONCAT("[",$I3,",",CHAR(34),$K3,CHAR(34),",",CHAR(34),$J3,CHAR(34),"]"))
+# !)
+
 
 
 from pathlib import Path
@@ -119,20 +120,32 @@ def _parse_other_links(text: str) -> list[tuple[str, str, str]]:
     pattern = r"\[(?P<tag>[^,\]]+),\"(?P<url>[^\"]+)\",\"(?P<label>[^\"]+)\"\]"
     return re.findall(pattern, text or "")
 
-# * Helper: build TEXTJOIN formula for Other Links AddSub rows
+# * Helper: build TEXTJOIN formula for Other Links rows
 def build_link_formula(row: int, max_links: int) -> str:
-    """Return Excel TEXTJOIN formula referencing Label/URL/Tag cells."""
-    pieces: list[str] = []
+    """
+    Build the TEXTJOIN formula that returns
+    [TAG,"URL","LABEL"];[TAG,"URL","LABEL"];…
+    Excel string quotes are inserted with CHAR(34).
+    Column order on “Other Links” is Tag | Label | URL  (C, D, E …).
+    """
+    parts: list[str] = []
     for idx in range(1, max_links + 1):
-        l_col = get_column_letter(3 + (idx - 1) * 3)
-        u_col = get_column_letter(3 + (idx - 1) * 3 + 1)
-        t_col = get_column_letter(3 + (idx - 1) * 3 + 2)
-        pieces.append(
-            f'IF(OR({l_col}{row}="",{u_col}{row}="",{t_col}{row}=""),"",'  # noqa: E501
-            f'"["&{t_col}{row}&","""&{u_col}{row}&""","""&{l_col}{row}&""]")'
+        base   = 3 * (idx - 1) + 3            # C,F,I,…
+        tag    = get_column_letter(base)
+        label  = get_column_letter(base + 1)
+        url    = get_column_letter(base + 2)
+
+        link   = (
+            f'CONCAT("[",{tag}{row},",",CHAR(34),'
+            f'{url}{row},CHAR(34),",",CHAR(34),'
+            f'{label}{row},CHAR(34),"]")'
         )
-    joined = ",".join(pieces)
-    return f'=TEXTJOIN(";",TRUE,{joined})'
+        parts.append(
+            f'IF(OR({tag}{row}="",{url}{row}="",{label}{row}=""),"",{link})'
+        )
+
+    return f'=TEXTJOIN(";",TRUE,{",".join(parts)})'
+
 
 if "Link: Others" in df.columns:
     links_parsed = df["Link: Others"].apply(_parse_other_links)
@@ -147,6 +160,11 @@ if "Link: Others" in df.columns:
         df[f"Other Tag {idx+1}"] = links_parsed.apply(
             lambda lst: lst[idx][0] if idx < len(lst) else ""
         )
+MAX_LINKS = locals().get("max_links", 0)
+
+# allow up to N links per record (makes "1,2,3,..." for validation lists)
+LINK_CHOICES = ",".join(str(i) for i in range(1, MAX_LINKS + 1))  # e.g. "1,2,3"
+
 
 # Normalise casing
 if "Common Name" in df.columns:
@@ -164,22 +182,54 @@ if "Mark Reviewed" not in df.columns:
 DATA_ROWS = len(df)
 MAX_LINKS = locals().get("max_links", 0)
 
-df.to_excel(XLSX_FILE, index=False, na_rep="NA")
+# ── Canonical column lists ────────────────────────────────────────────
+MASTER_COLS = [
+    "Plant Type","Key","Botanical Name","Common Name",
+    "Height (ft)","Spread (ft)","Bloom Color","Bloom Time",
+    "Sun","Water","AGCP Regional Status","USDA Hardiness Zone",
+    "Attracts","Tolerates","Soil Description","Condition Comments",
+    "MaintenanceLevel","Native Habitats","Culture","Uses",
+    "UseXYZ","WFMaintenance","Problems",
+    "Link: Missouri Botanical Garden","Link: Wildflower.org",
+    "Link: Pleasantrunnursery.com","Link: Newmoonnursery.com",
+    "Link: Pinelandsnursery.com","Link: Others","Rev",
+]
+
+# Plant Data = master columns + Mark Reviewed + one Tag/Label/URL trio per link
+PLANT_DATA_COLS = MASTER_COLS + ["Mark Reviewed"]
+for idx in range(1, MAX_LINKS + 1):
+    PLANT_DATA_COLS += [f"Tag {idx}", f"Label {idx}", f"URL {idx}"]
+
+# ── Export to Plant Data (master + Mark Reviewed + Tag/Label/URL) ──
+df_out = df.reindex(columns=PLANT_DATA_COLS, fill_value="")
+PLANT_DATA_HEADERS = PLANT_DATA_COLS
+
+df_out.to_excel(XLSX_FILE, index=False, na_rep="NA")
 wb = load_workbook(XLSX_FILE)
 ws = wb.active
 ws.title = "Plant Data"
 
-# * Raw data sheet mirrors Plant Data and updates when edited
-raw_ws = wb.create_sheet("RAW CSV Export")
-raw_ws.append(list(df.columns))
-for r in range(DATA_ROWS):
-    for c, _ in enumerate(df.columns, start=1):
-        col_letter = get_column_letter(c)
-        raw_ws.cell(row=r + 2, column=c).value = (
-            f"='Plant Data'!{col_letter}{r + 4}"
-        )
+# ── RAW CSV Export ────────────────────────────────────────────────────
 
-# ── Source-legend row (unchanged) ----------------------------------------
+raw_ws = wb.create_sheet("RAW CSV Export")
+raw_ws.append(MASTER_COLS)                     # header row
+
+for r in range(DATA_ROWS):                    # 1-based to match Excel rows
+    for c_idx, col_name in enumerate(MASTER_COLS, start=1):
+        col_letter = get_column_letter(c_idx)
+
+        # ‘Link: Others’ comes from the helper sheet; everything else mirrors Plant Data
+        if col_name == "Link: Others":
+            raw_ws.cell(row=r+2, column=c_idx).value = (
+                f"='Other Links'!{col_letter}{r+2}"
+            )
+        else:
+            # Plant Data has headers in row 2 and the dataset starts on row 3
+            raw_ws.cell(row=r+2, column=c_idx).value = (
+                f"='Plant Data'!{col_letter}{r+3}"
+            )
+
+# ── Source-legend row  ----------------------------------------
 DATA_SOURCE = {
     "Plant Type": "Masterlist",
     "Key": "FillMissingData",
@@ -211,29 +261,23 @@ DATA_SOURCE = {
     "Link: Pinelandsnursery.com": "GetLinks (name)",
     "Rev": "User Input (YYYYMMDD_FL)",
     "Mark Reviewed": "Type Initials; Inserts YYYYMMDD_FL",
+    "Link: Others": "Edit on `Other Links`",
 }
 
-# // create a quick-access link to the raw data sheet
-ws.insert_rows(1)
-ws["A1"] = "Edit raw CSV"
-ws["A1"].hyperlink = "#'RAW CSV Export'!A1"
-ws["A1"].style = "Hyperlink"
-ws["A1"].font = Font(color="0000EE", underline="single")
-
-ws.insert_rows(3)
-for col_idx, col_name in enumerate([c.value for c in ws[2]], start=1):
-    cell = ws.cell(row=3, column=col_idx)
+ws.insert_rows(2)
+for col_idx, col_name in enumerate([c.value for c in ws[1]], start=1):
+    cell = ws.cell(row=2, column=col_idx)
     cell.value = DATA_SOURCE.get(col_name, "")
     cell.font = Font(italic=True, size=8)
     cell.alignment = Alignment(horizontal="center", vertical="top", wrap_text=False, shrink_to_fit=False)
 
 # ── Header formatting + freeze -------------------------------------------
 HEADER_FILL = PatternFill(start_color="CFE2F3", end_color="CFE2F3", fill_type="solid")
-for c in ws[2]:
+for c in ws[1]:
     c.fill = HEADER_FILL
     c.font = Font(bold=True, size=11)
     c.alignment = Alignment(horizontal="center", vertical="center")
-ws.freeze_panes = "E4"
+ws.freeze_panes = "E3"
 
 # ── Autofit helper --------------------------------------------------------
 # * Resize columns to fit content while respecting caps
@@ -242,7 +286,7 @@ def autofit(ws: Worksheet) -> None:
         "UseXYZ": 50, "Culture": 50, "Uses": 50,
         "Soil Description": 48, "Condition Comments": 48, "Native Habitats": 42,
     }
-    headers = [c.value for c in ws[2]]
+    headers = [c.value for c in ws[1]]
     for col_cells in ws.iter_cols(min_row=1, max_row=ws.max_row):
         col_idx = col_cells[0].column
         col_letter = get_column_letter(col_idx)
@@ -275,7 +319,7 @@ def style_sheet(ws: Worksheet, df: pd.DataFrame, header: list[str]) -> None:
     }
 
 
-    for r_idx, row in enumerate(df.itertuples(index=False, name=None), start=4):
+    for r_idx, row in enumerate(df.itertuples(index=False, name=None), start=3):
         for c_idx, (col_name, val) in enumerate(zip(header, row), start=1):
             cell = ws.cell(row=r_idx, column=c_idx)
             val = str(val).strip()
@@ -353,42 +397,122 @@ def style_sheet(ws: Worksheet, df: pd.DataFrame, header: list[str]) -> None:
 
 
 # ── Style + Fit ----------------------------------------------------------
-style_sheet(ws, df, df.columns.tolist())
+style_sheet(ws, df_out, PLANT_DATA_HEADERS)
 autofit(ws)
 
-for hdr_cell in ws[2]:
+
+for hdr_cell in ws[1]:
     hdr = str(hdr_cell.value).strip()
     col_letter = get_column_letter(hdr_cell.column)
     ws.column_dimensions[col_letter].width = COLUMN_WIDTHS.get(hdr, DEFAULT_WIDTH)
 
 # Row heights
-for row in ws.iter_rows(min_row=4, max_row=ws.max_row):
+for row in ws.iter_rows(min_row=3, max_row=ws.max_row):
     ws.row_dimensions[row[0].row].height = 28
+# ── Other Links sheet (two-row header, Link 1-4 groups) ──────────────────
+other_ws = wb.create_sheet("Other Links")
 
-# * Sheet dedicated to editing "Link: Others" entries
-other_ws = wb.create_sheet("Other Links AddSub")
-headers = ["Botanical Name", "Common Name"]
-for idx in range(1, MAX_LINKS + 1):
-    headers += [f"Label {idx}", f"URL {idx}", f"Tag {idx}"]
-headers.append("RAW CSV Export Data")
-other_ws.append(headers)
+# --- Row 1 · group titles -------------------------------------------------
+row1 = ["Botanical Name", "Common Name"]
+for i in range(1, 5):                         # Link 1 … Link 4
+    row1 += [f"Link {i}", "", ""]             # will be merged later
+row1 += ["Formula", "CSV RAW OUTPUT"]
+other_ws.append(row1)
+
+# --- Row 2 · sub-titles ---------------------------------------------------
+row2 = ["", ""]                              # first two cols blank
+for _ in range(4):                            # four trios
+    row2 += ["Label", "URL", "Tag"]
+row2 += ["", ""]                              # Formula + CSV columns
+other_ws.append(row2)
+
+# --- merge the Link n title cells ----------------------------------------
+col_base = 3                                   # first trio starts at col C
+for i in range(4):                             # 0..3  → Link 1..4
+    start = col_base + i*3
+    end   = start + 2
+    other_ws.merge_cells(
+        start_row=1, start_column=start,
+        end_row=1,   end_column=end
+    )
+
+# --- bold / center the headers -------------------------------------------
+for cell in other_ws[1] + other_ws[2]:
+    cell.font      = Font(bold=True)
+    cell.alignment = Alignment(horizontal="center", vertical="center")
+
+# --- write the example helper row (optional) ------------------------------
+example = ["", ""]
+example += ["(e.g. MyLabel, https://example.com, ML)"] * 12
+example += ["Enter full CSV string like: [ML,\"https://...\",\"MyLabel\"]"]
+other_ws.append(example)
+
+# --- append data rows -----------------------------------------------------
 for i in range(DATA_ROWS):
     row = [
         df.get("Botanical Name")[i] if "Botanical Name" in df.columns else "",
-        df.get("Common Name")[i] if "Common Name" in df.columns else "",
+        df.get("Common Name")[i]    if "Common Name"    in df.columns else "",
     ]
-    for idx in range(1, MAX_LINKS + 1):
+    for idx in range(1, 5):                     # up to Link 4
         row += [
-            df.get(f"Other Label {idx}", [""] * DATA_ROWS)[i],
-            df.get(f"Other URL {idx}", [""] * DATA_ROWS)[i],
-            df.get(f"Other Tag {idx}", [""] * DATA_ROWS)[i],
+            df.get(f"Other Label {idx}", [""]*DATA_ROWS)[i],
+            df.get(f"Other URL {idx}",   [""]*DATA_ROWS)[i],
+            df.get(f"Other Tag {idx}",   [""]*DATA_ROWS)[i],
         ]
-    formula = build_link_formula(i + 2, MAX_LINKS)
-    row.append(formula)
+    # build TEXTJOIN formula (row offset = current sheet row)
+    formula_row = other_ws.max_row + 1
+    row.append(build_link_formula(formula_row, 4))
     other_ws.append(row)
 
-bot_range = f"'Plant Data'!$C$4:$C${DATA_ROWS + 3}"
-com_range = f"'Plant Data'!$D$4:$D${DATA_ROWS + 3}"
+
+link_sel_col = PLANT_DATA_HEADERS.index("Link: Others") + 1   # AE
+for i in range(DATA_ROWS):
+    row_pd = i + 3            # Plant Data row (headers row 1, legend row 2)
+    row_ol = i + 3            # same index on Other Links
+
+    # ①  drop-down selector in AE
+    sel_cell = ws.cell(row=row_pd, column=link_sel_col)
+    if sel_cell.value in ("", None):
+        sel_cell.value = 1                 # default to link 1
+    # add the list validation "1,2,3"
+    dv = DataValidation(type="list",
+                        formula1=f'"{LINK_CHOICES}"',
+                        allow_blank=True)
+    ws.add_data_validation(dv)
+    dv.add(sel_cell)
+
+    # ②  Tag / Label / URL formulas use the selector
+    for idx in range(1, MAX_LINKS + 1):
+        tag_pd   = PLANT_DATA_HEADERS.index(f"Tag {idx}")   + 1
+        label_pd = PLANT_DATA_HEADERS.index(f"Label {idx}") + 1
+        url_pd   = PLANT_DATA_HEADERS.index(f"URL {idx}")   + 1
+
+        base_tag   = get_column_letter(3 * (idx - 1) + 3)   # C,F,I,...
+        base_label = get_column_letter(3 * (idx - 1) + 4)   # D,G,J,...
+        base_url   = get_column_letter(3 * (idx - 1) + 5)   # E,H,K,...
+
+        # Tag n  (AF, AI, …) simply re-shows the chosen tag
+        ws.cell(row=row_pd, column=tag_pd).value = \
+            f"=CHOOSE($AE{row_pd}," + \
+            ",".join(f"'Other Links'!{get_column_letter(3 * (j - 1) + 3)}{row_ol}"
+                    for j in range(1, MAX_LINKS + 1)) + ")"
+
+        # Label n
+        ws.cell(row=row_pd, column=label_pd).value = \
+            f"=CHOOSE($AE{row_pd}," + \
+            ",".join(f"'Other Links'!{get_column_letter(3 * (j - 1) + 4)}{row_ol}"
+                    for j in range(1, MAX_LINKS + 1)) + ")"
+
+        # URL n
+        ws.cell(row=row_pd, column=url_pd).value = \
+            f"=CHOOSE($AE{row_pd}," + \
+            ",".join(f"'Other Links'!{get_column_letter(3 * (j - 1) + 5)}{row_ol}"
+                    for j in range(1, MAX_LINKS + 1)) + ")"
+
+
+bot_range = f"'Plant Data'!$C$3:$C${DATA_ROWS + 2}"
+com_range = f"'Plant Data'!$D$3:$D${DATA_ROWS + 2}"
+
 dv_bot = DataValidation(type="list", formula1=bot_range, allow_blank=True)
 dv_com = DataValidation(type="list", formula1=com_range, allow_blank=True)
 other_ws.add_data_validation(dv_bot)
@@ -397,12 +521,41 @@ dv_bot.add(f"A2:A{DATA_ROWS + 1}")
 dv_com.add(f"B2:B{DATA_ROWS + 1}")
 
 # * Link: Others columns in Plant Data reference the formula column
-others_col_idx = df.columns.get_loc("Link: Others") + 1
+# Only apply the formula to the "Link: Others" column — avoid injecting helper columns
+try:
+    others_col_idx = PLANT_DATA_HEADERS.index("Link: Others") + 1
+except ValueError:
+    print("[ERROR] 'Link: Others' column not found in final output headers.")
+    others_col_idx = None
+
 formula_col = get_column_letter(3 * MAX_LINKS + 3)
 for i in range(DATA_ROWS):
-    ws.cell(row=i + 4, column=others_col_idx).value = (
-        f"='Other Links AddSub'!{formula_col}{i + 2}"
-    )
+    row_pd   = i + 3           # data start row on Plant Data
+    row_ol   = i + 3           # same index on Other Links
+
+    # full CSV string
+    if others_col_idx:
+        ws.cell(row=row_pd, column=others_col_idx).value = \
+            f"='Other Links'!{formula_col}{row_ol}"
+
+    # mirror each Tag / Label / URL
+    for idx in range(1, MAX_LINKS + 1):
+        base_letter = 3 * (idx - 1) + 3      # C, F, I, …
+        tag_pd   = PLANT_DATA_HEADERS.index(f"Tag {idx}")   + 1
+        label_pd = PLANT_DATA_HEADERS.index(f"Label {idx}") + 1
+        url_pd   = PLANT_DATA_HEADERS.index(f"URL {idx}")   + 1
+
+        tag_lt   = get_column_letter(base_letter)
+        label_lt = get_column_letter(base_letter + 1)
+        url_lt   = get_column_letter(base_letter + 2)
+
+        ws.cell(row=row_pd, column=tag_pd  ).value = f"='Other Links'!{tag_lt}{row_ol}"
+        ws.cell(row=row_pd, column=label_pd).value = f"='Other Links'!{label_lt}{row_ol}"
+        ws.cell(row=row_pd, column=url_pd  ).value = f"='Other Links'!{url_lt}{row_ol}"
+
+print("[DEBUG] Sample formula preview:")
+for i in range(min(3, DATA_ROWS)):
+    print(build_link_formula(i + 2, MAX_LINKS))
 
 # ── README -------------------------------------------------------------------
 readme = wb.create_sheet("README")
