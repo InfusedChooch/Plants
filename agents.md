@@ -51,7 +51,7 @@ I need my code base commented out for basic functions, and it should be updated 
 I also need my requirements updated, and commented which scripts use which.
 
 ```
-Comment Style Guide Meaning -- This repo uses better-comments (VS Code)
+Comment Style Guide Meaning -- This repo uses better-comments (VS Code) -- key functions
 * : Important information
 ! : Deprecated method
 ? : Something to think about
