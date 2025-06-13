@@ -49,52 +49,12 @@ Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bl
 I need my code base commented out for basic functions, and it should be updated to expect comments for the Better COmments VS Code Extension "better-comments.
 
 I also need my requirements updated, and commented which scripts use which.
+
 ```
-tags": [
-  {
-    "tag": "!",
-    "color": "#FF2D00",
-    "strikethrough": false,
-    "underline": false,
-    "backgroundColor": "transparent",
-    "bold": false,
-    "italic": false
-  },
-  {
-    "tag": "?",
-    "color": "#3498DB",
-    "strikethrough": false,
-    "underline": false,
-    "backgroundColor": "transparent",
-    "bold": false,
-    "italic": false
-  },
-  {
-    "tag": "//",
-    "color": "#474747",
-    "strikethrough": true,
-    "underline": false,
-    "backgroundColor": "transparent",
-    "bold": false,
-    "italic": false
-  },
-  {
-    "tag": "todo",
-    "color": "#FF8C00",
-    "strikethrough": false,
-    "underline": false,
-    "backgroundColor": "transparent",
-    "bold": false,
-    "italic": false
-  },
-  {
-    "tag": "*",
-    "color": "#98C379",
-    "strikethrough": false,
-    "underline": false,
-    "backgroundColor": "transparent",
-    "bold": false,
-    "italic": false
-  }
-]
+Comment Style Guide Meaning -- This repo uses better-comments (VS Code)
+* : Important information
+! : Deprecated method
+? : Something to think about
+TODO : Next steps here
+// : Note for the Layman - useful for the intended User
 ```

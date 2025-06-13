@@ -7,3 +7,5 @@ helpers/GeneratePDF.exe
 helpers/GetLinks.exe
 helpers/PDFScraper.exe
 build
+__pycache__/ 
+*.pyc
