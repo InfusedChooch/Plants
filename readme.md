@@ -85,7 +85,7 @@ Native Habitats          : WF “Native Habitat”              : Prairie, Woodl
 Culture                  : MBG “Culture” / “Growing Tips”   : paragraph
 Uses                     : MBG “Uses”                       : paragraph
 UseXYZ                   : WF Benefit list                  : Use Ornamental: …; Use Wildlife: …
-WFMaintenance            : WF "Maintenance:"                : free-text
+WFMaintenance            : WF "Maintenance:"                : Maintenance:... 
 Problems                 : MBG “Problems”                   : paragraph
 
 Link: MBG                : GetLinks                         : URL

@@ -357,7 +357,7 @@ def fetch(url: str) -> str | None:
     """
     1. Look for <CACHE_DIR>/<slug>.html → return its contents if found.
     2. Otherwise hit the network, save a copy to the cache, and return it.
-       If the request fails, return None (previous behaviour).
+    If the request fails, return None (previous behaviour).
     """
     cache_file = _cache_name(url)
 

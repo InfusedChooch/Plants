@@ -10,15 +10,8 @@
 
 # ? I need to figure out how to get urls added and edited from the CSV header
 # ! This works in excel for Amsonia Hubrichtii	THREADLEAF BLUE STAR	T1	Test 1	https://Test.com	T2	Test 2	https://Test.com	T3	Test 3	https://Test.com
-# ! =TEXTJOIN(
-# ! ";", TRUE,
-# !IF(OR($C3="",$E3="",$D3=""), "",
-# !  CONCAT("[",$C3,",",CHAR(34),$E3,CHAR(34),",",CHAR(34),$D3,CHAR(34),"]")),
-# !IF(OR($F3="",$H3="",$G3=""), "",
-# !   CONCAT("[",$F3,",",CHAR(34),$H3,CHAR(34),",",CHAR(34),$G3,CHAR(34),"]")),
-# !IF(OR($I3="",$K3="",$J3=""), "",
-# !   CONCAT("[",$I3,",",CHAR(34),$K3,CHAR(34),",",CHAR(34),$J3,CHAR(34),"]"))
-# !)
+ 
+# * =TEXTJOIN(";", TRUE,IF(OR($C3="",$E3="",$D3=""), "",CONCAT("[",$C3,",",CHAR(34),$E3,CHAR(34),",",CHAR(34),$D3,CHAR(34),"]")),IF(OR($F3="",$H3="",$G3=""), "",CONCAT("[",$F3,",",CHAR(34),$H3,CHAR(34),",",CHAR(34),$G3,CHAR(34),"]")),IF(OR($I3="",$K3="",$J3=""), "",CONCAT("[",$I3,",",CHAR(34),$K3,CHAR(34),",",CHAR(34),$J3,CHAR(34),"]")))
 
 
 
@@ -77,7 +70,7 @@ DEFAULT_WIDTH: int = 18
 
 # ── CLI ------------------------------------------------------------------
 parser = argparse.ArgumentParser(description="Export formatted Excel from CSV")
-parser.add_argument("--in_csv",      default="Templates/ExcelTestTemplate_5.csv")
+parser.add_argument("--in_csv",      default="Templates/ExcelTestTemplate_25.csv")
 parser.add_argument("--out_xlsx",    default="ReviewFiles/Plants_Reformat_Test.xlsx")
 parser.add_argument("--template_csv",default="Templates/Plants_Template.csv")
 args = parser.parse_args()
