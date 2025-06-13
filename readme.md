@@ -108,27 +108,24 @@ Any pd.read_csv needs to have "keep_default_na=False" added to work!
 ```
 
 ## Prerequisites
-
-```bash
-pip install -r requirements.txt
-```
-* `pip` for installing packages
 * Python dependencies from `requirements.txt`
-        pandas
-        openpyxl
-        black
-        tqdm
-        pillow
-        fpdf2
-        pdfplumber
-        pymupdf
-        customtkinter
-        pyinstaller
-        pyyaml
-        pytest
-        beautifulsoup4
-        lxml
-        requests
+
+beautifulsoup4  # Static/Python_full/GetLinks.py, Static/Python_full/FillMissingData.py
+black  # Static/Python_full/Excelify2.py
+customtkinter  # Launcher.py
+fpdf2  # Static/Python_full/GeneratePDF.py
+lxml  # Static/Python_full/GetLinks.py, Static/Python_full/FillMissingData.py
+openpyxl  # Static/Python_full/Excelify2.py
+pandas  # Static/Tools/CleanMerge.py, Static/Python_full/Excelify2.py, Static/Python_full/FillMissingData.py, Static/Python_full/GeneratePDF.py, Static/Python_full/GetLinks.py, Static/Python_full/PDFScraper_depreciate.py, ReviewFiles/SampleTest/SampleTestvManual.py
+pdfplumber  # Static/Python_full/PDFScraper_depreciate.py
+pillow  # Static/Python_full/GeneratePDF.py, Static/Python_full/PDFScraper_depreciate.py
+pymupdf  # Static/Python_full/PDFScraper_depreciate.py
+pytest  # tests
+pyyaml  # Static/Python_full/GeneratePDF.py
+requests  # Static/Python_full/GetLinks.py, Static/Python_full/FillMissingData.py
+rich  # ReviewFiles/SampleTest/SampleTestvManual.py
+selenium  # Static/Python_full/GetLinks.py
+tqdm  # Static/Python_full/FillMissingData.py, Static/Python_full/PDFScraper_depreciate.py
 
 
 ## Building Executables (Optional)
@@ -151,24 +148,13 @@ pyinstaller Launcher_lite.py --onedir --noconfirm --windowed \
 ├── Launcher.py
 ├── readme.md
 ├── requirements.txt
-├── .github/
-│ └── workflows/
-│ └── tests.yml
-├── NEW/
-│ ├── 0611_Masterlist_New_Beta_Nodata_NEW.csv
-│ └── 0611_Masterlist_New_Beta_Nodata_NEW_merge_log.md
 ├── Outputs/
-│ ├── 0611_Masterlist_Nodata.csv
-│ ├── 20250612_Plants_Linked_Filled_JG.csv
-│ ├── Fixed_Plant_Guide_EXPORT_JG_TimesLogos.pdf
-│ ├── Plants_Linked.csv
-│ ├── Plants_Linked_30.csv
-│ ├── Plants_Linked_Filled_Review_30Rev.xlsx
+| ├── NewMaster/
 │ ├── html_cache/
 │ └── Images/
-│ ├── NJAES_Logo.jpeg
-│ ├── Rutgers_Logo.png
-│ └── Plants/
+│   ├── NJAES_Logo.jpeg
+│   ├── Rutgers_Logo.png
+│   └── Plants/
 ├── SampleTest/
 │ ├── Plants_Linked_FIlled_Manual.csv
 │ ├── Plants_Linked_Filled_Test.csv
@@ -176,27 +162,12 @@ pyinstaller Launcher_lite.py --onedir --noconfirm --windowed \
 ├── Static/
 │ ├── GoogleChromePortable/
 │ ├── Python_full/
-│ │ ├── chromedriver.exe
-│ │ ├── Excelify2.py
-│ │ ├── FillMissingData.py
-│ │ ├── GeneratePDF.py
-│ │ ├── GetLinks.py
-│ │ ├── PDFScraper_depreciate.py
-│ │ └── requirements_full.txt
+| ├──Tools/
 │ └── themes/
 │ ├── leaf.ico
 │ └── rutgers.json
 ├── Templates/
-│ ├── 0611_Masterlist_Nodata_Readonly.csv
-│ ├── 20250612_Plants_Linked_Filled_Review_JG.xlsx
-│ ├── Plant Guide 2025 Update.pdf
-│ ├── Plants_Linked_Verified.csv
-│ ├── Plants_Template.csv
-│ ├── ReviewedLinks.csv
-│ └── style_rules.yaml
-├── Tools/
-│ ├── list_files.py
-│ └── merge_masterlist.py
+
 ```
 
 ## Expected EXE Folder Layout
@@ -208,29 +179,11 @@ RU Plant Guide/
 │   │   ├── themes/
 │   │   │   └── leaf.ico
 │   │   └── Python_full/
-│   │       ├── chromedriver.exe
-│   │       ├── Excelify2.py
-│   │       ├── FillMissingData.py
-│   │       ├── GeneratePDF.py
-│   │       ├── GetLinks.py
-│   │       ├── PDFScraper_depreciate.py
 │   ├── helpers/
 │   │   ├── PDFScraper.exe
 │   │   ├── GeneratePDF.exe
 │   │   ├── Excelify2.exe
 │   │   └── FillMissingData.exe      # ← if compiled
 ├── Templates/
-│   ├── DATE_Masterlist_Nodata_Readonly.csv
-│   ├── Plant Guide 2025 Update.pdf
-│   ├── Plants_Template.csv
-│   ├── ReviewedLinks.csv
-│   └── style_rules.yaml
 ├── Outputs/
-│   ├── pdf_images/
-│   ├── html_cache/
-│   ├── Images/
-│   │   ├── NJAES_Logo.jpeg
-│   │   ├── Rutgers_Logo.png
-│   │   └── Plants/
-│   ├── Plants_Linked.csv
 ```
