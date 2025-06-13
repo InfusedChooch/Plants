@@ -6,7 +6,7 @@
 # todo "Link: Others" needs to be autopopulated on the first sheet split up into columns for each entry:
 # todo CSV Format: [Tag1,"URL1","Label1"];[Tag2,"URL2","Label2"] : "[T1,""https://Test.com"",""Test 1""];[T2,""https://Test.com"",""Test 2""];[T3,""https://Test.com"",""Test 3""]"
 # todo 
-# todo Excel Format   
+# todo Excel Format   -- Maybe a Searchable/appendable list
 # todo   |    aa    |     ab     |      ac    |   
 # todo   |          Other : Links             |
 # todo   |  Label1  |    URL1    |    Tag1    |
