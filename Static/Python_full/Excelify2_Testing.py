@@ -5,11 +5,18 @@
 # todo CSV Format: [Tag1,""URL1"",""Label1""];[Tag2,""URL2"",""Label2""] : "[T1,""https://Test.com"",""Test 1""];[T2,""https://Test.com"",""Test 2""];[T3,""https://Test.com"",""Test 3""]"
 # todo New Workbook order: [Readme!][Pretty Data"Plant Data"][Other Links Add/Sub][RAW CSV Export][Imported .py codes][Dir Readme.md]
 # todo Excel Format   -- Maybe a Searchable/appendable list 
-# todo  0 |    aa    |     ab     |      ac    |   
-# todo  1 |      Bot Name   |  Common Name     | : This should be a selectable drop down for each plant entry
-# todo  2 |          Other : Links             | : This should be a merged Column
-# todo  3 |  Label1  |    URL1    |    Tag1    | : Editing this should change the RAW CSV String for "Link: Others" in the ROW [Tag1,"URL1","Label1"];[Tag2,"URL2","Label2"]
-# todo  4 |  Label2  |    URL2    |    Tag2    |
+# *  0 |    aa    |     ab     |      ac    |   
+# *  1 |      Bot Name   |  Common Name     | : This should be a selectable drop down for each plant entry
+# *  2 |          Other : Links             | : This should be a merged Column
+# *  3 |  Label1  |    URL1    |    Tag1    | : Editing this should change the RAW CSV String for "Link: Others" in the ROW [Tag1,"URL1","Label1"];[Tag2,"URL2","Label2"]
+# *  4 |  Label2  |    URL2    |    Tag2    |
+
+# *   Link data =[E1,"D1","C1"];[H1,"G1","F1"];[K1,"J1","I1"]
+
+# *   C      D       E        F     G       H        I       J       K
+# * Label 1	URL 1	Tag 1	Label 2	URL 2	Tag 2	Label 3	URL 3	Tag 3
+
+
 # ? I need to figure out how to get urls added and edited from the CSV header
 
 
@@ -68,7 +75,7 @@ DEFAULT_WIDTH: int = 18
 
 # ── CLI ------------------------------------------------------------------
 parser = argparse.ArgumentParser(description="Export formatted Excel from CSV")
-parser.add_argument("--in_csv",      default="Templates/ExcelTestTemplate.csv")
+parser.add_argument("--in_csv",      default="Templates/ExcelTestTemplate_5.csv")
 parser.add_argument("--out_xlsx",    default="ReviewFiles/Plants_Reformat_Test.xlsx")
 parser.add_argument("--template_csv",default="Templates/Plants_Template.csv")
 args = parser.parse_args()
