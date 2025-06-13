@@ -39,7 +39,7 @@ Link: Wildflower.org     : GetLinks                         : URL
 Link: Pleasant Run       : GetLinks                         : URL
 Link: New Moon           : GetLinks                         : URL
 Link: Pinelands          : GetLinks                         : URL
-Link: Other              : [Tag,"URL","Label"]              : Entry list [Tag,"URL","Label"];[T2,"U2","L2]
+Link: Other              : [Tag,"URL","Label"]              : Entry list [Tag,"URL","Label"] : [T1,""https://Test.com"",""Test 1""];
 Rev                      : User Input (YYYYMMDD_FL)         : "YYYYMMDD_FirstinitalLastinital" 
 ```
 
@@ -49,7 +49,7 @@ Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bl
 
 I need my code base commented out for basic functions, and it should be updated to expect comments for the Better COmments VS Code Extension "better-comments.
 
-I also need my requirements updated, and commented which scripts use which.
+You need to help execute the todo comments in Static\Python_full\Excelify2.py we are using a sample input to see how it works that is Templates\ExcelTestTemplate.csv
 
 ```
 Comment Style Guide Meaning -- This repo uses better-comments (VS Code) -- key functions

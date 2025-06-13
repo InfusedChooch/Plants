@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # Excelify2.py – Create a styled Excel workbook from the fully populated plant CSV.
 # 2025-06-13 · Adds blanket COLUMN_WIDTHS dict, keep_default_na, and cleans up width logic.
-# todo I need to make the first sheet the "pretty sheet that you can interface with, There needs to be an appended "RAW CSV" tab
+# todo I need to make the first sheet the "pretty sheet that you can interface with, There needs to be an appended "RAW CSV" tab the houses the data we are going to export.
 # todo I need to make the "RAW CSV" editable/viewable from the first page
 # todo "Link: Others" needs to be autopopulated on the first sheet split up into columns for each entry:
-# todo CSV Format: [Tag1,"URL1","Label1"];[Tag2,"URL2","Label2"] 
+# todo CSV Format: [Tag1,"URL1","Label1"];[Tag2,"URL2","Label2"] : "[T1,""https://Test.com"",""Test 1""];[T2,""https://Test.com"",""Test 2""];[T3,""https://Test.com"",""Test 3""]"
 # todo 
 # todo Excel Format   
 # todo   |    aa    |     ab     |      ac    |   
