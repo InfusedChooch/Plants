@@ -22,6 +22,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.cell.cell import Cell
+from openpyxl.worksheet.datavalidation import DataValidation
 import black
 
 # ── Column widths (characters) -------------------------------------------
@@ -136,16 +137,24 @@ if "Botanical Name" in df.columns:
 if "Mark Reviewed" not in df.columns:
     df.insert(df.columns.get_loc("Rev") + 1, "Mark Reviewed", "")
 
+# * track sizes for later formulas
+DATA_ROWS = len(df)
+MAX_LINKS = locals().get("max_links", 0)
+
 df.to_excel(XLSX_FILE, index=False, na_rep="NA")
 wb = load_workbook(XLSX_FILE)
 ws = wb.active
 ws.title = "Plant Data"
 
-# * Raw data sheet for easy CSV export
-from openpyxl.utils.dataframe import dataframe_to_rows
-raw_ws = wb.create_sheet("RAW CSV")
-for r in dataframe_to_rows(df, index=False, header=True):
-    raw_ws.append(list(r))
+# * Raw data sheet mirrors Plant Data and updates when edited
+raw_ws = wb.create_sheet("RAW CSV Export")
+raw_ws.append(list(df.columns))
+for r in range(DATA_ROWS):
+    for c, _ in enumerate(df.columns, start=1):
+        col_letter = get_column_letter(c)
+        raw_ws.cell(row=r + 2, column=c).value = (
+            f"='Plant Data'!{col_letter}{r + 4}"
+        )
 
 # ── Source-legend row (unchanged) ----------------------------------------
 DATA_SOURCE = {
@@ -184,7 +193,7 @@ DATA_SOURCE = {
 # // create a quick-access link to the raw data sheet
 ws.insert_rows(1)
 ws["A1"] = "Edit raw CSV"
-ws["A1"].hyperlink = "#'RAW CSV'!A1"
+ws["A1"].hyperlink = "#'RAW CSV Export'!A1"
 ws["A1"].style = "Hyperlink"
 ws["A1"].font = Font(color="0000EE", underline="single")
 
@@ -333,6 +342,34 @@ for hdr_cell in ws[2]:
 for row in ws.iter_rows(min_row=4, max_row=ws.max_row):
     ws.row_dimensions[row[0].row].height = 28
 
+# * Sheet dedicated to editing "Link: Others" entries
+other_ws = wb.create_sheet("Other Links AddSub")
+headers = ["Botanical Name", "Common Name"]
+for idx in range(1, MAX_LINKS + 1):
+    headers += [f"Label {idx}", f"URL {idx}", f"Tag {idx}"]
+other_ws.append(headers)
+for i in range(DATA_ROWS):
+    row = [
+        df.get("Botanical Name")[i] if "Botanical Name" in df.columns else "",
+        df.get("Common Name")[i] if "Common Name" in df.columns else "",
+    ]
+    for idx in range(1, MAX_LINKS + 1):
+        row += [
+            df.get(f"Other Label {idx}", [""] * DATA_ROWS)[i],
+            df.get(f"Other URL {idx}", [""] * DATA_ROWS)[i],
+            df.get(f"Other Tag {idx}", [""] * DATA_ROWS)[i],
+        ]
+    other_ws.append(row)
+
+bot_range = f"'Plant Data'!$C$4:$C${DATA_ROWS + 3}"
+com_range = f"'Plant Data'!$D$4:$D${DATA_ROWS + 3}"
+dv_bot = DataValidation(type="list", formula1=bot_range, allow_blank=True)
+dv_com = DataValidation(type="list", formula1=com_range, allow_blank=True)
+other_ws.add_data_validation(dv_bot)
+other_ws.add_data_validation(dv_com)
+dv_bot.add(f"A2:A{DATA_ROWS + 1}")
+dv_com.add(f"B2:B{DATA_ROWS + 1}")
+
 # ── README -------------------------------------------------------------------
 readme = wb.create_sheet("README")
 readme.sheet_properties.tabColor = "A9A9A9"
@@ -353,7 +390,7 @@ readme["A14"] = "Tools: How to filter by partial match in Excel:"
 readme["A15"] = "1. Click the filter dropdown on the header."
 readme["A16"] = "2. Choose 'Text Filters' ➜ 'Contains...'"
 readme["A17"] = "3. Type part of a word (e.g., 'shade', 'yellow')."
-readme["A19"] = "The 'RAW CSV' sheet holds editable data." 
+readme["A19"] = "The 'RAW CSV Export' sheet mirrors Plant Data."
 
 
 # -- Step 6 · embed helper scripts ----------------------------------------
@@ -386,6 +423,7 @@ script_descriptions = {
     "Excelify2.py":       "Make this Excel workbook",
 }
 
+code_sheets: list[Worksheet] = []
 for script, desc in script_descriptions.items():
     src = PYTHON_FULL / script
     if not src.exists():
@@ -397,6 +435,7 @@ for script, desc in script_descriptions.items():
     except Exception:
         code = raw                     # keep original text if Black fails
     ws_code = wb.create_sheet(script)  # one worksheet per helper script
+    code_sheets.append(ws_code)
     ws_code.column_dimensions["A"].width = 120
     ws_code["A1"] = f"# {script} - {desc}"
     for i, line in enumerate(code.splitlines(), start=2):
@@ -414,11 +453,18 @@ if req.exists():
 
 # ── Step 8 · pull full README.md (optional) ---------------------------------
 readme_md = REPO / "readme.md"
+dir_readme = None
 if readme_md.exists():
-    tab = wb.create_sheet("README_full")
-    tab.column_dimensions["A"].width = 120
+    dir_readme = wb.create_sheet("Dir README")
+    dir_readme.column_dimensions["A"].width = 120
     for i, line in enumerate(readme_md.read_text(encoding="utf-8").splitlines(), start=1):
-        tab[f"A{i}"] = line
+        dir_readme[f"A{i}"] = line
+
+# * Reorder worksheets per README instructions
+sheet_order = [readme, ws, other_ws, raw_ws] + code_sheets
+if dir_readme:
+    sheet_order.append(dir_readme)
+wb._sheets = sheet_order
 
 # ── Step 9 · finish ---------------------------------------------------------
 wb.save(XLSX_FILE)
