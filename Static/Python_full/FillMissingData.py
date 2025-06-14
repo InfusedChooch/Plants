@@ -17,6 +17,8 @@ import hashlib, re, os
 
 # ───────────────────────────── CLI ────────────────────────────────────────
 def parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse command line options for CSV inputs and diff helper."""
+    # // Called when the module is run directly
     p = argparse.ArgumentParser(
         description="Fill missing plant-guide fields from MBG, Wildflower.org "
         "and nursery sites."
@@ -39,11 +41,8 @@ ARGS = parse_cli()
 
 # ─────────────── repo / bundle path helpers (+ icon finder) ───────────────
 def repo_dir() -> Path:
-    """
-    Return project root whether running from source or a PyInstaller bundle:
-        • source tree …/Templates, …/Outputs present
-        • frozen exe  …/_internal/helpers/<tool>.exe  -> go up three
-    """
+    """Return project root for both source and bundled executables."""
+    # * Handles PyInstaller paths as well as local source layouts
     if getattr(sys, "frozen", False):
         exe = Path(sys.executable).resolve()
         if (
@@ -64,6 +63,7 @@ REPO = repo_dir()
 
 def repo_path(p: str | Path) -> Path:
     """Resolve Outputs/… or Templates/… against repo root unless absolute."""
+    # // Accepts either absolute or repo-relative paths
     p = Path(p).expanduser()
     if p.is_absolute():
         return p
@@ -103,6 +103,8 @@ def _cache_name(url: str) -> Path:
 
 # ───────────────────── CSV diff helper (optional) ─────────────────────────
 def csv_diff(old_csv: Path, new_csv: Path) -> None:
+    """Print cell-level differences between two CSV files."""
+    # // Useful for quick regression checks
     a = pd.read_csv(old_csv, dtype=str, keep_default_na=False)
     b = pd.read_csv(new_csv, dtype=str, keep_default_na=False)
     if a.shape != b.shape:
@@ -190,6 +192,8 @@ ADDITIVE_COLS = {
 
 # ────────────────────── generic text helpers ──────────────────────────────
 def missing(v: str | None, rev: str | None = None) -> bool:
+    """Return True if a field is empty or 'NA' without a revision."""
+    # // Used to decide when to fetch new data
     s = str(v or "").strip()
     if s.upper() == "NA":
         return not rev or not str(rev).strip()  # treat as missing if Rev is empty
@@ -214,6 +218,8 @@ def rng(s: str | None) -> str | None:
 
 
 def csv_join(parts: list[str]) -> str | None:
+    """Return unique, comma-separated items from a list."""
+    # // Helper for merging multi-value fields
     out: list[str] = []
     for p in parts:
         if not p:
@@ -225,6 +231,8 @@ def csv_join(parts: list[str]) -> str | None:
 
 
 def merge_field(a: str | None, b: str | None) -> str | None:
+    """Merge two comma or pipe separated strings uniquely."""
+    # // Used for additive fields like Attracts
     parts = [
         *(re.split(r"[|,]", a) if a else []),
         *(re.split(r"[|,]", b) if b else []),
@@ -237,6 +245,7 @@ def merge_field(a: str | None, b: str | None) -> str | None:
 
 
 def _merge_months(a: str | None, b: str | None) -> str | None:
+    """Merge month strings into a single range."""
     collected: list[str] = []
     for val in (a, b):
         parsed = month_list(val)
@@ -252,6 +261,7 @@ def _merge_months(a: str | None, b: str | None) -> str | None:
 
 
 def _merge_colors(a: str | None, b: str | None) -> str | None:
+    """Combine color lists, preserving unique order."""
     colors: list[str] = []
     for val in (a, b):
         parsed = color_list(val)
@@ -263,6 +273,8 @@ def _merge_colors(a: str | None, b: str | None) -> str | None:
 
 
 def merge_additive(field: str, a: str | None, b: str | None) -> str | None:
+    """Merge values for fields that can combine multiple sources."""
+    # // Handles month/color lists specially
     if field == "Bloom Time":
         return _merge_months(a, b)
     if field == "Bloom Color":
@@ -306,22 +318,8 @@ def normalise_botanical(name: str) -> str:
     return " ".join(filter(None, [genus, species, rest]))
 
 def gen_key(botanical: str, used: set[str]) -> str:
-    """
-    Build a unique plant key.
-
-        • First letter of Genus  (upper-case)
-        • First letter of species (upper-case)
-        • First letter of cultivar/variety (upper-case) IF a cultivar is present
-          ─ cultivar is anything inside single quotes in the botanical name.
-        • If no cultivar is present (or the key is still not unique),
-          append digits to make the key unique.
-
-    Examples
-    --------
-    Achillea millefolium 'Paprika'  ->  AMP
-    Acer rubrum                     ->  AR   (first unused; AR1, AR2 … if needed)
-    Ilex ×meserveae 'Blue Girl'     ->  IMB
-    """
+    """Build a unique plant key from botanical name."""
+    # * Ensures each plant has a stable identifier
     if not botanical:
         base = "XX"        # fallback for badly-formed rows
     else:
@@ -358,6 +356,7 @@ def fetch(url: str) -> str | None:
     If the request fails, return None (previous behaviour).
     """
     cache_file = _cache_name(url)
+    # // Simple offline cache to reduce server hits
 
     # ---------- 1. serve from cache if we already have it ---------------
     if cache_file.exists():
@@ -386,6 +385,7 @@ def fetch(url: str) -> str | None:
 
 # ───────────────────────────── parsers ────────────────────────────────────
 def _grab(text: str, label: str) -> str:
+    """Return text immediately following a label in plain text."""
     m = re.search(
         rf"{re.escape(label)}\s*[:\-\u2013\u2014]?\s*([^\n]+)",
         text,
@@ -396,6 +396,7 @@ def _grab(text: str, label: str) -> str:
 
 # Wildflower helpers
 def _section_text(soup: BeautifulSoup, hdr: str) -> str:
+    """Concatenate paragraph text that follows a given header."""
     h = soup.find(
         lambda t: t.name in ("h2", "h3", "h4")
         and hdr.lower() in t.get_text(strip=True).lower()
@@ -411,6 +412,7 @@ def _section_text(soup: BeautifulSoup, hdr: str) -> str:
 
 
 def _wf_wetland(soup: BeautifulSoup, region: str = "AGCP") -> Optional[str]:
+    """Return the wetland indicator status for a region."""
     h = soup.find("h4", string=lambda x: x and "wetland indicator" in x.lower())
     if not h:
         return None
@@ -505,6 +507,8 @@ def color_list(raw: str | None) -> str | None:
 
 
 def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str]]:
+    """Parse wildflower.org HTML into plant attribute dict."""
+    # // Handles multiple layouts on the site
     soup = BeautifulSoup(html, "lxml")
     txt = soup.get_text("\n", strip=True)
 
@@ -642,6 +646,8 @@ def parse_wf(html: str, want_fallback_sun_water=False) -> Dict[str, Optional[str
 
 
 def parse_mbg(html: str) -> Dict[str, Optional[str]]:
+    """Parse the MBG Plant Finder HTML page."""
+    # // Extracts height, spread and more from the key table
     soup = BeautifulSoup(html, "lxml")
 
     # helper: return concatenated <p> text that follows an <h3>/<h4> header
@@ -688,6 +694,8 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
 
 
 def parse_pr(html: str) -> Dict[str, Optional[str]]:
+    """Parse Pleasant Run Nursery HTML."""
+    # // Collects Attracts and Tolerates lists
     soup = BeautifulSoup(html, "lxml")
 
     def collect(title: str) -> Optional[str]:
@@ -705,6 +713,8 @@ def parse_pr(html: str) -> Dict[str, Optional[str]]:
 
 
 def parse_nm(html: str) -> Dict[str, Optional[str]]:
+    """Parse New Moon Nursery pages."""
+    # // Extract sun, water and tolerance details
     soup = BeautifulSoup(html, "lxml")
 
     def next_div_text(title: str) -> Optional[str]:
@@ -744,6 +754,8 @@ def parse_nm(html: str) -> Dict[str, Optional[str]]:
 
 
 def parse_pn(html: str) -> Dict[str, Optional[str]]:
+    """Parse Pinelands Nursery HTML search results."""
+    # // Falls back to JSON-LD when no direct link exists
     soup = BeautifulSoup(html, "lxml")
     info = {
         i.find("span").get_text(strip=True): i.find("p").get_text(strip=True)
@@ -765,6 +777,8 @@ def parse_pn(html: str) -> Dict[str, Optional[str]]:
 
 
 def gen_key(botanical: str, used: set[str]) -> str:
+    """Generate a short unique key for each plant."""
+    # * Helps track plants across spreadsheets
     if not botanical:
         base = "XX"
     else:
@@ -782,13 +796,8 @@ def gen_key(botanical: str, used: set[str]) -> str:
     return key
 
 def normalise_botanical(name: str) -> str:
-    """
-    Return botanical name as “Genus species 'Cultivar'”.
-
-    • Genus  -> first letter capital, rest lower.
-    • species -> all lower-case.
-    • Cultivar (if any) -> single-quoted and Title-cased.
-    """
+    """Return botanical name as “Genus species 'Cultivar'”."""
+    # // Provides consistent formatting for lookups
     if not isinstance(name, str):
         return name
 
@@ -817,6 +826,8 @@ def normalise_botanical(name: str) -> str:
 
 # ──────────────────────────── main routine ────────────────────────────────
 def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
+    """Fill missing plant data using various website scrapers."""
+    # * Core driver for the enrichment process
     df = pd.read_csv(in_csv, dtype=str, keep_default_na=False).fillna("")
 
     df.rename(columns={

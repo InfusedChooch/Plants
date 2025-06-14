@@ -41,6 +41,8 @@ PLANT_RANK = {pt: i for i, pt in enumerate(PLANT_ORDER)}
 # ──────────────────────────────────────────────────────────────────────────── #
 
 def to_md(records):
+    """Return a Markdown table from log records."""
+    # // Handy for GitHub diff viewing
     esc = lambda t: str(t).replace("|","\\|")
     hdr = ["| Action | Botanical Name | Note |",
            "|:------:|:---------------|:----|"]
@@ -49,6 +51,8 @@ def to_md(records):
     return "\n".join(hdr + rows)
 
 def parse_rev_date(rev: str) -> datetime | None:
+    """Extract date object from a Rev string like '20240612_FL'."""
+    # // Returns None if parsing fails
     rev = rev.strip()
     if len(rev) >= 8 and rev[:8].isdigit():
         try:
@@ -58,6 +62,8 @@ def parse_rev_date(rev: str) -> datetime | None:
     return None
 
 def clean_csv_from_excel(input_csv: Path, template_csv: Path, output_csv: Path) -> None:
+    """Normalize and clean a reviewed CSV exported from Excel."""
+    # * Applies NA logic and writes a clean output
     df = pd.read_csv(input_csv, dtype=str, encoding="cp1252", keep_default_na=False).fillna("")
     template_df = pd.read_csv(template_csv, dtype=str, keep_default_na=False, nrows=0)
     desired_cols = list(template_df.columns)
@@ -131,6 +137,8 @@ def clean_csv_from_excel(input_csv: Path, template_csv: Path, output_csv: Path) 
 
 
 def main(argv=None):
+    """Entry point for cleaning or merging master files."""
+    # * Chooses between clean and merge modes
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", choices=["merge", "clean"], default="clean", help="Choose: merge (default) or clean")
 
