@@ -7,7 +7,7 @@ merge_masterlist.py  –  Overwrite rows where Botanical Name matches,
                          output merged CSV + Markdown log to Outputs/NewMaster/.
 """
 from __future__ import annotations
-import argparse, sys
+import argparse, csv, sys
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
@@ -117,7 +117,8 @@ def clean_csv_from_excel(input_csv: Path, template_csv: Path, output_csv: Path) 
     df = df[desired_cols]
 
     output_csv.parent.mkdir(exist_ok=True)
-    df.to_csv(output_csv, index=False, na_rep="")
+    # // Write CSV with uniform quoting
+    df.to_csv(output_csv, index=False, na_rep="", quoting=csv.QUOTE_ALL)
     print(f"Cleaned CSV saved to: {output_csv}")
 
     # Step 6: Save log
@@ -224,7 +225,8 @@ def main(argv=None):
     merged["__rank"] = merged["Plant Type"].map(lambda v: PLANT_RANK.get(v, len(PLANT_ORDER)))
     merged = merged.sort_values(["__rank", "Botanical Name"], kind="mergesort").drop(columns="__rank")
 
-    merged.to_csv(out_path, index=False, na_rep="")
+    # // Write merged CSV with uniform quoting
+    merged.to_csv(out_path, index=False, na_rep="", quoting=csv.QUOTE_ALL)
     print(f" Merged CSV -> {out_path.resolve()}")
 
     if log:
