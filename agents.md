@@ -1,40 +1,41 @@
 ## Start
 ```
+I need my toolchains csv outpput catagories to match the csv column formatting through out. I went and hand tuned the desire coulmn entires in Templates\DatasetFormating_Template_Sample.csv .. The way each column holds the data is important. the current methods results in data that looks like Outputs\NewMaster\0612_Masterlist_Merged.csv. Certain columns are a mix of "" strings and not. My Templates\DatasetFormating_Template_Sample.csv has uniform data in each column. I want this uniformity to be standrad across the whole toolchain. notable export csv tools are Static\Python_full\FillMissingData.py, Static\Python_full\Excelify2_Testing.py, and Static\Tools\CleanMerge.py .
+
 I need my code base commented out for basic functions, and it should be updated to expect comments for the Better COmments VS Code Extension "better-comments.
 
-You need to help execute the todo comments in Static\Python_full\Excelify2_Testing.py we are using a sample input to see how it works that is Templates\ExcelTestTemplate.csv
+Make sure to update the comments at the top when they are finished, You can use the "# // tag" and change the comment on the line, or Needs Testing
 
-Make sure to update the comments at the top when they are finished, You can use the // tag and append finished on the line, or Needs Testing
 ```
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
 ```
 CSV header               : data source path                : expected format
-Plant Type               : Masterlist                      : Perennial | Shrub | …
+Plant Type               : Masterlist                      : "Plant Type"
 Key                      : FillMissingData                 : 2-3 letter unique code
-Botanical Name           : Masterlist                      : Genus species 'Variety' (italics)
-Common Name              : Masterlist                      : ALL CAPS
+Botanical Name           : Masterlist                      : "Genus species 'Variety'" (italics)
+Common Name              : Masterlist                      : "COMMON NAME"
 
 Height (ft)              : MBG → WF → PL                   : X - Y
 Spread (ft)              : MBG → WF → PL                   : X - Y
-Bloom Color              : WF + MBG + PL/NM                : Color1, Color2, …
-Bloom Time               : WF + MBG + PL/NM                : Jan, Feb, …
-Sun                      : MBG → WF “Light Requirement”    : Full Sun, Part Sun, …
-Water                    : MBG → WF “Soil Moisture”        : Low | Medium | High
+Bloom Color              : WF + MBG + PL/NM                : "Color1, Color2, …"
+Bloom Time               : WF + MBG + PL/NM                : "Jan, Feb, …"
+Sun                      : MBG → WF “Light Requirement”    : "Full Sun, Part Sun, …"
+Water                    : MBG → WF “Soil Moisture”        : "Wet, Medium, Dry"
 AGCP Regional Status     : WF (Wetland Indicator)          : FACU | OBL | …
-USDA Hardiness Zone      : MBG “Zone”                      : Zone X – Y
+USDA Hardiness Zone      : MBG “Zone”                      : "Zone X – Y"
 
-Attracts                 : PR + WF + MBG + Pinelands        : Bees, Butterflies, …
-Tolerates                : MBG + PR + NM + Pinelands        : Deer, Salt, …
-Soil Description         : WF “Soil Description”            : paragraph
-Condition Comments       : WF “Condition Comments”          : paragraph
-MaintenanceLevel         : MBG “Maintenance”                : Low | Medium | High
-Native Habitats          : WF “Native Habitat”              : Prairie, Woodland, …
-Culture                  : MBG “Culture” / “Growing Tips”   : paragraph
-Uses                     : MBG “Uses”                       : paragraph
-UseXYZ                   : WF Benefit list                  : Use Ornamental: …; Use Wildlife: …
-WFMaintenance            : WF "Maintenance:"                : free-text
-Problems                 : MBG “Problems”                   : paragraph
+Attracts                 : PR + WF + MBG + Pinelands        : "Bees, Butterflies, …"
+Tolerates                : MBG + PR + NM + Pinelands        : "Deer, Salt, …"
+Soil Description         : WF “Soil Description”            : "paragraph"
+Condition Comments       : WF “Condition Comments”          : "paragraph"
+MaintenanceLevel         : MBG “Maintenance”                : "Low | Medium | High"
+Native Habitats          : WF “Native Habitat”              : "Prairie, Woodland, …"
+Culture                  : MBG “Culture” / “Growing Tips”   : "paragraph"
+Uses                     : MBG “Uses”                       : "paragraph"
+UseXYZ                   : WF Benefit list                  : "Use Ornamental: …; Use Wildlife: …"
+WFMaintenance            : WF "Maintenance:"                : "Maintenence: ..."
+Problems                 : MBG “Problems”                   : "paragraph"
 
 Link: MBG                : GetLinks                         : URL
 Link: Wildflower.org     : GetLinks                         : URL
@@ -47,6 +48,7 @@ Rev                      : User Input (YYYYMMDD_FL)         : "YYYYMMDD_Firstini
 
 ```
 Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,AGCP Regional Status,USDA Hardiness Zone,Attracts,Tolerates,Soil Description,Condition Comments,MaintenanceLevel,Native Habitats,Culture,Uses,UseXYZ,WFMaintenance,Problems,Link: Missouri,Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com,Link: Others,Rev
+
 ```
 
 ```
