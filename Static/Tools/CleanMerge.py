@@ -32,7 +32,7 @@ LINK_COLS = COLUMN_ORDER[-6:-1]
 PLANT_ORDER = [
     "Herbaceous, Perennial",
     "Ferns",
-    "Grasses, Sedges, And Rushes",
+    "Grasses, Sedges, and Rushes",
     "Shrubs",
     "Trees",
 ]
