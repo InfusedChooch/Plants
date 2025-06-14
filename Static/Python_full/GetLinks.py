@@ -105,7 +105,7 @@ NM_COL = "Link: Newmoonnursery.com"
 PN_COL = "Link: Pinelandsnursery.com"
 
 # --- Step 1: Load CSVs & prefill from master -----------------------------
-df = pd.read_csv(INPUT, dtype=str).fillna("")
+df = pd.read_csv(INPUT, dtype=str, keep_default_na=False).fillna("")
 
 rename_map = {
     "Link: Missouri Botanical Garden": MBG_COL,
@@ -132,7 +132,7 @@ reverse_map = {
 }
 
 try:
-    master = pd.read_csv(MASTER, dtype=str).fillna("")
+    master = pd.read_csv(MASTER, dtype=str, keep_default_na=False).fillna("")
     master.rename(
         columns={k: v for k, v in rename_map.items() if k in master.columns},
         inplace=True,
@@ -181,7 +181,7 @@ needs = df[
 if needs.empty:
     # Normalize any legacy column names before exporting
     df.rename(columns=reverse_map, inplace=True)
-    template_cols = list(pd.read_csv(MASTER, nrows=0).columns)
+    template_cols = list(pd.read_csv(MASTER, nrows=0, keep_default_na=False).columns)
     df = df.reindex(
         columns=template_cols + [c for c in df.columns if c not in template_cols]
     )
@@ -512,7 +512,7 @@ for i, row in needs.iterrows():
 # --- Save & exit --------------------------------------------------------
 driver.quit()
 df.rename(columns=reverse_map, inplace=True)
-template_cols = list(pd.read_csv(MASTER, nrows=0).columns)
+template_cols = list(pd.read_csv(MASTER, nrows=0, keep_default_na=False).columns)
 df = df.reindex(
     columns=template_cols + [c for c in df.columns if c not in template_cols]
 )

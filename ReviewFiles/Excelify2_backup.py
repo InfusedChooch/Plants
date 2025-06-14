@@ -96,7 +96,7 @@ df = (
     )
     .fillna("")
 )
-template_cols = list(pd.read_csv(TEMPLATE_CSV, nrows=0).columns)
+template_cols = list(pd.read_csv(TEMPLATE_CSV, nrows=0, keep_default_na=False).columns)
 df = df.reindex(columns=template_cols + [c for c in df.columns if c not in template_cols])
 
 # Normalise casing
