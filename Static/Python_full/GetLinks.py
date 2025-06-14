@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GetLinks.py - Prefill from master first, launch Chrome only if needed (rev-patched)
-#! Might retire
-#todo Needs to be revamped a bit -- maybe combined with FillMissingData
+# ! Deprecated: may eventually merge with FillMissingData
+# // Still used for gathering initial links
 """Search web resources to populate missing plant links in the CSV.
 
 Existing links from the master sheet are reused. Any remaining gaps are
@@ -163,6 +163,8 @@ print(f"Prefilled {pref} links from master.")
 
 # --- Step 2: Check for needs ---------------------------------------------
 def safe_starts(col):
+    """Return boolean mask for valid http URLs in a column."""
+    # // Helps decide if a search is needed
     return (
         df[col].astype(str).str.startswith("http")
         if col in df.columns
@@ -201,7 +203,8 @@ PORT_DIRS = [STATIC / "GoogleChromePortable"]  # legacy
 
 
 def find_chrome() -> Path:
-    # explicit CLI path still wins
+    """Locate a Chrome executable for Selenium."""
+    # // CLI flag takes precedence
     if args.chrome_binary:
         p = Path(args.chrome_binary).expanduser()
         if p.exists():
@@ -224,6 +227,7 @@ def find_chrome() -> Path:
 
 
 def full_ver(bin_path: Path) -> str:
+    """Return the full Chrome version string."""
     out = subprocess.check_output(
         [str(bin_path), "--version"], text=True, stderr=subprocess.STDOUT
     )
@@ -232,19 +236,19 @@ def full_ver(bin_path: Path) -> str:
 
 
 def major(v: str) -> str:
+    """Return major version number from dotted string."""
     return v.split(".", 1)[0] if v else ""
 
 
 # --- Driver discovery ----------------------------------------------------
 def find_driver() -> Path:
-    """
-    Return a working chromedriver.exe.
-
-    Priority:
-    1) --chromedriver CLI flag  (file or folder)
-    2) Static/Python/chromedriver.exe
-    3) Any chromedriver.exe inside Static/GoogleChromePortable/App/Chrome-bin/*
-    """
+    """Return a working chromedriver.exe."""
+    # * Searches bundled copies before failing
+    #
+    # Priority:
+    # 1) --chromedriver CLI flag  (file or folder)
+    # 2) Static/Python/chromedriver.exe
+    # 3) Any chromedriver.exe inside Static/GoogleChromePortable/App/Chrome-bin/*
     # 1) explicit CLI path wins
     if args.chromedriver:
         p = Path(args.chromedriver).expanduser()
@@ -290,6 +294,8 @@ except WebDriverException as e:
 
 # --- Helper functions ---------------------------------------------------
 def safe_get(url: str, retries=2, delay=2):
+    """HTTP GET with retries and user-agent fallbacks."""
+    # // Returns None on network failure
     for _ in range(retries + 1):
         try:
             r = requests.get(url, headers=HEADERS, timeout=10)
@@ -304,6 +310,8 @@ def safe_get(url: str, retries=2, delay=2):
 
 
 def name_variants(row):
+    """Return possible search terms for a plant row."""
+    # // Includes common name when available
     v = [row["Botanical Name"]]
     if row.get("Common Name"):
         v.append(row["Common Name"])
@@ -312,6 +320,8 @@ def name_variants(row):
 
 
 def bing_link(q: str, include: str) -> Optional[str]:
+    """Return first Bing result containing a substring."""
+    # // Used when direct HTML search fails
     driver.get(f"https://www.bing.com/search?q={quote_plus(q)}")
     time.sleep(1)
     for a in driver.find_elements(By.XPATH, '//li[@class="b_algo"]//a[@href]'):
@@ -322,10 +332,14 @@ def bing_link(q: str, include: str) -> Optional[str]:
 
 
 def title_ok(botan: str) -> bool:
+    """Check if every word from botan name appears in browser title."""
+    # // Helps filter false-positive search results
     return all(p.lower() in driver.title.lower() for p in botan.split())
 
 
 def query_mbg_html(name: str) -> Optional[str]:
+    """Scrape MBG search results and return first detail link."""
+    # // Falls back to HTML scraping when Bing search fails
     url = (
         "https://www.missouribotanicalgarden.org/PlantFinder/"
         "PlantFinderSearchResults.aspx?basic=" + quote_plus(name)
@@ -338,6 +352,8 @@ def query_mbg_html(name: str) -> Optional[str]:
 
 
 def query_pr_html(name: str) -> Optional[str]:
+    """Scrape Pleasant Run Nursery search results."""
+    # // Returns full URL when found
     url = (
         "https://www.pleasantrunnursery.com/index.cfm/"
         "fuseaction/plants.kwSearchPost?presearch=" + quote_plus(name)
@@ -355,6 +371,8 @@ def query_pr_html(name: str) -> Optional[str]:
 
 
 def query_nm_html(name: str) -> Optional[str]:
+    """Scrape New Moon Nursery search results."""
+    # // Handles relative and absolute URLs
     url = f"https://newmoonnursery.com/?s={quote_plus(name)}"
     if r := safe_get(url):
         soup = BeautifulSoup(r.text, "lxml")
@@ -367,6 +385,8 @@ def query_nm_html(name: str) -> Optional[str]:
 
 
 def query_pn_html(name: str) -> Optional[str]:
+    """Scrape Pinelands Nursery search results."""
+    # // Uses JSON-LD data when available
     url = f"https://www.pinelandsnursery.com/search?query={quote_plus(name)}"
     if r := safe_get(url):
         soup = BeautifulSoup(r.text, "lxml")
