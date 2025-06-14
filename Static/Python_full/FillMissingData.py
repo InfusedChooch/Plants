@@ -305,8 +305,6 @@ def normalise_botanical(name: str) -> str:
 
     return " ".join(filter(None, [genus, species, rest]))
 
-import re
-
 def gen_key(botanical: str, used: set[str]) -> str:
     """
     Build a unique plant key.
