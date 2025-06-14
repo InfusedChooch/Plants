@@ -480,26 +480,26 @@ for i in range(DATA_ROWS):
         label_pd = PLANT_DATA_HEADERS.index(f"Label {idx}") + 1
         url_pd   = PLANT_DATA_HEADERS.index(f"URL {idx}")   + 1
 
-        base_tag   = get_column_letter(3 * (idx - 1) + 3)   # C,F,I,...
-        base_label = get_column_letter(3 * (idx - 1) + 4)   # D,G,J,...
-        base_url   = get_column_letter(3 * (idx - 1) + 5)   # E,H,K,...
+        base_label = get_column_letter(3 * (idx - 1) + 3)   # C,F,I,...
+        base_url   = get_column_letter(3 * (idx - 1) + 4)   # D,G,J,...
+        base_tag   = get_column_letter(3 * (idx - 1) + 5)   # E,H,K,...
 
         # Tag n  (AF, AI, …) simply re-shows the chosen tag
         ws.cell(row=row_pd, column=tag_pd).value = \
             f"=CHOOSE($AE{row_pd}," + \
-            ",".join(f"'Other Links'!{get_column_letter(3 * (j - 1) + 3)}{row_ol}"
+            ",".join(f"'Other Links'!{get_column_letter(3 * (j - 1) + 5)}{row_ol}"
                     for j in range(1, MAX_LINKS + 1)) + ")"
 
         # Label n
         ws.cell(row=row_pd, column=label_pd).value = \
             f"=CHOOSE($AE{row_pd}," + \
-            ",".join(f"'Other Links'!{get_column_letter(3 * (j - 1) + 4)}{row_ol}"
+            ",".join(f"'Other Links'!{get_column_letter(3 * (j - 1) + 3)}{row_ol}"
                     for j in range(1, MAX_LINKS + 1)) + ")"
 
         # URL n
         ws.cell(row=row_pd, column=url_pd).value = \
             f"=CHOOSE($AE{row_pd}," + \
-            ",".join(f"'Other Links'!{get_column_letter(3 * (j - 1) + 5)}{row_ol}"
+            ",".join(f"'Other Links'!{get_column_letter(3 * (j - 1) + 4)}{row_ol}"
                     for j in range(1, MAX_LINKS + 1)) + ")"
 
 
