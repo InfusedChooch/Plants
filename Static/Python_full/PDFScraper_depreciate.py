@@ -101,9 +101,9 @@ def safe_print(*objs, **kw):
 
 # --- CSV Columns ---------------------------------------------------------
 MASTER_CSV = repo_path("Templates/Plants_Linked_Filled_Master.csv")
-template_cols = list(pd.read_csv(MASTER_CSV, nrows=0).columns)
+template_cols = list(pd.read_csv(MASTER_CSV, nrows=0, keep_default_na=False).columns)
 
-master_df = pd.read_csv(MASTER_CSV, dtype=str).fillna("")
+master_df = pd.read_csv(MASTER_CSV, dtype=str, keep_default_na=False).fillna("")
 master_idx = master_df.set_index("Botanical Name")
 
 COLUMNS = ["Page in PDF"] + template_cols

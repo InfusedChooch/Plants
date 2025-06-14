@@ -935,14 +935,15 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
         "PN Link":  "Link: Pinelandsnursery.com",
     }, inplace=True)
 
-    template_cols = list(pd.read_csv(master_csv, nrows=0).columns)
+    template_cols = list(pd.read_csv(master_csv, nrows=0, keep_default_na=False).columns)
     for c in template_cols:
         if c not in df.columns:
             df[c] = ""
     df = df.loc[:, [c for c in template_cols if c in df.columns]]
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(out_csv, index=False, quoting=csv.QUOTE_MINIMAL, na_rep="")
+    # // Ensure uniform quoting across all columns
+    df.to_csv(out_csv, index=False, quoting=csv.QUOTE_ALL, na_rep="")
     print(f"[OK] saved -> {out_csv.relative_to(REPO)}")
 
 # ────────────────────────── entrypoint ────────────────────────────────────

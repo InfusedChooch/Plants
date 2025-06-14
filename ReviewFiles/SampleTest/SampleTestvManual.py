@@ -48,7 +48,7 @@ def load(path: Path) -> pd.DataFrame:
     if not path.exists():
         console.print(f"[red]ERROR:[/red] file not found → {path}")
         sys.exit(2)
-    return pd.read_csv(path, dtype=str).fillna("")
+    return pd.read_csv(path, dtype=str, keep_default_na=False).fillna("")
 
 
 def row_key(row: pd.Series) -> str:
