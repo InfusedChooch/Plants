@@ -937,7 +937,7 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
         "PN Link":  "Link: Pinelandsnursery.com",
     }, inplace=True)
 
-    template_cols = list(pd.read_csv(master_csv, nrows=0).columns)
+    template_cols = list(pd.read_csv(master_csv, nrows=0, keep_default_na=False).columns)
     for c in template_cols:
         if c not in df.columns:
             df[c] = ""
