@@ -21,6 +21,7 @@ from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font, Alignment
 from openpyxl.formatting.rule import FormulaRule
+from openpyxl.formula.translate import Translator
 from openpyxl.workbook.properties import CalcProperties
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
@@ -78,7 +79,7 @@ DEFAULT_WIDTH: int = 18
 # ── CLI ------------------------------------------------------------------
 parser = argparse.ArgumentParser(description="Export formatted Excel from CSV")
 parser.add_argument("--in_csv",      default="Outputs/Excel Template00.csv")
-parser.add_argument("--out_xlsx",    default="ReviewFiles/Plants_00.xlsx")
+parser.add_argument("--out_xlsx",    default="ReviewFiles/Plants_01.xlsx")
 parser.add_argument("--template_csv",default="Templates/Plants_Template.csv")
 args = parser.parse_args()
 
@@ -121,30 +122,24 @@ def _parse_other_links(text: str) -> list[tuple[str, str, str]]:
     return re.findall(pattern, text or "")
 
 # * Helper: build TEXTJOIN formula for Other Links rows
-def build_link_formula(row: int, max_links: int) -> str:
+def build_link_formula(row: int, max_links: int) -> list[str]:
     """
-    Build the TEXTJOIN formula that returns
-    [TAG,"URL","LABEL"];[TAG,"URL","LABEL"];…
-    Excel string quotes are inserted with CHAR(34).
-    Column order on “Other Links” is Tag | URL | Label  (C, D, E …).
+    Return list of Excel formulas, one per [Tag, URL, Label] group.
+    Used for injecting staged link chunks into helper columns.
     """
-    parts: list[str] = []
+    formulas = []
     for idx in range(1, max_links + 1):
-        base   = 3 * (idx - 1) + 3            # C,F,I,…
-        tag    = get_column_letter(base)
-        url  = get_column_letter(base + 1)
-        label    = get_column_letter(base + 2)
+        base = 3 * (idx - 1) + 3  # C, F, I...
+        tag = get_column_letter(base)
+        url = get_column_letter(base + 1)
+        lab = get_column_letter(base + 2)
 
-        link   = (
-            f'CONCAT("[",{tag}{row},",",CHAR(34),'
-            f'{url}{row},CHAR(34),",",CHAR(34),'
-            f'{label}{row},CHAR(34),"]")'
+        formula = (
+            f'=IF(OR({tag}{row}="",{url}{row}="",{lab}{row}=""),"",'
+            f'CONCAT("[",{tag}{row},",",CHAR(34),{url}{row},CHAR(34),",",CHAR(34),{lab}{row},CHAR(34),"]"))'
         )
-        parts.append(
-            f'IF(OR({tag}{row}="",{url}{row}="",{label}{row}=""),"",{link})'
-        )
-
-    return f'=TEXTJOIN(";",TRUE,{",".join(parts)})'
+        formulas.append(formula)
+    return formulas
 
 
 if "Link: Others" in df.columns:
@@ -240,7 +235,7 @@ for r in range(DATA_ROWS):                    # 1-based to match Excel rows
         else:
             # Plant Data has headers in row 2 and the dataset starts on row 3
             raw_ws.cell(row=r+2, column=c_idx).value = (
-                f"='Plant Data'!{col_letter}{r+3}"
+                f"='Plant Data'!{col_letter}{r+2}"
             )
 
 # ── Source-legend row  ----------------------------------------
@@ -276,6 +271,7 @@ DATA_SOURCE = {
     "Rev": "User Input (YYYYMMDD_FL)",
     "Mark Reviewed": "Type Initials",
     "Link: Others": "Edit on `Other Links`",
+    "Link Lists": "Populated from `Other Links`",
     
 }
 
@@ -448,22 +444,23 @@ for r in range(3, ws.max_row + 1):                  # data start at row 3
     ws.cell(row=r, column=col_LinkN).value = "Link 1"          # sensible default
 
 # ---- build CHOOSE() argument list (Tag / URL / Label) compatible with all Excel versions ----
-args_tag, args_url, args_label = [], [], []
-for n in range(1, MAX_LINKS + 1):
-    base = 3 * (n - 1) + 3
-    tag  = get_column_letter(base)
-    url  = get_column_letter(base + 1)
-    lab  = get_column_letter(base + 2)
-    args_tag.append(f"'Other Links'!${tag}${r}")
-    args_url.append(f"'Other Links'!${url}${r}")
-    args_label.append(f"'Other Links'!${lab}${r}")
+for r in range(3, ws.max_row + 1):
+    args_tag, args_url, args_label = [], [], []
+    for n in range(1, MAX_LINKS + 1):
+        base = 3 * (n - 1) + 3
+        tag  = get_column_letter(base)
+        url  = get_column_letter(base + 1)
+        lab  = get_column_letter(base + 2)
+        args_tag.append(f"'Other Links'!${tag}${r}")
+        args_url.append(f"'Other Links'!${url}${r}")
+        args_label.append(f"'Other Links'!${lab}${r}")
 
-choice_idx = f'MATCH(${get_column_letter(col_LinkN)}{r},{{"Link 1","Link 2","Link 3","Link 4","Link 5"}},0)'
+    choice_idx = f'MATCH(${get_column_letter(col_LinkN)}{r},{{"Link 1","Link 2","Link 3","Link 4","Link 5"}},0)'
 
-ws.cell(row=r, column=col_Tag).value   = f"=CHOOSE({choice_idx},{','.join(args_tag)})"
-ws.cell(row=r, column=col_URL).value   = f"=CHOOSE({choice_idx},{','.join(args_url)})"
-ws.cell(row=r, column=col_Label).value = f"=CHOOSE({choice_idx},{','.join(args_label)})"
-ws.cell(row=r, column=col_URL).style   = "Hyperlink"
+    ws.cell(row=r, column=col_Tag).value   = f"=CHOOSE({choice_idx},{','.join(args_tag)})"
+    ws.cell(row=r, column=col_URL).value   = f"=CHOOSE({choice_idx},{','.join(args_url)})"
+    ws.cell(row=r, column=col_Label).value = f"=CHOOSE({choice_idx},{','.join(args_label)})"
+    ws.cell(row=r, column=col_URL).style   = "Hyperlink"
 
     
 
@@ -543,7 +540,11 @@ for i in range(DATA_ROWS):
     formula_cell = other_ws.cell(row=formula_row, column=len(row) - 1)
     formula_cell = other_ws.cell(row=formula_row, column=len(row) - 1)
     formula_text = build_link_formula(formula_row, MAX_LINKS)
-    formula_cell.value = formula_text
+    formula_cell.value = formula_text  # Inject Excel formula
+    if isinstance(formula_cell.value, str) and formula_cell.value.startswith("="):
+        formula_cell.value = formula_cell.value  # Nudge Excel to register it
+    if isinstance(formula_cell.value, str) and formula_cell.value.startswith("="):
+        formula_cell.value = formula_cell.value
 
 
     match_col_letter = get_column_letter(len(row))   # CSV RAW
