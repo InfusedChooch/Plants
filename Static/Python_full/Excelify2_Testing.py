@@ -78,7 +78,7 @@ DEFAULT_WIDTH: int = 18
 
 # ── CLI ------------------------------------------------------------------
 parser = argparse.ArgumentParser(description="Export formatted Excel from CSV")
-parser.add_argument("--in_csv",      default="Outputs/Excel Template00.csv")
+parser.add_argument("--in_csv",      default="Outputs/Excel_Template00.csv")
 parser.add_argument("--out_xlsx",    default="ReviewFiles/Plants_01.xlsx")
 parser.add_argument("--template_csv",default="Templates/Plants_Template.csv")
 args = parser.parse_args()
@@ -539,8 +539,22 @@ for i in range(DATA_ROWS):
     # 3. Inject formula as actual Excel formula
     formula_cell = other_ws.cell(row=formula_row, column=len(row) - 1)
     formula_cell = other_ws.cell(row=formula_row, column=len(row) - 1)
-    formula_text = build_link_formula(formula_row, MAX_LINKS)
-    formula_cell.value = formula_text  # Inject Excel formula
+    formula_cell.value = (
+        f'=TEXTJOIN(";", TRUE,'
+        f'IF(OR(C{formula_row}="",D{formula_row}="",E{formula_row}=""), "",'
+        f'CONCAT("[",C{formula_row},",",CHAR(34),D{formula_row},CHAR(34),",",CHAR(34),E{formula_row},CHAR(34),"]")),'
+        f'IF(OR(F{formula_row}="",G{formula_row}="",H{formula_row}=""), "",'
+        f'CONCAT("[",F{formula_row},",",CHAR(34),G{formula_row},CHAR(34),",",CHAR(34),H{formula_row},CHAR(34),"]")),'
+        f'IF(OR(I{formula_row}="",J{formula_row}="",K{formula_row}=""), "",'
+        f'CONCAT("[",I{formula_row},",",CHAR(34),J{formula_row},CHAR(34),",",CHAR(34),K{formula_row},CHAR(34),"]")),'
+        f'IF(OR(L{formula_row}="",M{formula_row}="",N{formula_row}=""), "",'
+        f'CONCAT("[",L{formula_row},",",CHAR(34),M{formula_row},CHAR(34),",",CHAR(34),N{formula_row},CHAR(34),"]")),'
+        f'IF(OR(O{formula_row}="",P{formula_row}="",Q{formula_row}=""), "",'
+        f'CONCAT("[",O{formula_row},",",CHAR(34),P{formula_row},CHAR(34),",",CHAR(34),Q{formula_row},CHAR(34),"]"))'
+        f')'
+    )
+
+
     if isinstance(formula_cell.value, str) and formula_cell.value.startswith("="):
         formula_cell.value = formula_cell.value  # Nudge Excel to register it
     if isinstance(formula_cell.value, str) and formula_cell.value.startswith("="):
