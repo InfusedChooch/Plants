@@ -16,7 +16,7 @@ import pandas as pd
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 from fpdf.errors import FPDFException
-import yaml, re
+import yaml
 
 
 # --- CLI ------------------------------------------------------------------
