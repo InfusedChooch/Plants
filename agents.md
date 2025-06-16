@@ -1,8 +1,8 @@
 ## Start
 ```
-I need this file looked at and check for redundancies and cleaned up if there are ,it's mostly working.Static\Python_full\Excelify.py
+I need to integrate new scripts into the launcher. Static\Python_full\CleanMerge.py  -- Check the notes on Launcher.py
 
-Ideally I would like the ?Name erros removed, but this seems to be a limit of excel not my code. 
+I also need to update the Generate PDF to accept the new formats .
 ```
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GetLinks.py - Prefill from master first, launch Chrome only if needed (rev-patched)
 # ! Deprecated: may eventually merge with FillMissingData
-# // Still used for gathering initial links
+
 """Search web resources to populate missing plant links in the CSV.
 
 Existing links from the master sheet are reused. Any remaining gaps are

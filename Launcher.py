@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # Launcher_lite.py – CTk GUI for the plant-database tool-chain
 # 2025-06-09  portable-layout & resizable console edition
+# todo THe launcher needs to have Builder and Export tabs
+# todo the launcher needs to have a resizable console pane
+# todo the launcher export tab needs to be before the builder tab
+# todo The script Static\Python_full\CleanMerge.py needs to be added to a the launcher. The functions should be seperated, and the merge should be in its own tab.
 
 import sys, subprocess, threading, queue, customtkinter as ctk
 from tkinter import filedialog
@@ -52,7 +56,7 @@ TOOLS = [
      str(OUTDEF / "Plants_Linked.csv"),           "Plants_Linked_Filled", ".csv"),
     ("GeneratePDF.py",    "--in_csv", "--out_pdf",
      str(OUTDEF / "Plants_Linked_Filled.csv"),    "Plant_Guide_EXPORT", ".pdf"),
-    ("Excelify2.py",      "--in_csv", "--out_xlsx",
+    ("Excelify.py",      "--in_csv", "--out_xlsx",
      str(OUTDEF / "Plants_Linked_Filled.csv"),    "Plants_Linked_Filled_Review", ".xlsx"),
 ]
 
@@ -61,14 +65,14 @@ TAB_MAP = {
     "GetLinks.py": "Builder",
     "FillMissingData.py": "Builder",
     "GeneratePDF.py": "Export",
-    "Excelify2.py": "Export",
+    "Excelify.py": "Export",
 }
 LABEL_OVERRIDES = {
     "PDFScraper.py":      "Extract from PDF",
     "GetLinks.py":        "Find Links",
     "FillMissingData.py": "Fill Data",
     "GeneratePDF.py":     "Generate PDF",
-    "Excelify2.py":       "Export to Excel",
+    "Excelify.py":       "Export to Excel",
 }
 
 # ── Helpers ───────────────────────────────────────────────────────────────

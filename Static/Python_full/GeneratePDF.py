@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # GeneratePDF.py - Produce a printable plant-guide PDF (2025-06-05, portable paths)
-#todo Needs to be updated to fit new master csv
+# todo Needs to be updated to fit new master csv
+# todo Need to format with the new style from  
 #! Wont work as is
 
 """
