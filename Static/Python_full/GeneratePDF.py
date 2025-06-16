@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # GeneratePDF.py - Produce a printable plant-guide PDF (2025-06-05, portable paths)
-# todo Needs to be updated to fit new master csv
-# todo Need to format with the new style from
-#! Wont work as is
+# todo The Link Legend needs to find whhich links are in the csv, and populate the legend in the front with them
+# todo IE, Plant entries footer should populate the [TAG] from the csv in the plants footer. 
+# todo LINK_LABELS needs to auto detect new Tags from the Link: Others column.
 
 """
 Generate a title page, TOC and a page per plant with images using fpdf2.

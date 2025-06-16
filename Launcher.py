@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Launcher_lite.py – CTk GUI for the plant-database tool-chain
 # 2025-06-09  portable-layout & resizable console edition
-# 
+# todo 
 
 import sys, subprocess, threading, queue, customtkinter as ctk
 from tkinter import filedialog
@@ -92,7 +92,7 @@ TOOLS = [
         "Plants_Linked_Filled_Reviewed_Clean",
         ".csv",
     ),
-    
+
     (
         "GeneratePDF.py",
         "--in_csv",
