@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 # Launcher_lite.py – CTk GUI for the plant-database tool-chain
 # 2025-06-09  portable-layout & resizable console edition
-# todo THe launcher needs to have Builder and Export tabs
-# todo the launcher needs to have a resizable console pane
-# todo the launcher export tab needs to be before the builder tab
-# todo The script Static\Python_full\CleanMerge.py needs to be added to a the launcher. The functions should be seperated, and the merge should be in its own tab.
+# 
 
 import sys, subprocess, threading, queue, customtkinter as ctk
 from tkinter import filedialog
@@ -62,14 +59,6 @@ ctk.set_default_color_theme(
 # ── Tool definitions (script, in-flag, out-flag, default-IN, stem, ext) ──
 TOOLS = [
     (
-        "PDFScraper.py",
-        "--in_pdf",
-        "--out_csv",
-        str(TEMPL / "Plant Guide 2025 Update.pdf"),
-        "Plants_NeedLinks",
-        ".csv",
-    ),
-    (
         "GetLinks.py",
         "--in_csv",
         "--out_csv",
@@ -85,6 +74,25 @@ TOOLS = [
         "Plants_Linked_Filled",
         ".csv",
     ),
+
+        (
+        "Excelify.py",
+        "--in_csv",
+        "--out_xlsx",
+        str(OUTDEF / "Plants_Linked_Filled.csv"),
+        "Plants_Linked_Filled_Review",
+        ".xlsx",
+    ),
+
+            (
+        "CleanMerge.py:clean",
+        "--input",
+        "--out",
+        str(OUTDEF / "Plants_Linked_Filled_Reviewed.csv"),
+        "Plants_Linked_Filled_Reviewed_Clean",
+        ".csv",
+    ),
+    
     (
         "GeneratePDF.py",
         "--in_csv",
@@ -93,22 +101,7 @@ TOOLS = [
         "Plant_Guide_EXPORT",
         ".pdf",
     ),
-    (
-        "Excelify.py",
-        "--in_csv",
-        "--out_xlsx",
-        str(OUTDEF / "Plants_Linked_Filled.csv"),
-        "Plants_Linked_Filled_Review",
-        ".xlsx",
-    ),
-    (
-        "CleanMerge.py:clean",
-        "--input",
-        "--out",
-        str(OUTDEF / "Plants_Linked_Filled_Reviewed.csv"),
-        "Plants_Linked_Filled_Reviewed_Clean",
-        ".csv",
-    ),
+
     (
         "CleanMerge.py:merge",
         "--input",
@@ -120,16 +113,14 @@ TOOLS = [
 ]
 
 TAB_MAP = {
-    "PDFScraper.py": "Builder",
     "GetLinks.py": "Builder",
     "FillMissingData.py": "Builder",
-    "GeneratePDF.py": "Export",
     "Excelify.py": "Export",
-    "CleanMerge.py:clean": "Builder",
+    "CleanMerge.py:clean": "Export",
+    "GeneratePDF.py": "Export",
     "CleanMerge.py:merge": "Merge",
 }
 LABEL_OVERRIDES = {
-    "PDFScraper.py": "Extract from PDF",
     "GetLinks.py": "Find Links",
     "FillMissingData.py": "Fill Data",
     "GeneratePDF.py": "Generate PDF",
@@ -279,7 +270,7 @@ ctk.CTkButton(hdr, text="Open Repo", width=160, command=open_repo).grid(
 tabs = ctk.CTkTabview(app)
 export_tab = tabs.add("Export")
 builder_tab = tabs.add("Builder")
-merge_tab = tabs.add("Merge")
+merge_tab = tabs.add("Merge with Master")
 
 tabs.pack(fill="both", expand=True, padx=15, pady=(0, 6))
 

@@ -1,8 +1,6 @@
 ## Start
 ```
-I need to integrate new scripts into the launcher. Static\Python_full\CleanMerge.py  -- Check the notes on Launcher.py
-
-I also need to update the Generate PDF to accept the new formats .
+The Launchers args must match the induvidual script expectations, look for any odd resolve cases, the goal is to have the tool chain work as an exe and .py
 ```
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
