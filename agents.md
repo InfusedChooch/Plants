@@ -1,11 +1,8 @@
 ## Start
 ```
-I need my toolchains csv outpput catagories to match the csv column formatting through out. I went and hand tuned the desire coulmn entires in Templates\DatasetFormating_Template_Sample.csv .. The way each column holds the data is important. the current methods results in data that looks like Outputs\NewMaster\0612_Masterlist_Merged.csv. Certain columns are a mix of "" strings and not. My Templates\DatasetFormating_Template_Sample.csv has uniform data in each column. I want this uniformity to be standrad across the whole toolchain. notable export csv tools are Static\Python_full\FillMissingData.py, Static\Python_full\Excelify2_Testing.py, and Static\Tools\CleanMerge.py .
+I need this file looked at and check for redundancies and cleaned up if there are ,it's mostly working.Static\Python_full\Excelify.py
 
-I need my code base commented out for basic functions, and it should be updated to expect comments for the Better COmments VS Code Extension "better-comments.
-
-Make sure to update the comments at the top when they are finished, You can use the "# // tag" and change the comment on the line, or Needs Testing
-
+Ideally I would like the ?Name erros removed, but this seems to be a limit of excel not my code. 
 ```
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**

@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 # Excelify.py – Create a styled Excel workbook from the fully populated plant CSV.
 # 2025-06-13 · Adds blanket COLUMN_WIDTHS dict, keep_default_na, and cleans up width logic.
-# todo I need to make the Static\Python_full\Excelify2_Testing.py out put resemble the logic in ReviewFiles\Plants_Reformat_Logic.pdf and ReviewFiles\Plants_Reformat_Logic.xlsx.
-
-# todo CSV Format: [Tag1,""URL1"",""Label1""];[Tag2,""URL2"",""Label2""] : "[T1,""https://Test.com"",""Test 1""];[T2,""https://Test.com"",""Test 2""];[T3,""https://Test.com"",""Test 3""]"
-# todo New Workbook order: [Readme!][Pretty Data"Plant Data"][Other Links Add/Sub][RAW CSV Export][Imported .py codes][Dir Readme.md]
-# todo Excel Format   -- Maybe a Searchable/appendable list 
+# todo Fix comments
+# todo Clean up code, and look for any unused imports, and redundant code.
 
 
-# ? I need to figure out how to get urls added and edited from the CSV header
+# ? I need update the comments for laymen to obsover and understand the code. 
 # ! This works in excel for Amsonia Hubrichtii	THREADLEAF BLUE STAR	T1	Test 1	https://Test.com	T2	Test 2	https://Test.com	T3	Test 3	https://Test.com
  
-# * =TEXTJOIN(";", TRUE,IF(OR($C3="",$E3="",$D3=""), "",CONCAT("[",$C3,",",CHAR(34),$E3,CHAR(34),",",CHAR(34),$D3,CHAR(34),"]")),IF(OR($F3="",$H3="",$G3=""), "",CONCAT("[",$F3,",",CHAR(34),$H3,CHAR(34),",",CHAR(34),$G3,CHAR(34),"]")),IF(OR($I3="",$K3="",$J3=""), "",CONCAT("[",$I3,",",CHAR(34),$K3,CHAR(34),",",CHAR(34),$J3,CHAR(34),"]")))
+# * Working Formula : =TEXTJOIN(";", TRUE, IF(OR(C3="",D3="",E3=""), "",CONCAT("[",C3,",",CHAR(34),D3,CHAR(34),",",CHAR(34),E3,CHAR(34),"]")),IF(OR(F3="",G3="",H3=""), "",CONCAT("[",F3,",",CHAR(34),G3,CHAR(34),",",CHAR(34),H3,CHAR(34),"]")),IF(OR(I3="",J3="",K3=""), "",CONCAT("[",I3,",",CHAR(34),J3,CHAR(34),",",CHAR(34),K3,CHAR(34),"]")),IF(OR(L3="",M3="",N3=""), "",CONCAT("[",L3,",",CHAR(34),M3,CHAR(34),",",CHAR(34),N3,CHAR(34),"]")),IF(OR(O3="",P3="",Q3=""), "",CONCAT("[",O3,",",CHAR(34),P3,CHAR(34),",",CHAR(34),Q3,CHAR(34),"]")))
 
 
 
