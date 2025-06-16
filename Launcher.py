@@ -37,6 +37,14 @@ def nice_path(p: Path | str) -> str:
     """Return string path with forward slashes (even on Windows)."""
     return str(p).replace("\\", "/")
 
+def latest_masterlist(dir: Path) -> Path:
+    """Return newest *_Masterlist_Master.csv within ``dir``."""
+    files = [p for p in dir.glob("*_Masterlist_Master.csv") if p.name[:8].isdigit()]
+    if not files:
+        return dir / "Masterlist.csv"
+    files.sort(key=lambda p: p.name[:8], reverse=True)
+    return files[0]
+
 
 HELPERS = prefer(INTERNAL / "helpers", BASE / "helpers")
 STATIC = prefer(INTERNAL / "Static", BASE / "Static")
@@ -153,15 +161,17 @@ app.geometry("900x780")  # starting size
 app.minsize(760, 600)  # user can shrink but not collapse
 
 # ── Global state vars ─────────────────────────────────────────────────────
+
 today = datetime.now().strftime("%Y%m%d")
 out_dir_var = ctk.StringVar(value=nice_path(OUTDEF))
 pre_var = ctk.StringVar(value=f"{today}_")
 suf_var = ctk.StringVar(value="")
 img_dir_var = ctk.StringVar(value=nice_path(OUTDEF / "Images"))
 guide_pdf_var = ctk.StringVar(value=nice_path(TEMPL / "Plant Guide 2025 Update.pdf"))
-master_csv_var = ctk.StringVar(value=nice_path(TEMPL / "0612_Masterlist.csv"))
+master_csv_var = ctk.StringVar(value=nice_path(latest_masterlist(TEMPL)))
 _img_user_set = False
 _prev_out_dir = out_dir_var.get()
+
 
 log_q: queue.Queue[str] = queue.Queue(maxsize=1500)
 in_vars: dict[tuple[str, str], ctk.StringVar] = {}
