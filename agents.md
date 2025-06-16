@@ -1,6 +1,6 @@
 ## Start
 ```
-The Launchers args must match the induvidual script expectations, look for any odd resolve cases, the goal is to have the tool chain work as an exe and .py
+
 ```
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
@@ -55,61 +55,6 @@ TODO : Next steps here
 // : Note for the Layman - useful for the intended User
 ```
 
-```
-!Urgent
-@@  # inside the loop that writes mirror formulas into Plant Data
--        base_tag   = get_column_letter(3 * (idx - 1) + 3)   # C,F,I,...
--        base_label = get_column_letter(3 * (idx - 1) + 4)   # D,G,J,...
--        base_url   = get_column_letter(3 * (idx - 1) + 5)   # E,H,K,...
-+        base_label = get_column_letter(3 * (idx - 1) + 3)   # C,F,I,...
-+        base_url   = get_column_letter(3 * (idx - 1) + 4)   # D,G,J,...
-+        base_tag   = get_column_letter(3 * (idx - 1) + 5)   # E,H,K,...
-@@
--        ws.cell(row=row_pd, column=tag_pd).value = \
--            f"=CHOOSE($AE{row_pd}," + \
--            ",".join(f"'Other Links'!{get_column_letter(3 * (j - 1) + 3)}{row_ol}"
--                     for j in range(1, MAX_LINKS + 1)) + ")"
--
--        # Label n
--        ws.cell(row=row_pd, column=label_pd).value = \
--            f"=CHOOSE($AE{row_pd}," + \
--            ",".join(f"'Other Links'!{get_column_letter(3 * (j - 1) + 4)}{row_ol}"
--                     for j in range(1, MAX_LINKS + 1)) + ")"
--
--        # URL n
--        ws.cell(row=row_pd, column=url_pd).value = \
--            f"=CHOOSE($AE{row_pd}," + \
--            ",".join(f"'Other Links'!{get_column_letter(3 * (j - 1) + 5)}{row_ol}"
--                     for j in range(1, MAX_LINKS + 1)) + ")"
-+        # Tag n  (now pulls column  E,H,K,…)
-+        ws.cell(row=row_pd, column=tag_pd).value = \
-+            f"=CHOOSE($AE{row_pd}," + \
-+            ",".join(f"'Other Links'!{get_column_letter(3 * (j - 1) + 5)}{row_ol}"
-+                     for j in range(1, MAX_LINKS + 1)) + ")"
-+
-+        # Label n  (C,F,I,…)
-+        ws.cell(row=row_pd, column=label_pd).value = \
-+            f"=CHOOSE($AE{row_pd}," + \
-+            ",".join(f"'Other Links'!{get_column_letter(3 * (j - 1) + 3)}{row_ol}"
-+                     for j in range(1, MAX_LINKS + 1)) + ")"
-+
-+        # URL n   (D,G,J,…)
-+        ws.cell(row=row_pd, column=url_pd).value = \
-+            f"=CHOOSE($AE{row_pd}," + \
-+            ",".join(f"'Other Links'!{get_column_letter(3 * (j - 1) + 4)}{row_ol}"
-+                     for j in range(1, MAX_LINKS + 1)) + ")"
-```
-
-
-and
-
-```
-@@  # fix Link: Others reference – remove stray apostrophe
--    ws.cell(row=row_pd, column=link_others_col).value = \
--        f"='Other Links'!{get_column_letter(PLANT_DATA_HEADERS.index('CSV RAW OUTPUT')+1)}{row_ol}"
-+    ws.cell(row=row_pd, column=link_others_col).value = \
-+        f"='Other Links'!{get_column_letter(PLANT_DATA_HEADERS.index('CSV RAW OUTPUT')+1)}{row_ol}".replace(\"'Other Links'!\", \"Other Links!\")
-```
 
 
 ```
