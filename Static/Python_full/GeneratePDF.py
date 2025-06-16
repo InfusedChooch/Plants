@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GeneratePDF.py - Produce a printable plant-guide PDF (2025-06-05, portable paths)
 # todo Needs to be updated to fit new master csv
-# todo Need to format with the new style from  
+# todo Need to format with the new style from
 #! Wont work as is
 
 """
@@ -39,13 +39,13 @@ parser.add_argument(
 parser.add_argument(
     "--logo_dir",
     default="Outputs/Images",
-    help="Folder that holds Rutgers and NJAES logos"
+    help="Folder that holds Rutgers and NJAES logos",
 )
 
 parser.add_argument(
     "--template_csv",
-    default="Templates/Plants_Linked_Filled_Master.csv",  # <- moved
-    help="CSV file containing column template",
+    default="Templates/20250612_Masterlist_Master.csv",
+    help="CSV file containing column template (must include 'Link: Others')",
 )
 args = parser.parse_args()
 
@@ -61,7 +61,10 @@ def repo_dir() -> Path:
     if getattr(sys, "frozen", False):
         exe_dir = Path(sys.executable).resolve().parent
         # If we're in .../_internal/helpers/, go up 2
-        if exe_dir.name.lower() == "helpers" and exe_dir.parent.name.lower() == "_internal":
+        if (
+            exe_dir.name.lower() == "helpers"
+            and exe_dir.parent.name.lower() == "_internal"
+        ):
             return exe_dir.parent.parent
         return exe_dir.parent  # fallback: go up 1
     # for source .py files
@@ -70,8 +73,6 @@ def repo_dir() -> Path:
         if (parent / "Templates").is_dir() and (parent / "Outputs").is_dir():
             return parent
     return here.parent.parent
-
-
 
 
 REPO = repo_dir()
@@ -88,7 +89,11 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
 # --- Load and Prepare Data ------------------------------------------------
-df = pd.read_csv(CSV_FILE, dtype=str, keep_default_na=False).fillna("").replace("Needs Review", "")  # Read CSV, empty cells -> ""
+df = (
+    pd.read_csv(CSV_FILE, dtype=str, keep_default_na=False)
+    .fillna("")
+    .replace("Needs Review", "")
+)  # Read CSV, empty cells -> ""
 template_cols = list(pd.read_csv(TEMPLATE_CSV, nrows=0, keep_default_na=False).columns)
 df = df.reindex(
     columns=template_cols + [c for c in df.columns if c not in template_cols]
@@ -114,6 +119,7 @@ LINK_LABELS = [
     ("Link: Pleasantrunnursery.com", "PRN"),
     ("Link: Newmoonnursery.com", "NMN"),
     ("Link: Pinelandsnursery.com", "PNL"),
+    ("Link: Others", "OTH"),
 ]
 
 # Mapping of link abbreviations to their full names for the legend
@@ -123,6 +129,7 @@ LINK_LEGEND = {
     "PRN": "Pleasantrunnursery.com",
     "NMN": "Newmoonnursery.com",
     "PNL": "Pinelandsnursery.com",
+    "OTH": "Other Sources",
 }
 
 # Colors assigned to each link abbreviation for legend and footers
@@ -132,6 +139,7 @@ LINK_COLORS = {
     "PRN": (128, 0, 128),
     "NMN": (255, 140, 0),
     "PNL": (34, 139, 34),
+    "OTH": (0, 0, 200),
 }
 
 
@@ -141,7 +149,9 @@ def safe_text(text: str) -> str:
     text = str(text).replace("\x00", "").replace("\r", "")
     text = re.sub(r"\s*\n\s*", " ", text)
     text = re.sub(r"[^\x20-\x7E]+", "", text)
-    return text.strip()
+    text = text.strip()
+    return apply_style(text)
+
 
 # --- Style-sheet enforcement ---------------------------------------------
 STYLE_FILE = REPO / "Templates" / "style_rules.yaml"
@@ -150,8 +160,9 @@ _style_rules = []
 if STYLE_FILE.exists():
     with open(STYLE_FILE, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
+        subs = data.get("substitutions", data)
 
-    for pattern, repl in data.items():
+    for pattern, repl in subs.items():
         pat = re.compile(pattern)
         if repl == "<<lower>>":
             _style_rules.append((pat, lambda m: m.group(0).lower()))
@@ -166,7 +177,6 @@ def apply_style(text: str) -> str:
     for pat, repl in _style_rules:
         text = pat.sub(repl, text)
     return text
-
 
 
 def primary_common_name(name):
@@ -648,6 +658,7 @@ import os
 pdf.skip_footer = True
 pdf.add_page()
 
+
 # ------------------------------------------------------------------------
 # 1.  Robust path lookup ─ tolerate .png/.jpg/.jpeg and missing extension
 # ------------------------------------------------------------------------
@@ -661,15 +672,16 @@ def find_logo(base_dir: Path, basenames: list[str]) -> Path | None:
     return None
 
 
-left_logo = find_logo(LOGO_DIR, ["Rutgers_Logo"])           # <-- “R” + text
-right_logo = find_logo(LOGO_DIR, ["NJAES_Logo"])              # <-- green swoosh
+left_logo = find_logo(LOGO_DIR, ["Rutgers_Logo"])  # <-- “R” + text
+right_logo = find_logo(LOGO_DIR, ["NJAES_Logo"])  # <-- green swoosh
 
 
 # ------------------------------------------------------------------------
 # 2.  Helper to draw both logos next to each other, centred on the page
 # ------------------------------------------------------------------------
-def draw_logos(pdf: FPDF, left: Path, right: Path, *,
-               y: float = 16, h: float = 24, gap: float = 4) -> None:
+def draw_logos(
+    pdf: FPDF, left: Path, right: Path, *, y: float = 16, h: float = 24, gap: float = 4
+) -> None:
     """Place *left* and *right* logos on one line, centred horizontally."""
     if not (left and right):
         return  # quietly skip if either file is missing
@@ -685,7 +697,7 @@ def draw_logos(pdf: FPDF, left: Path, right: Path, *,
     total_w = w_left + gap + w_right
     x0 = (pdf.w - total_w) / 2  # centre the pair on the page width
 
-    pdf.image(str(left),  x=x0,               y=y, h=h)
+    pdf.image(str(left), x=x0, y=y, h=h)
     pdf.image(str(right), x=x0 + w_left + gap, y=y, h=h)
 
 
@@ -693,7 +705,6 @@ def draw_logos(pdf: FPDF, left: Path, right: Path, *,
 # 3.  Draw the banner (remove the old individual image() calls)
 # ------------------------------------------------------------------------
 draw_logos(pdf, left_logo, right_logo)
-
 
 
 pdf.set_y(70)
