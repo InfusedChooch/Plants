@@ -123,10 +123,10 @@ LINK_LABELS = [
 # Mapping of link abbreviations to their full names for the legend
 LINK_LEGEND = {
     "MBG": "Missouri Botanical Garden",
-    "WF": "Wildflower.org",
-    "PRN": "Pleasantrunnursery.com",
-    "NMN": "Newmoonnursery.com",
-    "PNL": "Pinelandsnursery.com",
+    "WF": "Wildflower",
+    "PRN": "Pleasant Run Nursery",
+    "NMN": "New Moon Nursery",
+    "PNL": "Pinelands Nursery",
     "OTH": "Other Sources",
 }
 
@@ -243,11 +243,13 @@ def draw_wrapped_legend(pdf) -> None:
     standard_items = []
     other_items = []
 
+    STANDARD_TAGS = {"MBG", "WF", "PRN", "NMN", "PNL"}
+
     for abbr, label in LINK_LEGEND.items():
-        if abbr.startswith("T") and abbr[1:].isdigit():
-            other_items.append((abbr, label))
-        elif abbr != "OTH":
+        if abbr in STANDARD_TAGS:
             standard_items.append((abbr, label))
+        elif abbr != "OTH":
+            other_items.append((abbr, label))
 
     # ── Standard Legend Entries ──
     pdf.set_font("Times", "", 11)
@@ -255,7 +257,7 @@ def draw_wrapped_legend(pdf) -> None:
 
     # ── Other Sources ──
     if other_items:
-        other_items = sorted(set(other_items), key=lambda x: int(x[0][1:]))
+        other_items = sorted(set(other_items), key=lambda x: x[0])  # alphabetically
         pdf.set_text_color(*LINK_COLORS.get("OTH", (0, 0, 200)))
         pdf.set_font("Times", "B", 11)
         pdf.cell(0, 8, "Other Links", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
@@ -446,25 +448,24 @@ class PlantPDF(FPDF):
                 )
 
     def add_plant(self, row, plant_type):
-        """Add a single plant page. Regenerate with shorter text if needed."""
+        """Add a single plant page using Layoutmk1 structure."""
         bot_name = safe_text(row.get("Botanical Name", ""))
         base_name = name_slug(bot_name)
         links = []
+
         for col, label in LINK_LABELS:
             url = row.get(col, "").strip()
             if url:
                 links.append((label, url))
 
-        # Handle custom tags from "Link: Others"
-        other_text = row.get("Link: Others", "")
-        for tag, url, label_name in parse_other_links(other_text):
+        for tag, url, label_name in parse_other_links(row.get("Link: Others", "")):
             links.append((tag, url))
             LINK_LEGEND.setdefault(tag, label_name)
             LINK_COLORS.setdefault(tag, LINK_COLORS.get("OTH", (0, 0, 200)))
 
         self.current_plant_type = plant_type
         link = self.add_link()
-        max_len = 300
+        max_len = 240
 
         while True:
             self.set_auto_page_break(auto=False)
@@ -473,12 +474,11 @@ class PlantPDF(FPDF):
             self.footer_links = links
             self.set_link(link)
 
-            # Botanical name
+            # --- Header: Botanical and Common Name ---
             self.set_font("Times", "I", 18)
             self.set_text_color(22, 92, 34)
             self.multi_cell(0, 8, bot_name, align="C")
 
-            # Common name, if present
             common = primary_common_name(safe_text(row.get("Common Name", ""))).strip()
             if common:
                 self.set_font("Times", "B", 13)
@@ -488,202 +488,184 @@ class PlantPDF(FPDF):
                 except FPDFException:
                     self.set_x((self.w - self.get_string_width(common)) / 2)
                     self.cell(self.get_string_width(common) + 1, 8, common)
+
             self.ln(2)
 
-            # -- Images --
-            images = sorted(
-                list(IMG_DIR.glob(f"{base_name}_*.jpg"))
-                + list(IMG_DIR.glob(f"{base_name}_*.png"))
-            )  # Find up to 3 images
+            # --- Images ---
+            images = sorted(list(IMG_DIR.glob(f"{base_name}_*.jpg")) +
+                            list(IMG_DIR.glob(f"{base_name}_*.png")))
             count = max(1, min(len(images), 3))
             margin = self.l_margin
             avail_w = self.w - margin - self.r_margin
             gap = 5
             img_w = (avail_w - (count - 1) * gap) / count
             img_h_fixed = 100
-            x = margin
-            y0 = 40
-            self.set_y(y0)
+            y0 = self.get_y()
+
             for i in range(count):
+                x_pos = margin + i * (img_w + gap)
                 if i < len(images):
                     img_path = str(images[i])
                     with Image.open(img_path) as im:
                         aspect = im.height / im.width
                     scaled_h = min(img_w * aspect, img_h_fixed)
                     scaled_w = scaled_h / aspect
-                    x_img = x + (img_w - scaled_w) / 2
+                    x_img = x_pos + (img_w - scaled_w) / 2
                     y_img = y0 + (img_h_fixed - scaled_h) / 2
                     self.image(img_path, x=x_img, y=y_img, w=scaled_w, h=scaled_h)
                 else:
-                    self.rect(x, y0, img_w, img_h_fixed)  # Empty box if no image
-                x += img_w + gap
+                    self.rect(x_pos, y0, img_w, img_h_fixed)
+
             self.set_y(y0 + img_h_fixed + 6)
 
-            # -- Characteristics section --
-            tolerates = truncate_text(
-                safe_text(row.get("Tolerates", "")), max_len, bot_name, "Tolerates"
-            )
-            maintenance = truncate_text(
-                safe_text(row.get("Maintenance", "")), max_len, bot_name, "Maintenance"
-            )
-            agcp = truncate_text(
-                safe_text(row.get("AGCP Regional Status", "")),
-                max_len,
-                bot_name,
-                "AGCP",
-            )
-            if any([tolerates, maintenance, agcp]):
-                self.set_font("Times", "B", 13)
-                self.cell(
-                    0,
-                    8,
-                    "Characteristics",
-                    new_x=XPos.LMARGIN,
-                    new_y=YPos.NEXT,
-                )
-                self.set_font("Times", "", 12)
-                char_parts = []
-                if tolerates:
-                    char_parts.append(("Tolerates:", tolerates))
-                if maintenance:
-                    char_parts.append(("Maintenance:", maintenance))
-                if agcp:
-                    char_parts.append(("AGCP Status:", agcp))
-                draw_labeled_parts(self, char_parts)
-                self.ln(2)
-
-            # -- Appearance --
+            # --- Characteristics ---
             self.set_font("Times", "B", 13)
-            self.cell(
-                0,
-                8,
-                "Appearance",
-                new_x=XPos.LMARGIN,
-                new_y=YPos.NEXT,
-            )
+            self.cell(0, 8, "Characteristics:", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
             self.set_font("Times", "", 12)
-            appearance_parts = []
+            char_parts = []
+
             color_text = safe_text(row.get("Bloom Color", ""))
             if color_text:
                 segments = []
-                colors = [c.strip() for c in color_text.split(",")]
-                for i, color in enumerate(colors):
-                    rgb = (
-                        {
-                            "red": (200, 0, 0),
-                            "pink": (255, 105, 180),
-                            "purple": (128, 0, 128),
-                            "blue": (0, 0, 200),
-                            "yellow": (200, 180, 0),
-                            "orange": (255, 140, 0),
-                            "green": (34, 139, 34),
-                            "indigo": (75, 0, 130),
-                            "violet": (148, 0, 211),
-                            "brown": (139, 69, 19),
-                        }.get(color.lower(), (0, 0, 0))
-                        if color.lower() != "white"
-                        else (0, 0, 0)
-                    )
+                for i, color in enumerate([c.strip() for c in color_text.split(",")]):
+                    rgb = {
+                        "red": (200, 0, 0), "pink": (255, 105, 180),
+                        "purple": (128, 0, 128), "blue": (0, 0, 200),
+                        "yellow": (200, 180, 0), "orange": (255, 140, 0),
+                        "green": (34, 139, 34), "indigo": (75, 0, 130),
+                        "violet": (148, 0, 211), "brown": (139, 69, 19),
+                    }.get(color.lower(), (0, 0, 0)) if color.lower() != "white" else (0, 0, 0)
                     segments.append((color, rgb))
-                    if i < len(colors) - 1:
+                    if i < len(color_text.split(",")) - 1:
                         segments.append((", ", None))
-                appearance_parts.append(("Bloom Color:", segments))
-            ht = safe_text(row.get("Height (ft)", ""))
-            if ht:
-                appearance_parts.append(("Height:", f"{ht} ft"))
-            sp = safe_text(row.get("Spread (ft)", ""))
-            if sp:
-                appearance_parts.append(("Spread:", f"{sp} ft"))
-            bloom_time = safe_text(row.get("Bloom Time", ""))
-            if bloom_time:
-                appearance_parts.append(("Bloom Time:", bloom_time))
-            draw_labeled_parts(self, appearance_parts)
-            self.ln(6)
-
-            # -- Site & Wildlife Details --
-            self.set_font("Times", "B", 13)
-            self.cell(
-                0,
-                8,
-                "Site & Wildlife Details",
-                new_x=XPos.LMARGIN,
-                new_y=YPos.NEXT,
-            )
-            self.set_font("Times", "", 12)
-            site_parts = []
-            sun = safe_text(row.get("Sun", ""))
-            water = safe_text(row.get("Water", ""))
-            zone_raw = safe_text(
-                row.get("USDA Hardiness Zone", "") or row.get("Zone", "")
-            )
+                char_parts.append(("Bloom Color:", segments))
+            if (h := safe_text(row.get("Height (ft)", ""))):
+                char_parts.append(("Height:", f"{h} ft"))
+            if (s := safe_text(row.get("Spread (ft)", ""))):
+                char_parts.append(("Spread:", f"{s} ft"))
+            if (b := safe_text(row.get("Bloom Time", ""))):
+                char_parts.append(("Bloom Time:", b))
+            self.ln(1)
+            
+            if (sun := safe_text(row.get("Sun", ""))):
+                char_parts.append(("Sun:", sun))
+            if (water := safe_text(row.get("Water", ""))):
+                char_parts.append(("Water:", water))
+            if (agcp := safe_text(row.get("AGCP Regional Status", ""))):
+                char_parts.append(("AGCP Status:", agcp))
+            zone_raw = safe_text(row.get("USDA Hardiness Zone", "") or row.get("Zone", ""))
             zone_match = re.search(r"(\d+)\s*(?:-|to)\s*(\d+)", zone_raw)
-            zone = (
-                f"{zone_match.group(1)} - {zone_match.group(2)}"
-                if zone_match
-                else zone_raw.replace("USDA Hardiness Zone", "").strip()
-            )
-            if sun:
-                site_parts.append(("Sun:", sun))
-            if water:
-                site_parts.append(("Water:", water))
+            zone = f"{zone_match.group(1)} - {zone_match.group(2)}" if zone_match else zone_raw
             if zone:
-                site_parts.append(("USDA Hardiness Zone:", zone))
-            draw_labeled_parts(self, site_parts)
-            self.ln(4)
+                char_parts.append(("USDA Hardiness Zone:", zone))
+            draw_labeled_parts(self, char_parts)
+            self.ln(1)
 
-            # Attracts
-            attracts = truncate_text(
-                safe_text(row.get("Attracts", "")), max_len, bot_name, "Attracts"
-            )
-            if attracts:
+            # --- Attracts + Tolerates inline ---
+            attracts = truncate_text(safe_text(row.get("Attracts", "")), max_len, bot_name, "Attracts")
+            tolerates = truncate_text(safe_text(row.get("Tolerates", "")), max_len, bot_name, "Tolerates")
+            if attracts or tolerates:
                 self.set_font("Times", "B", 12)
                 self.write(6, "Attracts: ")
                 self.set_font("Times", "", 12)
-                self.multi_cell(0, 6, attracts)
+                self.write(6, attracts or "—")
+                if tolerates:
+                    self.set_font("Times", "B", 12)
+                    self.write(6, "  |  Tolerates: ")
+                    self.set_font("Times", "", 12)
+                    self.write(6, tolerates)
                 self.ln(6)
 
-            # Soil Description
-            soil = truncate_text(
-                safe_text(row.get("Soil Description", "")),
-                max_len,
-                bot_name,
-                "Soil Description",
-            )
-            if soil:
-                self.set_font("Times", "B", 12)
-                self.write(6, "Soil Description: ")
+            # --- Soil / Habitat ---
+            for label, key in [("Soil Description", "Soil Description"),
+                            ("Native Habitats", "Native Habitats")]:
+                val = truncate_text(safe_text(row.get(key, "") or row.get("Habitats", "")), max_len, bot_name, key)
+                if val:
+                    self.set_font("Times", "B", 12)
+                    self.write(6, f"{label}: ")
+                    self.set_font("Times", "", 12)
+                    self.multi_cell(0, 6, val)
+            self.ln(1)
+
+            # --- Recommended Uses ---
+            self.set_font("Times", "B", 13)
+            self.cell(0, 8, "Recommended Uses:", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            self.set_font("Times", "", 12)
+
+            usexyz = safe_text(row.get("UseXYZ", ""))
+            if usexyz:
+                tags = [t.strip() for t in usexyz.split("|") if t.strip()]
                 self.set_font("Times", "", 12)
-                self.multi_cell(0, 6, soil)
+                for i, tag in enumerate(tags):
+                    self.write(6, f"{tag}")
+                    if i < len(tags) - 1:
+                        self.write(6, "  |  ")
                 self.ln(6)
 
-            # Habitats
-            habitats = truncate_text(
-                safe_text(row.get("Native Habitats", "") or row.get("Habitats", "")),
-                max_len,
-                bot_name,
-                "Habitats",
-            )
-            if habitats:
-                self.set_font("Times", "B", 12)
-                self.write(6, "Habitats: ")
-                self.set_font("Times", "", 12)
-                self.multi_cell(0, 6, habitats)
 
-            # Verify single-page layout
+
+            uses = truncate_text(safe_text(row.get("Uses", "")), max_len, bot_name, "Uses")
+            if uses:
+                self.set_font("Times", "B", 12)
+                self.write(6, "General Uses: ")
+                self.set_font("Times", "", 12)
+                self.multi_cell(0, 6, uses)
+
+            culture = truncate_text(safe_text(row.get("Culture", "")), max_len, bot_name, "Culture")
+            if culture:
+                self.set_font("Times", "B", 12)
+                self.write(6, "Culture: ")
+                self.set_font("Times", "", 12)
+                self.multi_cell(0, 6, culture)
+
+            note = row.get("Extra Notes", "")
+            if note:
+                note = truncate_text(safe_text(note), max_len, bot_name, "Extra Notes")
+                self.set_font("Times", "", 12)
+                self.multi_cell(0, 6, note)
+
+            # --- General Maintenance Level ---
+            level = safe_text(row.get("MaintenanceLevel", "")).capitalize()
+            color = {"Low": (34, 139, 34), "Medium": (255, 140, 0), "High": (200, 0, 0)}.get(level, (90, 90, 90))
+
+            self.set_font("Times", "B", 13)
+            self.write(6, "General Maintenance Level")
+            self.set_text_color(*color)
+            self.write(6, f" - {level}\n")
+            self.set_text_color(0, 0, 0)
+
+            for key in ["WFMaintenance", "Problems", "Condition Comments"]:
+                val = truncate_text(safe_text(row.get("WFMaintenance", "")), max_len, bot_name, "WFMaintenance")
+                if val:
+                    self.set_font("Times", "B", 12)
+                    self.write(6, "Maintenance: ")
+                    self.set_font("Times", "", 12)
+                    self.multi_cell(0, 6, val)
+
+                for key in ["Problems", "Condition Comments"]:
+                    val = truncate_text(safe_text(row.get(key, "")), max_len, bot_name, key)
+                    if val:
+                        self.set_font("Times", "B", 12)
+                        self.write(6, f"{key.replace('_', ' ')}: ")
+                        self.set_font("Times", "", 12)
+                        self.multi_cell(0, 6, val)
+
+                    self.ln(1)
+
+
             end_page = self.page_no()
-            end_y = self.get_y()
-            allowed_height = self.h - self.b_margin
-            overflow = end_page != page_start or end_y > allowed_height
+            pages_used = end_page - page_start + 1
             self.set_auto_page_break(auto=True, margin=20)
-            if overflow:
-                logging.warning(
-                    "Truncating content for %s to fit on one page", bot_name
-                )
-                if self.page in self.pages:
-                    del self.pages[self.page]
-                    self.page -= 1
-                max_len = max(50, max_len - 50)
+
+            if pages_used > 1:
+                logging.warning("Truncating %s to fit on a single page", bot_name)
+                for _ in range(pages_used):
+                    if self.page in self.pages:
+                        del self.pages[self.page]
+                        self.page -= 1
+                max_len = max(80, max_len - 80)
                 continue
+
             display_page = self.page_no() - getattr(self, "_ghost_pages", 0)
             self.toc[plant_type].append((bot_name, display_page, link, links))
             break
