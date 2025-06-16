@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Excelify2.py – Create a styled Excel workbook from the fully populated plant CSV.
+# Excelify.py – Create a styled Excel workbook from the fully populated plant CSV.
 # 2025-06-13 · Adds blanket COLUMN_WIDTHS dict, keep_default_na, and cleans up width logic.
 # todo I need to make the Static\Python_full\Excelify2_Testing.py out put resemble the logic in ReviewFiles\Plants_Reformat_Logic.pdf and ReviewFiles\Plants_Reformat_Logic.xlsx.
 
@@ -122,24 +122,23 @@ def _parse_other_links(text: str) -> list[tuple[str, str, str]]:
     return re.findall(pattern, text or "")
 
 # * Helper: build TEXTJOIN formula for Other Links rows
-def build_link_formula(row: int, max_links: int) -> list[str]:
+def build_textjoin_formula(row: int) -> str:
     """
-    Return list of Excel formulas, one per [Tag, URL, Label] group.
-    Used for injecting staged link chunks into helper columns.
+    Build a single-line TEXTJOIN formula from up to MAX_LINKS blocks.
+    Format: [TAG,"URL","LABEL"]
     """
-    formulas = []
-    for idx in range(1, max_links + 1):
-        base = 3 * (idx - 1) + 3  # C, F, I...
+    parts = []
+    for idx in range(MAX_LINKS):
+        base = 3 + idx * 3
         tag = get_column_letter(base)
         url = get_column_letter(base + 1)
         lab = get_column_letter(base + 2)
-
-        formula = (
-            f'=IF(OR({tag}{row}="",{url}{row}="",{lab}{row}=""),"",'
+        parts.append(
+            f'IF(OR({tag}{row}="",{url}{row}="",{lab}{row}=""), "",'
             f'CONCAT("[",{tag}{row},",",CHAR(34),{url}{row},CHAR(34),",",CHAR(34),{lab}{row},CHAR(34),"]"))'
         )
-        formulas.append(formula)
-    return formulas
+    return f'=TEXTJOIN(";", TRUE, {",".join(parts)})'
+
 
 
 if "Link: Others" in df.columns:
@@ -195,7 +194,13 @@ MASTER_COLS = [
 ]
 
 # Plant Data = master columns + Mark Reviewed (no extra link columns)
-PLANT_DATA_COLS = MASTER_COLS + ["Mark Reviewed"] + LINK_LIST_COLS
+PLANT_DATA_COLS = (
+    ["Botanical Name", "Common Name", "Plant Type", "Key"] +
+    [col for col in MASTER_COLS if col not in {"Botanical Name", "Common Name", "Plant Type", "Key"}] +
+    ["Mark Reviewed"] +
+    LINK_LIST_COLS
+)
+
 DISPLAY_PLANT_DATA_COLS = [c for c in PLANT_DATA_COLS if c != "Link: Others"]
 for col in LINK_LIST_COLS:
     if col not in df.columns:
@@ -221,22 +226,26 @@ ws.title = "Plant Data"
 raw_ws = wb.create_sheet("RAW CSV Export")
 raw_ws.append(MASTER_COLS)                     # header row
 
+
+# Build a map of column names to actual column letters in Plant Data
+plant_data_headers = [cell.value for cell in ws[1]]  # Row 1 of Plant Data
+col_map = {name: get_column_letter(cell.column) for cell, name in zip(ws[1], plant_data_headers)}
+
 for r in range(DATA_ROWS):                    # 1-based to match Excel rows
     for c_idx, col_name in enumerate(MASTER_COLS, start=1):
-        col_letter = get_column_letter(c_idx)
-
-        formula_col = get_column_letter(3 * MAX_LINKS + 3)   # 3·5+3 = 18 → "R"
-
-        # ‘Link: Others’ comes from the helper sheet; everything else mirrors Plant Data
         if col_name == "Link: Others":
+            formula_col = get_column_letter(3 * MAX_LINKS + 3)   # e.g., "R"
             raw_ws.cell(row=r+2, column=c_idx).value = (
                 f"='Other Links'!${formula_col}{r+3}"
             )
+        elif col_name == "Rev":
+            raw_ws.cell(row=r+2, column=c_idx).value = f"='Plant Data'!$AC{r+3}"  # hardcoded if needed
         else:
-            # Plant Data has headers in row 2 and the dataset starts on row 3
+            col_letter = col_map.get(col_name, get_column_letter(c_idx))  # fallback safe
             raw_ws.cell(row=r+2, column=c_idx).value = (
-                f"='Plant Data'!{col_letter}{r+2}"
+                f"='Plant Data'!{col_letter}{r+3}"
             )
+
 
 # ── Source-legend row  ----------------------------------------
 DATA_SOURCE = {
@@ -298,7 +307,7 @@ for c in ws[1]:
     c.fill = HEADER_FILL
     c.font = Font(bold=True, size=11)
     c.alignment = Alignment(horizontal="center", vertical="center")
-ws.freeze_panes = "E3"
+ws.freeze_panes = "C3"
 
 # ── Autofit helper --------------------------------------------------------
 # * Resize columns to fit content while respecting caps
@@ -429,19 +438,40 @@ autofit(ws)
 # ── Link-list helper columns (AD … AG) -----------------------------------
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.utils import get_column_letter
+from openpyxl.styles.borders import Border, Side
 
 LINK_DV   = ",".join(f"Link {n}" for n in range(1, MAX_LINKS + 1))  # "Link 1,Link 2,…"
-col_LinkN = PLANT_DATA_HEADERS.index("Link #") + 1  # AD → 1-based index
+col_LinkN = PLANT_DATA_HEADERS.index("Link #") + 1  # AD
 col_Tag   = col_LinkN + 1                           # AE
 col_URL   = col_LinkN + 2                           # AF
 col_Label = col_LinkN + 3                           # AG
 
-for r in range(3, ws.max_row + 1):                  # data start at row 3
-    # --- drop-down in “Link #” ------------------------------------------------
+# ── Style Link Lists block (Link #, Tag, URL, Label) ─────────────────────
+LINKLIST_FILL = PatternFill(start_color="FDE9D9", end_color="FDE9D9", fill_type="solid")  # soft orange
+BORDER = Border(bottom=Side(style="medium"))
+
+for r in range(2, ws.max_row + 1):
+    for c in range(col_LinkN, col_Label + 1):  # AE to AH
+        cell = ws.cell(row=r, column=c)
+        cell.fill = LINKLIST_FILL
+        if r == 2:
+            cell.font = Font(bold=True, italic=True, size=9)
+            cell.alignment = Alignment(horizontal="center", vertical="bottom", wrap_text=False)
+        elif r == 1:
+            continue  # merged header row
+        else:
+            cell.alignment = Alignment(horizontal="center", vertical="top")
+
+# Add bottom border to row 2 sub-headers
+for c in range(col_LinkN, col_Label + 1):
+    ws.cell(row=2, column=c).border = BORDER
+
+# --- Drop-down in “Link #” -----------------------------------------------
+for r in range(3, ws.max_row + 1):  # data starts on row 3
     dv = DataValidation(type="list", formula1=f'"{LINK_DV}"', allow_blank=False)
     ws.add_data_validation(dv)
     dv.add(ws.cell(row=r, column=col_LinkN))
-    ws.cell(row=r, column=col_LinkN).value = "Link 1"          # sensible default
+    ws.cell(row=r, column=col_LinkN).value = "Link 1"  # sensible default
 
 # ---- build CHOOSE() argument list (Tag / URL / Label) compatible with all Excel versions ----
 for r in range(3, ws.max_row + 1):
@@ -536,24 +566,13 @@ for i in range(DATA_ROWS):
     row += ["", raw_csv]  # placeholder for formula + raw
     other_ws.append(row)
 
-    # 3. Inject formula as actual Excel formula
+    # 3. Inject formula as actual Excel formula -- Working!
     formula_cell = other_ws.cell(row=formula_row, column=len(row) - 1)
-    formula_cell = other_ws.cell(row=formula_row, column=len(row) - 1)
-    formula_cell.value = (
-        f'=TEXTJOIN(";", TRUE,'
-        f'IF(OR(C{formula_row}="",D{formula_row}="",E{formula_row}=""), "",'
-        f'CONCAT("[",C{formula_row},",",CHAR(34),D{formula_row},CHAR(34),",",CHAR(34),E{formula_row},CHAR(34),"]")),'
-        f'IF(OR(F{formula_row}="",G{formula_row}="",H{formula_row}=""), "",'
-        f'CONCAT("[",F{formula_row},",",CHAR(34),G{formula_row},CHAR(34),",",CHAR(34),H{formula_row},CHAR(34),"]")),'
-        f'IF(OR(I{formula_row}="",J{formula_row}="",K{formula_row}=""), "",'
-        f'CONCAT("[",I{formula_row},",",CHAR(34),J{formula_row},CHAR(34),",",CHAR(34),K{formula_row},CHAR(34),"]")),'
-        f'IF(OR(L{formula_row}="",M{formula_row}="",N{formula_row}=""), "",'
-        f'CONCAT("[",L{formula_row},",",CHAR(34),M{formula_row},CHAR(34),",",CHAR(34),N{formula_row},CHAR(34),"]")),'
-        f'IF(OR(O{formula_row}="",P{formula_row}="",Q{formula_row}=""), "",'
-        f'CONCAT("[",O{formula_row},",",CHAR(34),P{formula_row},CHAR(34),",",CHAR(34),Q{formula_row},CHAR(34),"]"))'
-        f')'
-    )
+    formula_cell.font = Font(size=9, color="666666")
+    other_ws.cell(row=formula_row, column=len(row)).font = Font(size=9, color="666666")  # CSV Imported
 
+    formula_cell.value = build_textjoin_formula(formula_row)
+    formula_cell.data_type = "f"
 
     if isinstance(formula_cell.value, str) and formula_cell.value.startswith("="):
         formula_cell.value = formula_cell.value  # Nudge Excel to register it
@@ -571,23 +590,142 @@ for i in range(DATA_ROWS):
         f'CONCAT("Diff → ", {formula_col_letter}{formula_row}, " ≠ ", {match_col_letter}{formula_row}))'
     )
 
+    # ── Style 'Other Links' Sheet ─────────────────────────────────────────────
+    from openpyxl.styles import PatternFill, Alignment
+
+    # 1. Freeze header rows
+    other_ws.freeze_panes = "C3"
+
+    # 2. Alternate row shading
+    ALT_ROW_FILL = PatternFill(start_color="F9F9F9", end_color="F9F9F9", fill_type="solid")
+    for r in range(3, other_ws.max_row + 1, 2):
+        for cell in other_ws[r]:
+            if cell.fill == PatternFill():
+                cell.fill = ALT_ROW_FILL
+
+    # 3. Wrap text in Tag/URL/Label cells
+    for col in range(3, match_col_idx):
+        header = other_ws.cell(row=2, column=col).value or ""
+        is_wrap = header in {"URL", "Label"}
+        for r in range(3, other_ws.max_row + 1):
+            cell = other_ws.cell(row=r, column=col)
+            cell.alignment = Alignment(
+                wrap_text=is_wrap,
+                vertical="top",
+                horizontal="left"
+            )
+
+    # 4. Highlight headers for formula/raw/match status columns
+    header_fill = PatternFill(start_color="CFE2F3", end_color="CFE2F3", fill_type="solid")
+    for col in range(len(row) - 2, len(row) + 1):
+        other_ws.cell(row=2, column=col).fill = header_fill
+
+        # 5. Reduce row height for compact look
+    for r in range(3, other_ws.max_row + 1):
+        other_ws.row_dimensions[r].height = 18  # standard height
+
+# 6. Cap widths for formula & CSV string columns
+    other_ws.column_dimensions[get_column_letter(len(row) - 1)].width = 40  # Formula
+    other_ws.column_dimensions[get_column_letter(len(row))].width = 40      # CSV RAW
+    other_ws.column_dimensions[get_column_letter(len(row) + 1)].width = 22  # Match Status
+
+# Optional: Limit Label and URL columns
+    for col in range(3, match_col_idx):
+        hdr = other_ws.cell(row=2, column=col).value or ""
+        if hdr == "URL":
+            other_ws.column_dimensions[get_column_letter(col)].width = 50
+        elif hdr == "Label":
+            other_ws.column_dimensions[get_column_letter(col)].width = 25
+
+# 7. Style per-subcolumn banding for Tag, URL, Label
+TAG_FILL   = PatternFill(start_color="EAD1DC", end_color="EAD1DC", fill_type="solid")  # lavender
+URL_FILL   = PatternFill(start_color="DAEEF3", end_color="DAEEF3", fill_type="solid")  # light blue
+LABEL_FILL = PatternFill(start_color="FCE5CD", end_color="FCE5CD", fill_type="solid")  # light peach
+
+for idx in range(MAX_LINKS):
+    start_col = 3 + idx * 3  # C, F, I, ...
+    tag_col   = get_column_letter(start_col)
+    url_col   = get_column_letter(start_col + 1)
+    lab_col   = get_column_letter(start_col + 2)
+
+    # Set column widths
+    other_ws.column_dimensions[tag_col].width = 10
+    other_ws.column_dimensions[url_col].width = 20
+    other_ws.column_dimensions[lab_col].width = 10
+
+    # Row 2 headers
+    other_ws[f"{tag_col}2"].value = "Tag"
+    other_ws[f"{tag_col}2"].fill = TAG_FILL
+    other_ws[f"{tag_col}2"].alignment = Alignment(horizontal="center", vertical="bottom")
+
+    other_ws[f"{url_col}2"].value = "URL"
+    other_ws[f"{url_col}2"].fill = URL_FILL
+    other_ws[f"{url_col}2"].alignment = Alignment(horizontal="center", vertical="bottom")
+
+    other_ws[f"{lab_col}2"].value = "Label"
+    other_ws[f"{lab_col}2"].fill = LABEL_FILL
+    other_ws[f"{lab_col}2"].alignment = Alignment(horizontal="center", vertical="bottom")
+
+    # Apply color fills to each column per row
+    for r in range(3, other_ws.max_row + 1):
+        other_ws[f"{tag_col}{r}"].fill = TAG_FILL
+        other_ws[f"{tag_col}{r}"].alignment = Alignment(horizontal="center", vertical="top")
+
+        other_ws[f"{url_col}{r}"].fill = URL_FILL
+        other_ws[f"{url_col}{r}"].alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
+
+        other_ws[f"{lab_col}{r}"].fill = LABEL_FILL
+        other_ws[f"{lab_col}{r}"].alignment = Alignment(horizontal="left", vertical="top")
+
+# 8. Set fixed width for Botanical Name and Common Name columns
+    other_ws.column_dimensions["A"].width = 20  # Botanical Name
+    other_ws.column_dimensions["B"].width = 15  # Common Name
 
 
 # Get column letters for formula + raw string
 col_formula = get_column_letter(len(row) - 1)  # Formula column
 col_raw     = get_column_letter(len(row))      # CSV RAW OUTPUT column
+
+# Conditional formatting for unresolved formulas
+
+unresolved_fill = PatternFill(start_color="FFF79A", end_color="FFF79A", fill_type="solid")  # light yellow
+
+other_ws.conditional_formatting.add(
+    f"{col_formula}3:{col_formula}{DATA_ROWS + 2}",
+    FormulaRule(formula=[f'ISERROR({col_formula}3)'], fill=unresolved_fill)
+)
+
+
 start_row   = 3
 end_row     = DATA_ROWS + 2
 
 # Excel formula: compare formula cell with raw cell in same row
+# Highlight "Matched!" cells in green
+match_green = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")  # light green
+match_font = Font(bold=True, color="006100")
+
 match_rule = FormulaRule(
-    formula=[f'${col_formula}3=${col_raw}3'],
-    fill=PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
+    formula=[f'{status_col_letter}3="Matched!"'],
+    fill=match_green,
+    font=match_font
 )
+
+other_ws.conditional_formatting.add(
+    f"{status_col_letter}3:{status_col_letter}{end_row}",
+    match_rule
+)
+
 mismatch_rule = FormulaRule(
     formula=[f'${col_formula}3<>${col_raw}3'],
     fill=PatternFill(start_color="FFBABA", end_color="FFBABA", fill_type="solid")
 )
+
+gray_font = Font(size=9, color="666666")
+
+# Apply to formula and CSV imported string
+other_ws.cell(row=formula_row, column=len(row) - 1).font = gray_font
+other_ws.cell(row=formula_row, column=len(row)).font = gray_font
+
 
 # Apply formatting rules to CSV RAW OUTPUT column
 other_ws.conditional_formatting.add(f"{col_raw}{start_row}:{col_raw}{end_row}", match_rule)
@@ -610,29 +748,52 @@ dv_com.add(f"B2:B{DATA_ROWS + 1}")
 
 print("[DEBUG] Sample formula preview:")
 for i in range(min(3, DATA_ROWS)):
-    print(build_link_formula(i + 2, MAX_LINKS))
+    print(build_textjoin_formula(i + 2))
 
 # ── README -------------------------------------------------------------------
 readme = wb.create_sheet("README")
 readme.sheet_properties.tabColor = "A9A9A9"
 readme.column_dimensions["A"].width = 100
 
-readme["A1"] = "Instructions:"
-readme["A3"] = "To record a review:"
-readme["A4"] = "1. Type your initials (e.g., AN) in the 'Mark Reviewed' column."
-readme["A5"] = "2. The 'Rev' column will auto-fill with today's date and your initials."
-readme["A7"] = "Legend:"
-readme["A8"] = "RED: Missing value (empty cell)"
-readme["A9"] = "BLUE: Link doesn't exist and was reviewd. ‘NA’ =/= No Value"
+readme["A1"] = "📘 RU Plant Workbook – Sheet Guide and Instructions"
 
-readme["A11"] = "Filters applied only to these columns:"
-readme["A12"] = ", ".join(["Plant Type", "Bloom Color", "Sun", "Water", "Attracts"])
+readme["A3"] = "🧾 'Plant Data' – Main Display Sheet:"
+readme["A4"] = "• This is the primary, styled sheet for review and validation."
+readme["A5"] = "• Each row represents one plant; missing or incomplete fields are highlighted."
+readme["A6"] = "• Use the 'Mark Reviewed' column to enter your initials when verified."
+readme["A7"] = "• The 'Rev' column auto-generates the current date + your initials when reviewed."
 
-readme["A14"] = "Tools: How to filter by partial match in Excel:"
-readme["A15"] = "1. Click the filter dropdown on the header."
-readme["A16"] = "2. Choose 'Text Filters' ➜ 'Contains...'"
-readme["A17"] = "3. Type part of a word (e.g., 'shade', 'yellow')."
-readme["A19"] = "The 'RAW CSV Export' sheet mirrors Plant Data."
+readme["A9"] = "🔗 'Other Links' – Manual Tag + URL Entry:"
+readme["A10"] = "• You can enter up to 5 custom links per plant using Tag, URL, and Label columns."
+readme["A11"] = "• The 'Formula' column builds a CSV-ready string based on those links."
+readme["A12"] = "• The 'Match Status' column compares your formula with the original CSV string."
+readme["A13"] = "⚠️ Excel may display '#NAME?' in the 'Formula' column until manually resolved."
+readme["A14"] = "   ➤ To fix: Click into any formula cell and press Enter, or retype and confirm it."
+readme["A15"] = "   ➤ This is a known Excel issue when formulas are generated via script."
+
+readme["A17"] = "📤 'RAW CSV Export' – Live Reference of Raw Values:"
+readme["A18"] = "• Mirrors 'Plant Data' structure, but every value is linked back via formulas."
+readme["A19"] = "• Use this for export validation or to track live updates from edits."
+
+readme["A21"] = "📄 Code Sheets – Embedded Scripts:"
+readme["A22"] = "• Full source code for helper scripts like FillMissingData.py and Excelify.py are included."
+
+readme["A24"] = "🎨 Legend (Color Key):"
+readme["A25"] = "• RED: Required value is missing"
+readme["A26"] = "• BLUE: Link marked as 'NA' (not available)"
+readme["A27"] = "• YELLOW: 'Rev' pending — will auto-fill once reviewed"
+readme["A28"] = "• GREEN: 'Rev' has been filled correctly"
+
+readme["A30"] = "🧪 Tips:"
+readme["A31"] = "• Filters work best in the 'Plant Data' sheet — use Excel filters for fast lookups."
+readme["A32"] = "• To filter partial text: click column dropdown → 'Text Filters' → 'Contains…'"
+
+readme["A34"] = "✅ Workflow:"
+readme["A35"] = "1. Fill out missing or highlighted values in 'Plant Data'."
+readme["A36"] = "2. Add/edit custom links under 'Other Links' if needed."
+readme["A37"] = "3. Mark rows reviewed using your initials."
+readme["A38"] = "4. Review the 'Formula' column (click to resolve if needed)."
+readme["A39"] = "5. Export-ready values are stored in 'RAW CSV Export'."
 
 
 # -- Step 6 · embed helper scripts ----------------------------------------
@@ -719,3 +880,4 @@ wb.calculation_properties  = calc_props
 # ── Step 9 · finish ---------------------------------------------------------
 wb.save(XLSX_FILE)
 print(f"Yeehaw! Workbook saved -> {XLSX_FILE}")
+

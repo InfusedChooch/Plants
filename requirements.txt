@@ -14,3 +14,4 @@ requests  # Static/Python_full/GetLinks.py, Static/Python_full/FillMissingData.p
 rich  # ReviewFiles/SampleTest/SampleTestvManual.py
 selenium  # Static/Python_full/GetLinks.py
 tqdm  # Static/Python_full/FillMissingData.py, Static/Python_full/PDFScraper_depreciate.py
+xlwings
