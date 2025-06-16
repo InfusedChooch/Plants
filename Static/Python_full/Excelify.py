@@ -112,20 +112,28 @@ def _parse_other_links(text: str) -> list[tuple[str, str, str]]:
 # * Helper: build TEXTJOIN formula for Other Links rows
 def build_textjoin_formula(row: int) -> str:
     """
-    Build a single-line TEXTJOIN formula from up to MAX_LINKS blocks.
-    Format: [TAG,"URL","LABEL"]
+    Build a TEXTJOIN formula that outputs:
+    [TAG,"URL","LABEL"];[TAG,"URL","LABEL"];…
+    Only includes non-empty entries.
     """
-    parts = []
+    entry_fragments = []
+
     for idx in range(MAX_LINKS):
         base = 3 + idx * 3
-        tag = get_column_letter(base)
-        url = get_column_letter(base + 1)
-        lab = get_column_letter(base + 2)
-        parts.append(
-            f'IF(OR({tag}{row}="",{url}{row}="",{lab}{row}=""), "",'
-            f'CONCAT("[",{tag}{row},",",CHAR(34),{url}{row},CHAR(34),",",CHAR(34),{lab}{row},CHAR(34),"]"))'
+        col_tag = get_column_letter(base)
+        col_url = get_column_letter(base + 1)
+        col_lab = get_column_letter(base + 2)
+
+        condition = f'OR({col_tag}{row}="",{col_url}{row}="",{col_lab}{row}="")'
+        formatted = (
+            f'CONCAT("[",{col_tag}{row},",",CHAR(34),'
+            f'{col_url}{row},CHAR(34),",",CHAR(34),{col_lab}{row},CHAR(34),"]")'
         )
-    return f'=TEXTJOIN(";", TRUE, {",".join(parts)})'
+        entry = f'IF({condition}, "", {formatted})'
+        entry_fragments.append(entry)
+
+    return f'=TEXTJOIN(";", TRUE, {",".join(entry_fragments)})'
+
 
 
 
@@ -566,7 +574,7 @@ for i in range(DATA_ROWS):
     other_ws[f"{status_col_letter}{formula_row}"] = (
         f'=IF({formula_col_letter}{formula_row}={match_col_letter}{formula_row},'
         f'"Matched!",'
-        f'CONCAT("Diff → ", {formula_col_letter}{formula_row}, " ≠ ", {match_col_letter}{formula_row}))'
+        f'CONCATENATE("Mismatch: ", {formula_col_letter}{formula_row}, " vs ", {match_col_letter}{formula_row}))'
     )
 
     # ── Style 'Other Links' Sheet ─────────────────────────────────────────────
@@ -755,7 +763,7 @@ readme["A22"] = "• Full source code for helper scripts like FillMissingData.py
 readme["A24"] = "🎨 Legend (Color Key):"
 readme["A25"] = "• RED: Required value is missing"
 readme["A26"] = "• BLUE: Link marked as 'NA' (not available)"
-readme["A27"] = "• YELLOW: 'Rev' pending — will auto-fill once reviewed"
+readme["A27"] = "• YELLOW: 'Rev' pending — will auto-fill once reviewed or Link needs review"
 readme["A28"] = "• GREEN: 'Rev' has been filled correctly"
 
 readme["A30"] = "🧪 Tips:"
@@ -789,11 +797,8 @@ def find_script_root(repo: Path) -> Path:
 PYTHON_FULL = find_script_root(REPO)
 
 script_descriptions = {
-    "PDFScraper.py":      "Extract plant data from source PDF",
-    "GetLinks.py":        "Find MBG & WF links",
-    "FillMissingData.py": "Populate missing fields",
     "GeneratePDF.py":     "Create formatted PDF guide",
-    "Excelify2.py":       "Make this Excel workbook",
+    "Excelify.py":       "Make this Excel workbook",
 }
 
 code_sheets: list[Worksheet] = []
@@ -824,19 +829,45 @@ if req.exists():
         if line.strip() and not line.lstrip().startswith("#"):
             readme[f"A{i}"] = line.strip()
 
-# ── Step 8 · pull full README.md (optional) ---------------------------------
-readme_md = REPO / "readme.md"
-dir_readme = None
-if readme_md.exists():
-    dir_readme = wb.create_sheet("Dir README")
-    dir_readme.column_dimensions["A"].width = 120
-    for i, line in enumerate(readme_md.read_text(encoding="utf-8").splitlines(), start=1):
-        dir_readme[f"A{i}"] = line
+# ── README Styling Patch ────────────────────────────────────────────────
+from openpyxl.styles import PatternFill, Font
+
+# Bold + larger headers
+def style_header(ws, cell_ref):
+    ws[cell_ref].font = Font(bold=True, size=12)
+
+# Fill background color for grouped sections
+SECTION_FILL = PatternFill(start_color="E2EFDA", end_color="E2EFDA", fill_type="solid")
+def fill_section_block(ws, start_row, end_row):
+    for r in range(start_row, end_row + 1):
+        ws[f"A{r}"].fill = SECTION_FILL
+
+# Legend color chips
+def legend_chip(ws, cell_ref, color_hex):
+    ws[cell_ref].fill = PatternFill(start_color=color_hex, end_color=color_hex, fill_type="solid")
+
+# Apply styles
+for cell_ref in ["A1", "A3", "A9", "A17", "A21", "A24", "A30", "A34"]:
+    style_header(readme, cell_ref)
+
+fill_section_block(readme, 3, 7)   # Plant Data
+fill_section_block(readme, 9, 15)  # Other Links
+fill_section_block(readme, 17, 19) # RAW Export
+fill_section_block(readme, 21, 22) # Code Sheets
+fill_section_block(readme, 24, 28) # Legend
+fill_section_block(readme, 30, 32) # Tips
+fill_section_block(readme, 34, 39) # Workflow
+
+legend_chip(readme, "A25", "FFCCCC")  # RED
+legend_chip(readme, "A26", "B7D7FF")  # BLUE
+legend_chip(readme, "A27", "FFF79A")  # YELLOW
+legend_chip(readme, "A28", "C6EFCE")  # GREEN
+
 
 # * Reorder worksheets per README instructions
 sheet_order = [readme, ws, other_ws, raw_ws] + code_sheets
-if dir_readme:
-    sheet_order.append(dir_readme)
+#if dir_readme:
+#    sheet_order.append(dir_readme)
 wb._sheets = sheet_order
 
 
