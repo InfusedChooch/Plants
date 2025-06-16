@@ -1,29 +1,20 @@
 #!/usr/bin/env python3
 # Excelify.py – Create a styled Excel workbook from the fully populated plant CSV.
 # 2025-06-13 · Adds blanket COLUMN_WIDTHS dict, keep_default_na, and cleans up width logic.
-# todo Fix comments
-# todo Clean up code, and look for any unused imports, and redundant code.
-
-
-# ? I need update the comments for laymen to obsover and understand the code. 
-# ! This works in excel for Amsonia Hubrichtii	THREADLEAF BLUE STAR	T1	Test 1	https://Test.com	T2	Test 2	https://Test.com	T3	Test 3	https://Test.com
- 
-# * Working Formula : =TEXTJOIN(";", TRUE, IF(OR(C3="",D3="",E3=""), "",CONCAT("[",C3,",",CHAR(34),D3,CHAR(34),",",CHAR(34),E3,CHAR(34),"]")),IF(OR(F3="",G3="",H3=""), "",CONCAT("[",F3,",",CHAR(34),G3,CHAR(34),",",CHAR(34),H3,CHAR(34),"]")),IF(OR(I3="",J3="",K3=""), "",CONCAT("[",I3,",",CHAR(34),J3,CHAR(34),",",CHAR(34),K3,CHAR(34),"]")),IF(OR(L3="",M3="",N3=""), "",CONCAT("[",L3,",",CHAR(34),M3,CHAR(34),",",CHAR(34),N3,CHAR(34),"]")),IF(OR(O3="",P3="",Q3=""), "",CONCAT("[",O3,",",CHAR(34),P3,CHAR(34),",",CHAR(34),Q3,CHAR(34),"]")))
+# Example TEXTJOIN formula for the "Link: Others" column
+# =TEXTJOIN(";", TRUE, IF(OR(C3="",D3="",E3=""), "",CONCAT("[",C3,",",CHAR(34),D3,CHAR(34),",",CHAR(34),E3,CHAR(34),"]")),IF(OR(F3="",G3="",H3=""), "",CONCAT("[",F3,",",CHAR(34),G3,CHAR(34),",",CHAR(34),H3,CHAR(34),"]")),IF(OR(I3="",J3="",K3=""), "",CONCAT("[",I3,",",CHAR(34),J3,CHAR(34),",",CHAR(34),K3,CHAR(34),"]")),IF(OR(L3="",M3="",N3=""), "",CONCAT("[",L3,",",CHAR(34),M3,CHAR(34),",",CHAR(34),N3,CHAR(34),"]")),IF(OR(O3="",P3="",Q3=""), "",CONCAT("[",O3,",",CHAR(34),P3,CHAR(34),",",CHAR(34),Q3,CHAR(34),"]")))
 
 
 
 from pathlib import Path
 import sys, argparse, pandas as pd
-from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font, Alignment
 from openpyxl.formatting.rule import FormulaRule
-from openpyxl.formula.translate import Translator
+from openpyxl.styles.borders import Border, Side
 from openpyxl.workbook.properties import CalcProperties
 from openpyxl.utils import get_column_letter
-from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.worksheet import Worksheet
-from openpyxl.cell.cell import Cell
 from openpyxl.worksheet.datavalidation import DataValidation
 import black 
 
@@ -157,7 +148,6 @@ if "Link: Others" in df.columns:
 MAX_LINKS = locals().get("max_links", 5)
 
 # allow up to N links per record (makes "1,2,3,..." for validation lists)
-LINK_CHOICES = ",".join(str(i) for i in range(1, MAX_LINKS + 1))  # e.g. "1,2,3"
 
 
 # Normalise casing
@@ -174,7 +164,6 @@ if "Mark Reviewed" not in df.columns:
 
 # * track sizes for later formulas
 DATA_ROWS = len(df)
-MAX_LINKS = locals().get("max_links", 5)
 
 # ── Canonical column lists ────────────────────────────────────────────
 LINK_LIST_COLS = ["Link #", "Tag", "URL", "Label"]
@@ -198,7 +187,6 @@ PLANT_DATA_COLS = (
     LINK_LIST_COLS
 )
 
-DISPLAY_PLANT_DATA_COLS = [c for c in PLANT_DATA_COLS if c != "Link: Others"]
 for col in LINK_LIST_COLS:
     if col not in df.columns:
         df[col] = ""                          # blank until Excel formulas fill
@@ -212,8 +200,6 @@ PLANT_DATA_HEADERS = DISPLAY_PLANT_DATA_COLS
 # IMPORTANT: actually create / overwrite the workbook *before* customising it
 df_out.to_excel(XLSX_FILE, index=False, na_rep="NA", sheet_name="Plant Data")
 
-# ── Load the fresh workbook and start styling ----------------------------
-from openpyxl import load_workbook
 wb = load_workbook(XLSX_FILE)
 ws = wb.active
 ws.title = "Plant Data"
@@ -433,10 +419,6 @@ style_sheet(ws, df_out, PLANT_DATA_HEADERS)
 autofit(ws)
 
 # ── Link-list helper columns (AD … AG) -----------------------------------
-from openpyxl.worksheet.datavalidation import DataValidation
-from openpyxl.utils import get_column_letter
-from openpyxl.styles.borders import Border, Side
-
 LINK_DV   = ",".join(f"Link {n}" for n in range(1, MAX_LINKS + 1))  # "Link 1,Link 2,…"
 col_LinkN = PLANT_DATA_HEADERS.index("Link #") + 1  # AD
 col_Tag   = col_LinkN + 1                           # AE
@@ -588,11 +570,9 @@ for i in range(DATA_ROWS):
     )
 
     # ── Style 'Other Links' Sheet ─────────────────────────────────────────────
-    from openpyxl.styles import PatternFill, Alignment
 
     # 1. Freeze header rows
     other_ws.freeze_panes = "C3"
-
     # 2. Alternate row shading
     ALT_ROW_FILL = PatternFill(start_color="F9F9F9", end_color="F9F9F9", fill_type="solid")
     for r in range(3, other_ws.max_row + 1, 2):
@@ -743,9 +723,6 @@ dv_com.add(f"B2:B{DATA_ROWS + 1}")
 
 # * Link: Others columns in Plant Data reference the formula column
 
-print("[DEBUG] Sample formula preview:")
-for i in range(min(3, DATA_ROWS)):
-    print(build_textjoin_formula(i + 2))
 
 # ── README -------------------------------------------------------------------
 readme = wb.create_sheet("README")
@@ -792,10 +769,6 @@ readme["A37"] = "3. Mark rows reviewed using your initials."
 readme["A38"] = "4. Review the 'Formula' column (click to resolve if needed)."
 readme["A39"] = "5. Export-ready values are stored in 'RAW CSV Export'."
 
-
-# -- Step 6 · embed helper scripts ----------------------------------------
-from pathlib import Path
-import black
 
 # * Locate Static/Python_full no matter the install layout
 def find_script_root(repo: Path) -> Path:
