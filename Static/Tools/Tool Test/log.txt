@@ -1,0 +1,9 @@
+Ran Excelify on Templates/20991212_Masterlist_Template.csv
+
+Exported CSV as Static\Tools\Tool Test\0616_ToolTest_CSVfromExcel.csv
+
+Ran through Static\Python_full\CleanMerge.py
+
+Static\Tools\Tool Test\0616_ToolTest_CSVfromExcel_CLEAN.csv ran through Static\Python_full\CleanMerge.py merge with Templates\20991212_Masterlist_Template.csv
+
+Static\Tools\Tool Test\20991212_Masterlist_REMOVE_merge_log.md + Static\Tools\Tool Test\20991212_Masterlist_REMOVE.csv are generated. 
