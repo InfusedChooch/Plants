@@ -342,6 +342,10 @@ def run_tool(script, in_flag, out_flag, stem, ext):
         cmd += ["--img_dir", img_dir_var.get()]
         cmd += ["--map_csv", str(Path(img_dir_var.get()).parent / "image_map.csv")]
 
+    elif base_script == "Excelify.py":
+        # * default template is older - let Launcher specify the latest
+        cmd += ["--template_csv", master_csv_var.get()]
+
     elif base_script == "GeneratePDF.py":
         # builder needs the JPEG folder itself
         Plants_dir = Path(img_dir_var.get()) / "Plants"
