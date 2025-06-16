@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # GeneratePDF.py - Produce a printable plant-guide PDF (2025-06-05, portable paths)
-# todo The Link Legend needs to find whhich links are in the csv, and populate the legend in the front with them
-# todo IE, Plant entries footer should populate the [TAG] from the csv in the plants footer. 
-# todo LINK_LABELS needs to auto detect new Tags from the Link: Others column.
+# Auto-detect link tags from the CSV and populate the legend.
 
 """
 Generate a title page, TOC and a page per plant with images using fpdf2.
@@ -113,13 +111,13 @@ PLANT_TYPE_ORDER = [  # Desired order of sections
 ]
 
 # Mapping of link columns to short footer labels
+# ("Link: Others" is handled separately to allow custom tags per entry)
 LINK_LABELS = [
     ("Link: Missouri Botanical Garden", "MBG"),
     ("Link: Wildflower.org", "WF"),
     ("Link: Pleasantrunnursery.com", "PRN"),
     ("Link: Newmoonnursery.com", "NMN"),
     ("Link: Pinelandsnursery.com", "PNL"),
-    ("Link: Others", "OTH"),
 ]
 
 # Mapping of link abbreviations to their full names for the legend
@@ -141,6 +139,9 @@ LINK_COLORS = {
     "PNL": (34, 139, 34),
     "OTH": (0, 0, 200),
 }
+
+# --- Discover extra link tags from the data -----------------------------
+
 
 
 # --- Helpers --------------------------------------------------------------
@@ -199,6 +200,22 @@ def truncate_text(text: str, max_len: int, plant_name: str, field: str) -> str:
 def name_slug(text: str) -> str:
     """Convert name to filesystem-safe lowercase slug (letters/numbers -> underscore)."""
     return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
+
+
+# Parse "Link: Others" cell -> list of (tag, url, label)
+OTHER_LINK_PATTERN = re.compile(r"\[(?P<tag>[^,\]]+),\"(?P<url>[^\"]+)\",\"(?P<label>[^\"]+)\"\]")
+
+def parse_other_links(text: str) -> list[tuple[str, str, str]]:
+    """Return (tag, url, label) tuples from the Link: Others column."""
+    return OTHER_LINK_PATTERN.findall(text or "")
+
+
+# Scan dataframe for additional tags and extend legend/color maps
+if "Link: Others" in df.columns:
+    for cell in df["Link: Others"]:
+        for tag, url, label in parse_other_links(cell):
+            LINK_LEGEND.setdefault(tag, label)
+            LINK_COLORS.setdefault(tag, LINK_COLORS.get("OTH", (0, 0, 200)))
 
 
 def draw_wrapped_legend(pdf) -> None:
@@ -422,6 +439,13 @@ class PlantPDF(FPDF):
             url = row.get(col, "").strip()
             if url:
                 links.append((label, url))
+
+        # Handle custom tags from "Link: Others"
+        other_text = row.get("Link: Others", "")
+        for tag, url, label_name in parse_other_links(other_text):
+            links.append((tag, url))
+            LINK_LEGEND.setdefault(tag, label_name)
+            LINK_COLORS.setdefault(tag, LINK_COLORS.get("OTH", (0, 0, 200)))
 
         self.current_plant_type = plant_type
         link = self.add_link()
