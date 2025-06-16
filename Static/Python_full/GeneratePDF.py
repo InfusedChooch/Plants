@@ -217,48 +217,58 @@ if "Link: Others" in df.columns:
             LINK_LEGEND.setdefault(tag, label)
             LINK_COLORS.setdefault(tag, LINK_COLORS.get("OTH", (0, 0, 200)))
 
+def flush_columns(pdf, legend_items, col_count=3):
+    """Render legend entries in equal-width columns."""
+    max_w = pdf.w - pdf.l_margin - pdf.r_margin
+    col_width = max_w / col_count
+    row_height = 6
+
+    rows = (len(legend_items) + col_count - 1) // col_count
+    table = [[] for _ in range(rows)]
+    for idx, (abbr, label) in enumerate(legend_items):
+        table[idx % rows].append((abbr, label))
+
+    for row in table:
+        pdf.set_x(pdf.l_margin)
+        for abbr, label in row:
+            color = LINK_COLORS.get(abbr, (0, 0, 200))
+            pdf.set_text_color(*color)
+            pdf.cell(18, row_height, f"[{abbr}]", new_x=XPos.RIGHT, new_y=YPos.TOP)
+            pdf.set_text_color(0, 0, 0)
+            pdf.cell(col_width - 18, row_height, label, new_x=XPos.RIGHT, new_y=YPos.TOP)
+        pdf.ln(row_height)
 
 def draw_wrapped_legend(pdf) -> None:
-    """Draw the link legend centered and wrapped by available width."""
-    parts = list(LINK_LEGEND.items())
-    max_w = pdf.w - pdf.l_margin - pdf.r_margin
-    line_parts = []
-    line_width = 0
+    """Draw the link legend with [OTH] as a group header and all items in columns."""
+    standard_items = []
+    other_items = []
 
-    def flush_line():
-        nonlocal line_parts, line_width
-        if not line_parts:
-            return
-        total_w = 0
-        for i, (text, color) in enumerate(line_parts):
-            total_w += pdf.get_string_width(text)
-            if i < len(line_parts) - 1:
-                total_w += pdf.get_string_width(" | ")
-        start_x = pdf.l_margin + (max_w - total_w) / 2
-        pdf.set_x(start_x)
-        for i, (text, color) in enumerate(line_parts):
-            pdf.set_text_color(*color)
-            pdf.write(6, text)
-            if i < len(line_parts) - 1:
-                pdf.set_text_color(0, 0, 0)
-                pdf.write(6, " | ")
-        pdf.ln(6)
-        line_parts = []
-        line_width = 0
+    for abbr, label in LINK_LEGEND.items():
+        if abbr.startswith("T") and abbr[1:].isdigit():
+            other_items.append((abbr, label))
+        elif abbr != "OTH":
+            standard_items.append((abbr, label))
 
-    for idx, (abbr, name) in enumerate(parts):
-        seg_text = f"[{abbr}] {name}"
-        seg_width = pdf.get_string_width(seg_text)
-        sep_width = pdf.get_string_width(" | ") if line_parts else 0
-        if line_width + seg_width + sep_width > max_w:
-            flush_line()
-        if line_parts:
-            line_width += pdf.get_string_width(" | ")
-        line_parts.append((seg_text, LINK_COLORS.get(abbr, (0, 0, 200))))
-        line_width += seg_width
+    # ── Standard Legend Entries ──
+    pdf.set_font("Times", "", 11)
+    flush_columns(pdf, sorted(standard_items, key=lambda x: x[0]), col_count=3)
 
-    flush_line()
+    # ── Other Sources ──
+    if other_items:
+        other_items = sorted(set(other_items), key=lambda x: int(x[0][1:]))
+        pdf.set_text_color(*LINK_COLORS.get("OTH", (0, 0, 200)))
+        pdf.set_font("Times", "B", 11)
+        pdf.cell(0, 8, "Other Links", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+        pdf.set_font("Times", "", 11)
+        pdf.set_text_color(0, 0, 0)
+        flush_columns(pdf, other_items, col_count=3)
+
+    # Reset formatting
     pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Times", "", 12)
+
+
 
 
 def draw_labeled_parts(pdf, parts, sep=" | ") -> None:
@@ -356,7 +366,7 @@ class PlantPDF(FPDF):
             center_x = (
                 self.w / 2 - self.get_string_width(self.current_plant_type.title()) / 2
             )
-            self.set_xy(center_x, -12)
+            self.set_xy(center_x, -8.)  # or try -10, -10.25
             self.cell(
                 self.get_string_width(self.current_plant_type.title()) + 2,
                 6,
@@ -369,19 +379,24 @@ class PlantPDF(FPDF):
         self.cell(0, 6, page_str)
 
     def add_type_divider(self, plant_type):
-        """Insert a full-page section divider with title and link anchor."""
-        self.footer_links = []  # No links on divider page
-        self.skip_footer = True  # Temporarily hide footer
-        self.add_page()  # New page
-        self.skip_footer = False  # Re-enable footer for subsequent pages
-        link = self.add_link()  # Add internal link target
+        # DO NOT clear or disable footer until after rendering previous page's footer
+        self.add_page()  # this triggers footer for the previous page
+
+        self.footer_links = []      # Clear for divider page only
+        self.skip_footer = True     # Disable just for the divider page
+
+        link = self.add_link()
         self.set_link(link)
         self.section_links.append((plant_type, link))
+
         self.set_font("Times", "B", 22)
         self.set_text_color(0, 70, 120)
-        self.ln(80)  # Vertical spacing
+        self.ln(80)
         self.cell(0, 20, plant_type.title(), align="C")
         self.set_text_color(0, 0, 0)
+
+        self.skip_footer = False  # Re-enable footer for following content
+
 
     def add_table_of_contents(self):
         """Generate the TOC pages, listing each plant with page links."""
@@ -562,6 +577,9 @@ class PlantPDF(FPDF):
                             "yellow": (200, 180, 0),
                             "orange": (255, 140, 0),
                             "green": (34, 139, 34),
+                            "indigo": (75, 0, 130),
+                            "violet": (148, 0, 211),
+                            "brown": (139, 69, 19),
                         }.get(color.lower(), (0, 0, 0))
                         if color.lower() != "white"
                         else (0, 0, 0)
@@ -600,7 +618,7 @@ class PlantPDF(FPDF):
             )
             zone_match = re.search(r"(\d+)\s*(?:-|to)\s*(\d+)", zone_raw)
             zone = (
-                f"{zone_match.group(1)} to {zone_match.group(2)}"
+                f"{zone_match.group(1)} - {zone_match.group(2)}"
                 if zone_match
                 else zone_raw.replace("USDA Hardiness Zone", "").strip()
             )
