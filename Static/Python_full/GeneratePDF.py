@@ -410,7 +410,7 @@ class PlantPDF(FPDF):
                     if "|" in usexyz:
                         pieces = [t.strip() for t in usexyz.split("|") if t.strip()]
                     else:
-                        pat = re.compile(r"(?=Use [^:]+:")")
+                        pat = re.compile(r"(?=Use [^:]+:)")
                         pieces = [t.strip(", ") for t in pat.split(usexyz) if t.strip(", ")]
                     for i, tag in enumerate(pieces):
                         head, body = (p.strip() for p in tag.split(":", 1)) if ":" in tag else (tag, "")
