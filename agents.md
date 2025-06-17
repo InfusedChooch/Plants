@@ -1,9 +1,30 @@
 ## Start
 ```
-There is no footer on the last page.
-Use Ornamental, Use Wildlife:, ect need to be bold
-Maintenance: Maintenace: needs to be fixed 
-Those feildsd seem oldy higher than they should be too. 
+Static\Python_full\GeneratePDF.py makes Outputs\Meow_Plant_Guide_EXPORT.pdf with Outputs\20991212_Masterlist_Template.csv
+Static\Tools\Tool Test\WhatIhave.PNG needs to be Static\Tools\Tool Test\WhatIwant.png visually. 
+The Footer still isn't populating on the last page -- Ygenus yspecies 'Variety5'
+If a feild is blank, missing, or NA do not populate it. 
+
+!Needs to be!
+Ygenus yspecies 'Variety5'
+COMMON NAME5
+Characteristics:
+Bloom Color: White, Green | Height: 1 - 3 ft | Spread: 1 - 2 ft | Bloom Time: Feb, Mar | Sun: No Sun | Water: Wet
+AGCP Status: | USDA Hardiness Zone: 5 - 9
+Attracts: Hummingbirds, Butterflies  |  Tolerates: Deer, Clay Soil
+Soil Description: Soil Lorem ipsum
+Native Habitats: Native Habitats Lorem ipsum
+
+Recommended Uses:
+Use Ornamental: EXAPMLE | Use Wildlife:  Wild. | Use Food:  Foods. | Use Medicinal:  Meds.  
+General Uses: Uses Lorem ipsum.
+Culture: Culture Lorem ipsum.
+
+General Maintenance Level - Low
+Maintenance: lorem ipsum.
+Problems: Problems Lorem ipsum
+Condition Comments: Condition Comments Lorem ipsum
+
 ```
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**

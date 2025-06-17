@@ -64,7 +64,6 @@ LINK_LEGEND = {
     "PRN": "Pleasant Run Nursery",
     "NMN": "New Moon Nursery",
     "PNL": "Pinelands Nursery",
-    "OTH": "Other Sources",
 }
 
 LINK_COLORS = {
