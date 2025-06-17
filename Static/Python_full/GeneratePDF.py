@@ -375,17 +375,27 @@ class PlantPDF(FPDF):
                 self.current_plant_type.title(),
             )
 
+        # RIGHT: Rev tag (aligned right above page number)
+        rev = getattr(self, "current_rev", None)
+        if rev:
+            rev_text = f"Rev: {rev}"
+            self.set_text_color(90, 90, 90)
+            rev_w = self.get_string_width(rev_text)
+            self.set_xy(self.w - self.r_margin - rev_w - 10, -8)  # align with plant type line
+            self.cell(rev_w + 2, 6, rev_text)
+
+
         # RIGHT: Page number
         self.set_text_color(128, 128, 128)
         self.set_xy(self.w - self.r_margin - self.get_string_width(page_str), -12)
         self.cell(0, 6, page_str)
 
     def add_type_divider(self, plant_type):
-        # DO NOT clear or disable footer until after rendering previous page's footer
-        self.add_page()  # this triggers footer for the previous page
+        self.add_page()  # triggers footer for previous page before clearing values
 
-        self.footer_links = []      # Clear for divider page only
-        self.skip_footer = True     # Disable just for the divider page
+        self.skip_footer = True          # Disable footer for this divider page
+        self.current_rev = None          # Clear rev info for divider
+        self.footer_links = []           # No source links on divider page
 
         link = self.add_link()
         self.set_link(link)
@@ -397,7 +407,147 @@ class PlantPDF(FPDF):
         self.cell(0, 20, plant_type.title(), align="C")
         self.set_text_color(0, 0, 0)
 
-        self.skip_footer = False  # Re-enable footer for following content
+        self.skip_footer = False  # Re-enable footer for next pages
+
+    def add_plant(self, row, plant_type):
+        # Add a single plant page using Layoutmk1 structure.
+        bot_name = safe_text(row.get("Botanical Name", ""))
+        base_name = name_slug(bot_name)
+        links = []
+
+        # ―― build footer-link set (big five + custom tags) ――――――――――――――――――――
+        for col, label in LINK_LABELS:
+            url = row.get(col, "").strip()
+            if url:
+                links.append((label, url))
+
+        for tag, url, label_name in parse_other_links(row.get("Link: Others", "")):
+            links.append((tag, url))
+            LINK_LEGEND.setdefault(tag, label_name)
+            LINK_COLORS.setdefault(tag, LINK_COLORS.get("OTH", (0, 0, 200)))
+
+        self.current_plant_type = plant_type
+        link = self.add_link()
+        max_len = 240
+
+        # ―― main layout loop (re-tries if the page overflows) ――――――――――――――――
+        while True:
+            self.set_auto_page_break(auto=False)
+            self.add_page()                          # footer for previous page closes here
+            self.current_rev = safe_text(row.get("Rev", "")) or None  # ← now set *after* add_page()
+            page_start = self.page_no()
+            self.footer_links = links
+            self.set_link(link)
+
+            # ------------------------------------------------------------------
+            #  Header: Botanical + Common Name
+            # ------------------------------------------------------------------
+            self.set_font("Times", "I", 14)
+            self.cell(0, 8, bot_name, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+            common = safe_text(row.get("Common Name", ""))
+            if common:
+                self.set_font("Times", "B", 13)
+                self.cell(0, 9, common, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+            self.ln(4)  # space before images
+
+            # ------------------------------------------------------------------
+            #  Images (up to three)
+            # ------------------------------------------------------------------
+            images = sorted(
+                list(IMG_DIR.glob(f"{base_name}_*.jpg"))
+                + list(IMG_DIR.glob(f"{base_name}_*.png"))
+            )
+            count = max(1, min(len(images), 3))
+            margin = self.l_margin
+            avail_w = self.w - margin - self.r_margin
+            img_w = (avail_w - (count - 1) * 4) / count
+            y_start = self.get_y()
+
+            for n in range(count):
+                x = margin + n * (img_w + 4)
+                self.image(
+                    str(images[n]),
+                    x=x,
+                    y=y_start,
+                    w=img_w,
+                    h=img_w * 0.75,
+                    keep_aspect_ratio=True,
+                )
+
+            self.set_y(y_start + img_w * 0.75 + 6)
+
+            # ------------------------------------------------------------------
+            #  Quick facts table
+            # ------------------------------------------------------------------
+            def _fact(lbl, val):
+                if not val:
+                    return
+                self.set_font("Times", "B", 10)
+                self.cell(28, 5, f"{lbl}:")
+                self.set_font("Times", "", 10)
+                self.multi_cell(0, 5, val)
+
+            _fact("Height",         safe_text(row.get("Height (ft)", "")))
+            _fact("Spread",         safe_text(row.get("Spread (ft)", "")))
+            _fact("Bloom",          safe_text(row.get("Bloom Color", "")))
+            _fact("Bloom Time",     safe_text(row.get("Bloom Time", "")))
+            _fact("Sun",            safe_text(row.get("Sun", "")))
+            _fact("Water",          safe_text(row.get("Water", "")))
+            _fact("Hardiness",      safe_text(row.get("USDA Hardiness Zone", "")))
+
+            self.ln(2)
+
+            # ------------------------------------------------------------------
+            #  Attracts / Tolerates (one line)
+            # ------------------------------------------------------------------
+            attracts  = safe_text(row.get("Attracts", ""))
+            tolerates = safe_text(row.get("Tolerates", ""))
+            if attracts or tolerates:
+                self.set_font("Times", "B", 10)
+                self.cell(0, 5, "Attracts / Tolerates:", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                self.set_font("Times", "", 10)
+                self.multi_cell(0, 5, f"{attracts} | {tolerates}")
+
+            # ------------------------------------------------------------------
+            #  Narrative sections (Soil, Culture, Maintenance, Problems, Uses)
+            # ------------------------------------------------------------------
+            def _section(title, key, fallback=""):
+                txt = safe_text(row.get(key, fallback))
+                if txt:
+                    self.set_font("Times", "B", 11)
+                    self.cell(0, 6, title, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                    self.set_font("Times", "", 10)
+                    self.multi_cell(0, 5, truncate_text(txt, max_len))
+                    self.ln(1)
+
+            _section("Soil Description",   "Soil Description")
+            _section("Culture",            "Culture")
+            _section("Maintenance",        "MaintenanceLevel", fallback=row.get("WFMaintenance", ""))
+            _section("Uses",               "Uses")
+            _section("Problems",           "Problems")
+
+            # ------------------------------------------------------------------
+            #  Page-fit logic / TOC registration
+            # ------------------------------------------------------------------
+            end_page   = self.page_no()
+            pages_used = end_page - page_start + 1
+            self.set_auto_page_break(auto=True, margin=20)
+
+            if pages_used > 1:
+                # try again with tighter truncation
+                logging.warning("Truncating %s to fit on a single page", bot_name)
+                for _ in range(pages_used):
+                    if self.page in self.pages:
+                        del self.pages[self.page]
+                        self.page -= 1
+                max_len = max(80, max_len - 80)
+                continue
+
+            display_page = self.page_no() - getattr(self, "_ghost_pages", 0)
+            self.toc[plant_type].append((bot_name, display_page, link, links))
+            break
 
 
     def add_table_of_contents(self):
@@ -464,6 +614,7 @@ class PlantPDF(FPDF):
             LINK_COLORS.setdefault(tag, LINK_COLORS.get("OTH", (0, 0, 200)))
 
         self.current_plant_type = plant_type
+        self.current_rev = safe_text(row.get("Rev", "")) or None
         link = self.add_link()
         max_len = 240
 
@@ -475,21 +626,21 @@ class PlantPDF(FPDF):
             self.set_link(link)
 
             # --- Header: Botanical and Common Name ---
+            # --- Botanical Name ---
             self.set_font("Times", "I", 18)
             self.set_text_color(22, 92, 34)
-            self.multi_cell(0, 8, bot_name, align="C")
+            self.cell(0, 10, bot_name, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
+            # --- Common Name ---
             common = primary_common_name(safe_text(row.get("Common Name", ""))).strip()
             if common:
                 self.set_font("Times", "B", 13)
                 self.set_text_color(0, 0, 0)
-                try:
-                    self.multi_cell(0, 8, common, align="C")
-                except FPDFException:
-                    self.set_x((self.w - self.get_string_width(common)) / 2)
-                    self.cell(self.get_string_width(common) + 1, 8, common)
+            self.cell(0, 9, common, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
-            self.ln(2)
+
+            self.ln(4)  # Add breathing room before images
+
 
             # --- Images ---
             images = sorted(list(IMG_DIR.glob(f"{base_name}_*.jpg")) +
@@ -504,6 +655,9 @@ class PlantPDF(FPDF):
 
             for i in range(count):
                 x_pos = margin + i * (img_w + gap)
+                self.set_draw_color(180, 180, 180)  # light gray border
+                self.rect(x_pos, y0, img_w, img_h_fixed)  # always draw the frame
+
                 if i < len(images):
                     img_path = str(images[i])
                     with Image.open(img_path) as im:
@@ -513,10 +667,11 @@ class PlantPDF(FPDF):
                     x_img = x_pos + (img_w - scaled_w) / 2
                     y_img = y0 + (img_h_fixed - scaled_h) / 2
                     self.image(img_path, x=x_img, y=y_img, w=scaled_w, h=scaled_h)
-                else:
-                    self.rect(x_pos, y0, img_w, img_h_fixed)
 
-            self.set_y(y0 + img_h_fixed + 6)
+
+            self.set_y(y0 + img_h_fixed + 3)
+            gap = 8  # slightly larger horizontal space between images
+
 
             # --- Characteristics ---
             self.set_font("Times", "B", 13)
@@ -534,6 +689,7 @@ class PlantPDF(FPDF):
                         "yellow": (200, 180, 0), "orange": (255, 140, 0),
                         "green": (34, 139, 34), "indigo": (75, 0, 130),
                         "violet": (148, 0, 211), "brown": (139, 69, 19),
+                        "magenta": (255, 0, 255), "lavender": (230, 230, 250),
                     }.get(color.lower(), (0, 0, 0)) if color.lower() != "white" else (0, 0, 0)
                     segments.append((color, rgb))
                     if i < len(color_text.split(",")) - 1:
@@ -577,31 +733,77 @@ class PlantPDF(FPDF):
                 self.ln(6)
 
             # --- Soil / Habitat ---
-            for label, key in [("Soil Description", "Soil Description"),
-                            ("Native Habitats", "Native Habitats")]:
+            for idx, (label, key) in enumerate([("Soil Description", "Soil Description"),
+                                                ("Native Habitats", "Native Habitats")]):
                 val = truncate_text(safe_text(row.get(key, "") or row.get("Habitats", "")), max_len, bot_name, key)
                 if val:
                     self.set_font("Times", "B", 12)
                     self.write(6, f"{label}: ")
                     self.set_font("Times", "", 12)
-                    self.multi_cell(0, 6, val)
-            self.ln(1)
+                    self.multi_cell(0, 5, val)
+                    if label == "Native Habitats":
+                        self.ln(3)
+
 
             # --- Recommended Uses ---
             self.set_font("Times", "B", 13)
             self.cell(0, 8, "Recommended Uses:", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
             self.set_font("Times", "", 12)
 
-            usexyz = safe_text(row.get("UseXYZ", ""))
-            if usexyz:
-                tags = [t.strip() for t in usexyz.split("|") if t.strip()]
-                self.set_font("Times", "", 12)
-                for i, tag in enumerate(tags):
-                    self.write(6, f"{tag}")
-                    if i < len(tags) - 1:
-                        self.write(6, "  |  ")
-                self.ln(6)
+            # UseXYZ tags
+            usexyz_raw = safe_text(row.get("UseXYZ", ""))
+            # Auto-convert comma-separated to pipe-separated if needed
+            if "," in usexyz_raw and "|" not in usexyz_raw:
+                usexyz_raw = usexyz_raw.replace(",", "|")
 
+            tags = [t.strip() for t in usexyz_raw.split("|") if t.strip()]
+            max_w = self.w - self.l_margin - self.r_margin
+            sep = "  |  "
+            sep_w = self.get_string_width(sep)
+
+            line_parts = []
+            line_width = 0
+
+            for tag in tags:
+                if ":" in tag:
+                    label, value = tag.split(":", 1)
+                    label = label.strip()
+                    value = value.strip()
+                else:
+                    label = tag.strip()
+                    value = ""
+
+                part_width = (
+                    self.get_string_width(label + ": ") +
+                    self.get_string_width(value)
+                )
+
+                if line_parts and line_width + sep_w + part_width > max_w:
+                    for i, (lbl, val) in enumerate(line_parts):
+                        self.set_font("Times", "B", 12)
+                        self.write(6, f"{lbl}: ")
+                        self.set_font("Times", "", 12)
+                        self.write(6, val)
+                        if i < len(line_parts) - 1:
+                            self.write(6, sep)
+                    self.ln(6)
+                    line_parts = []
+                    line_width = 0
+
+                if line_parts:
+                    line_width += sep_w
+                line_parts.append((label, value))
+                line_width += part_width
+
+            if line_parts:
+                for i, (lbl, val) in enumerate(line_parts):
+                    self.set_font("Times", "B", 12)
+                    self.write(6, f"{lbl}: ")
+                    self.set_font("Times", "", 12)
+                    self.write(6, val)
+                    if i < len(line_parts) - 1:
+                        self.write(6, sep)
+                self.ln(6)
 
 
             uses = truncate_text(safe_text(row.get("Uses", "")), max_len, bot_name, "Uses")
@@ -609,7 +811,7 @@ class PlantPDF(FPDF):
                 self.set_font("Times", "B", 12)
                 self.write(6, "General Uses: ")
                 self.set_font("Times", "", 12)
-                self.multi_cell(0, 6, uses)
+                self.multi_cell(0, 5, uses)
 
             culture = truncate_text(safe_text(row.get("Culture", "")), max_len, bot_name, "Culture")
             if culture:
@@ -624,6 +826,7 @@ class PlantPDF(FPDF):
                 self.set_font("Times", "", 12)
                 self.multi_cell(0, 6, note)
 
+
             # --- General Maintenance Level ---
             level = safe_text(row.get("MaintenanceLevel", "")).capitalize()
             color = {"Low": (34, 139, 34), "Medium": (255, 140, 0), "High": (200, 0, 0)}.get(level, (90, 90, 90))
@@ -634,23 +837,29 @@ class PlantPDF(FPDF):
             self.write(6, f" - {level}\n")
             self.set_text_color(0, 0, 0)
 
-            for key in ["WFMaintenance", "Problems", "Condition Comments"]:
-                val = truncate_text(safe_text(row.get("WFMaintenance", "")), max_len, bot_name, "WFMaintenance")
+            # --- Maintenance Details ---
+            val = truncate_text(safe_text(row.get("WFMaintenance", "")), max_len, bot_name, "WFMaintenance")
+            if val:
+                # Remove redundant label if present
+                if val.lower().startswith("maintenance:"):
+                    val = val.partition(":")[2].strip()
+                self.set_font("Times", "B", 12)
+                self.write(6, "Maintenance: ")
+                self.set_font("Times", "", 12)
+                self.write(6, val)
+                self.ln(6)
+
+
+
+            for idx, key in enumerate(["Problems", "Condition Comments"]):
+                val = truncate_text(safe_text(row.get(key, "")), max_len, bot_name, key)
                 if val:
                     self.set_font("Times", "B", 12)
-                    self.write(6, "Maintenance: ")
+                    self.write(6, f"{key}: ")
                     self.set_font("Times", "", 12)
-                    self.multi_cell(0, 6, val)
-
-                for key in ["Problems", "Condition Comments"]:
-                    val = truncate_text(safe_text(row.get(key, "")), max_len, bot_name, key)
-                    if val:
-                        self.set_font("Times", "B", 12)
-                        self.write(6, f"{key.replace('_', ' ')}: ")
-                        self.set_font("Times", "", 12)
-                        self.multi_cell(0, 6, val)
-
-                    self.ln(1)
+                    self.multi_cell(0, 5, val)  # Slightly tighter spacing
+                    if idx == 0:
+                        self.ln(1)  # small gap only between Problems and Condition Comments
 
 
             end_page = self.page_no()
@@ -777,16 +986,27 @@ pdf.add_page()
 
 # --- Add plant sections and pages ----------------------------------------
 for plant_type in PLANT_TYPE_ORDER:
-    group = df[df["Plant Type"] == plant_type]  # Filter by type
+    group = df[df["Plant Type"] == plant_type]
     if not group.empty:
         pdf.add_type_divider(plant_type)
         for _, row in group.iterrows():
             if row.get("Botanical Name", "").strip():
                 pdf.add_plant(row, plant_type)
+        pdf.skip_footer = False  # ensure footer is on after divider
+
 
 # --- Insert TOC content --------------------------------------------------
 pdf.page = 2
 pdf.add_table_of_contents()
+
+
+# --- Force footer on final page ---
+pdf.skip_footer = False
+pdf.set_auto_page_break(False)
+pdf.set_y(-15)
+pdf.set_font("Times", "", 1)
+pdf.cell(0, 1, "")
+
 
 # --- Save PDF -----------------------------------------------------------
 pdf.output(str(OUTPUT))
