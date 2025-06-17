@@ -230,13 +230,8 @@ class PlantPDF(FPDF):
             self.set_xy(cx, -8)
             self.set_text_color(90,90,90)
             self.cell(0,6,self.current_plant_type.title())
-        # right- Rev
-        if self.current_rev:
-            rev_txt = f"Rev: {self.current_rev}"
-            rev_w   = self.get_string_width(rev_txt)
-            self.set_xy(self.w - self.r_margin - rev_w - 10, -8)
-            self.set_text_color(90,90,90)
-            self.cell(rev_w+2,6,rev_txt)
+        # right- Rev (moved to header for better styling)
+        # see add_plant for header placement
         # right- page #
         pg = str(self.page_no() - getattr(self,"_ghost_pages",0))
         self.set_text_color(128,128,128)
@@ -284,6 +279,14 @@ class PlantPDF(FPDF):
                 page_start = self.page_no()
                 self.footer_links = links
                 self.set_link(link)
+                # --- Revision marker at top left ---
+                if self.current_rev:
+                    rev_txt = f"Rev: {self.current_rev}"
+                    self.set_font("Times", "I", 9)
+                    self.set_text_color(150, 150, 150)
+                    self.set_xy(self.l_margin, 6)
+                    self.cell(self.get_string_width(rev_txt) + 1, 5, rev_txt)
+                    self.set_text_color(0, 0, 0)
 
                 # --- Header: Botanical and Common Name ---
                 self.set_font("Times", "I", 18)
