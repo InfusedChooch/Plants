@@ -1,6 +1,7 @@
 ## Start
 ```
-Read the todo in GeneratePDF, and look for better comments to make
+The footers are still misaligned in GeneratePDF, we need to fix it.
+We need to fix the alignment on the plant data text, some of it is way off. 
 ```
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
