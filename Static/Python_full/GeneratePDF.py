@@ -3,7 +3,6 @@
 # Auto-detect link tags from the CSV and populate the legend.
 # TODO: Use Templates/style_rules.yaml for PDF styling via regex substitutions.
 # TODO: Text misalignment occurs on plant pages where descriptions shift under the images.
-# TODO: Footer numbering on the last page is wrong because _ghost_pages offsets page numbers.
 """
 Generate a title page, TOC and a page per plant with images using fpdf2.
 """
@@ -233,7 +232,7 @@ class PlantPDF(FPDF):
         # right- Rev (moved to header for better styling)
         # see add_plant for header placement
         # right- page #
-        pg = str(self.page_no() - getattr(self,"_ghost_pages",0))
+        pg = str(self.page_no())
         self.set_text_color(128,128,128)
         self.set_xy(self.w - self.r_margin - self.get_string_width(pg), -12)
         self.cell(0,6,pg)
@@ -474,7 +473,7 @@ class PlantPDF(FPDF):
                     max_len = max(80, max_len - 80)
                     continue
 
-                display_page = self.page_no() - getattr(self, "_ghost_pages", 0)
+                display_page = self.page_no()
                 self.toc[plant_type].append((bot_name, display_page, link, links))
                 break
 
@@ -561,7 +560,6 @@ def main() -> None:
 
     # ─────────── build PDF ───────────────────────────────────────────────────
     pdf = PlantPDF()
-    pdf._ghost_pages = 0
 
     # title page
     pdf.skip_footer = True
@@ -645,6 +643,7 @@ def main() -> None:
     pdf.set_y(-15)
     pdf.set_font("Times", "", 1)
     pdf.cell(0, 1, "")
+    pdf.footer()
 
     # save
     pdf.output(str(OUTPUT))
