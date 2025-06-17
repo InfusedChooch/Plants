@@ -450,8 +450,12 @@ class PlantPDF(FPDF):
                 # --- Detailed Maintenance and Issues ---
                 val = truncate_text(safe_text(row.get("WFMaintenance", "")), max_len, bot_name, "WFMaintenance")
                 if val:
+                    has_prefix = val.lower().startswith("maintenance:")
+                    if has_prefix:
+                        val = val[len("maintenance:"):].lstrip()
                     self.set_font("Times", "B", 12)
-                    self.write(6, "Maintenance: ")
+                    if not has_prefix:
+                        self.write(6, "Maintenance: ")
                     self.set_font("Times", "", 12)
                     self.multi_cell(0, 4, val)
 
