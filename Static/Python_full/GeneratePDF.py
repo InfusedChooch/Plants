@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # GeneratePDF.py- Produce a printable plant-guide PDF (2025-06-05, portable paths)
 # Auto-detect link tags from the CSV and populate the legend.
-# todo Styling in the PDF, using a YAML file with regex substitutions.
-# todo The pdf text is misaligned, needs to be fixed.
-# todo Rev footers are  not working right, they are offset 1 and not showing on the last page.
+# TODO: Use Templates/style_rules.yaml for PDF styling via regex substitutions.
+# TODO: Text misalignment occurs on plant pages where descriptions shift under the images.
+# TODO: Footer numbering on the last page is wrong because _ghost_pages offsets page numbers.
 """
 Generate a title page, TOC and a page per plant with images using fpdf2.
 """
