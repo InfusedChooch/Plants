@@ -254,12 +254,16 @@ class PlantPDF(FPDF):
     def footer(self):
         if self.skip_footer: return
         self.set_y(-12); self.set_font("Times","I",9)
-        # left- source links
-        self.set_x(self.l_margin)
-        for i,(lab,url) in enumerate(self.footer_links):
+        # left- source links, centered as a block with fixed spacing
+        gap = 4
+        widths = [self.get_string_width(f"[{lab}]") + 2 for lab,_ in self.footer_links]
+        total_w = sum(widths) + gap * max(0, len(widths) - 1)
+        start_x = max(self.l_margin, (self.w - total_w) / 2)
+        self.set_x(start_x)
+        for i, ((lab,url), w) in enumerate(zip(self.footer_links, widths)):
             self.set_text_color(*LINK_COLORS.get(lab,(0,0,200)))
-            self.cell(self.get_string_width(f"[{lab}]")+2, 6, f"[{lab}]", link=url)
-            if i < len(self.footer_links)-1: self.cell(4,6,"")
+            self.cell(w,6,f"[{lab}]",link=url,align="C")
+            if i < len(self.footer_links)-1: self.cell(gap,6,"")
         self.set_text_color(0,0,0)
         # centre- plant type
         if self.current_plant_type:
