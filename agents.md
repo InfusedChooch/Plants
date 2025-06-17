@@ -1,7 +1,8 @@
 ## Start
 ```
-The footers are still misaligned in GeneratePDF, we need to fix it.
-We need to fix the alignment on the plant data text, some of it is way off. 
+There is no footer on the last page.
+Use Ornamental, Use Wildlife:, ect need to be bold
+Maintenance: Maintenace: needs to be fixed 
 ```
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
