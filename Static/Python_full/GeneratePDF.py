@@ -408,8 +408,12 @@ class PlantPDF(FPDF):
 
                 usexyz = safe_text(row.get("UseXYZ", ""))
                 if usexyz:
-                    tags = [t.strip() for t in usexyz.split("|") if t.strip()]
-                    for i, tag in enumerate(tags):
+                    if "|" in usexyz:
+                        pieces = [t.strip() for t in usexyz.split("|") if t.strip()]
+                    else:
+                        pat = re.compile(r"(?=Use [^:]+:")")
+                        pieces = [t.strip(", ") for t in pat.split(usexyz) if t.strip(", ")]
+                    for i, tag in enumerate(pieces):
                         head, body = (p.strip() for p in tag.split(":", 1)) if ":" in tag else (tag, "")
                         if body:
                             self.set_font("Times", "B", 12)
@@ -419,7 +423,7 @@ class PlantPDF(FPDF):
                         else:
                             self.set_font("Times", "B", 12)
                             self.write(6, head)
-                        if i < len(tags) - 1:
+                        if i < len(pieces) - 1:
                             self.write(6, "  |  ")
                     self.ln(3)
 
