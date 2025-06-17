@@ -408,15 +408,22 @@ class PlantPDF(FPDF):
 
                 usexyz = safe_text(row.get("UseXYZ", ""))
                 if usexyz:
-                    tags = [t.strip() for t in usexyz.split("|") if t.strip()]
-                    for i, tag in enumerate(tags):
+                    if "|" in usexyz:
+                        pieces = [t.strip() for t in usexyz.split("|") if t.strip()]
+                    else:
+                        pat = re.compile(r"(?=Use [^:]+:")")
+                        pieces = [t.strip(", ") for t in pat.split(usexyz) if t.strip(", ")]
+                    for i, tag in enumerate(pieces):
                         head, body = (p.strip() for p in tag.split(":", 1)) if ":" in tag else (tag, "")
-                        self.set_font("Times", "B", 12)
-                        self.write(6, head)
                         if body:
+                            self.set_font("Times", "B", 12)
+                            self.write(6, f"{head}:")
                             self.set_font("Times", "", 12)
-                            self.write(6, f": {body}")
-                        if i < len(tags) - 1:
+                            self.write(6, f" {body}")
+                        else:
+                            self.set_font("Times", "B", 12)
+                            self.write(6, head)
+                        if i < len(pieces) - 1:
                             self.write(6, "  |  ")
                     self.ln(3)
 
@@ -449,9 +456,14 @@ class PlantPDF(FPDF):
                 # --- Detailed Maintenance and Issues ---
                 val = truncate_text(safe_text(row.get("WFMaintenance", "")), max_len, bot_name, "WFMaintenance")
                 if val:
-                    has_prefix = val.lower().startswith("maintenance:")
+                    lower = val.lower()
+                    prefixes = ("maintenance:", "maintenace:", "maintenence:")
+                    has_prefix = any(lower.startswith(p) for p in prefixes)
                     if has_prefix:
-                        val = val[len("maintenance:"):].lstrip()
+                        for p in prefixes:
+                            if lower.startswith(p):
+                                val = val[len(p):].lstrip()
+                                break
                     self.set_font("Times", "B", 12)
                     if not has_prefix:
                         self.write(6, "Maintenance: ")
@@ -648,6 +660,7 @@ def main() -> None:
     # ensure footer on last page
     pdf.skip_footer = False
     pdf.set_auto_page_break(False)
+    pdf.page = len(pdf.pages)
     pdf.set_y(-15)
     pdf.set_font("Times", "", 1)
     pdf.cell(0, 1, "")
