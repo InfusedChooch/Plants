@@ -3,7 +3,7 @@
 # 2025-06-13 · Adds blanket COLUMN_WIDTHS dict, keep_default_na, and cleans up width logic.
 # Example TEXTJOIN formula for the "Link: Others" column
 # =TEXTJOIN(";", TRUE, IF(OR(C3="",D3="",E3=""), "",CONCAT("[",C3,",",CHAR(34),D3,CHAR(34),",",CHAR(34),E3,CHAR(34),"]")),IF(OR(F3="",G3="",H3=""), "",CONCAT("[",F3,",",CHAR(34),G3,CHAR(34),",",CHAR(34),H3,CHAR(34),"]")),IF(OR(I3="",J3="",K3=""), "",CONCAT("[",I3,",",CHAR(34),J3,CHAR(34),",",CHAR(34),K3,CHAR(34),"]")),IF(OR(L3="",M3="",N3=""), "",CONCAT("[",L3,",",CHAR(34),M3,CHAR(34),",",CHAR(34),N3,CHAR(34),"]")),IF(OR(O3="",P3="",Q3=""), "",CONCAT("[",O3,",",CHAR(34),P3,CHAR(34),",",CHAR(34),Q3,CHAR(34),"]")))
-
+# todo Needs to populate the formulas in the "Other Links" sheet even if there are no links. This is so users can add them live. Assume always 5 links. 
 
 
 from pathlib import Path
@@ -137,20 +137,23 @@ def build_textjoin_formula(row: int) -> str:
 
 
 
-if "Link: Others" in df.columns:
-    links_parsed = df["Link: Others"].apply(_parse_other_links)
-    max_links = links_parsed.map(len).max()
+links_parsed = (
+    df["Link: Others"].apply(_parse_other_links)
+    if "Link: Others" in df.columns else pd.Series([[] for _ in range(len(df))])
+)
+max_links = max(5, links_parsed.map(len).max())  # always populate 5 link sets
 
-    for idx in range(max_links):
-        df[f"Other Tag {idx+1}"] = links_parsed.apply(
-            lambda lst: lst[idx][0] if idx < len(lst) else ""
-        )
-        df[f"Other URL {idx+1}"] = links_parsed.apply(
-            lambda lst: lst[idx][1] if idx < len(lst) else ""
-        )
-        df[f"Other Label {idx+1}"] = links_parsed.apply(
-            lambda lst: lst[idx][2] if idx < len(lst) else ""
-        )
+for idx in range(max_links):
+    df[f"Other Tag {idx+1}"] = links_parsed.apply(
+        lambda lst: lst[idx][0] if idx < len(lst) else ""
+    )
+    df[f"Other URL {idx+1}"] = links_parsed.apply(
+        lambda lst: lst[idx][1] if idx < len(lst) else ""
+    )
+    df[f"Other Label {idx+1}"] = links_parsed.apply(
+        lambda lst: lst[idx][2] if idx < len(lst) else ""
+    )
+
 
         
 MAX_LINKS = locals().get("max_links", 5)
@@ -227,8 +230,10 @@ for r in range(DATA_ROWS):                    # 1-based to match Excel rows
         if col_name == "Link: Others":
             formula_col = get_column_letter(3 * MAX_LINKS + 3)   # e.g., "R"
             raw_ws.cell(row=r+2, column=c_idx).value = (
-                f"='Other Links'!${formula_col}{r+3}"
-            )
+            f'=IF(ISERROR(\'Other Links\'!${formula_col}{r+3}), "", \'Other Links\'!${formula_col}{r+3})'
+)
+
+
         elif col_name == "Rev":
             raw_ws.cell(row=r+2, column=c_idx).value = f"='Plant Data'!$AC{r+3}"  # hardcoded if needed
         else:
@@ -373,8 +378,13 @@ def style_sheet(ws: Worksheet, df: pd.DataFrame, header: list[str]) -> None:
                 continue
 
             # Links – NA / Needs Review logic
-            if val.upper() == "NA" and col_name.startswith("Link: "):
-                cell.value, cell.fill = "NA", NA_LINK_FILL
+            rev_val = str(row[PLANT_DATA_HEADERS.index("Rev")]).strip().upper() if "Rev" in PLANT_DATA_HEADERS else ""
+
+            if val.upper() == "NA":
+                if col_name.startswith("Link: ") or rev_val:
+                    cell.value, cell.fill = "NA", NA_LINK_FILL
+                else:
+                    cell.value, cell.fill = "Needs Review", MISSING_FILL
             elif not val:
                 cell.value, cell.fill = "Needs Review", MISSING_FILL
             else:
@@ -383,6 +393,7 @@ def style_sheet(ws: Worksheet, df: pd.DataFrame, header: list[str]) -> None:
                     cell.hyperlink = val
                     cell.style = "Hyperlink"
                     cell.font = Font(color="0000EE", underline="single")
+
 
                 # Italicise Botanical Name
                 if col_name_lower == "botanical name":
