@@ -1,6 +1,6 @@
 ## Start
 ```
-I need to fix the formating for the generate PDF .py
+Read the todo in GeneratePDF, and look for better comments to make
 ```
 
 **CSV → Source chain (left‑to‑right = first place we look, fallbacks follow, + means append to previous entry)**
@@ -75,3 +75,4 @@ Link String TEst
   IF(OR($N3="",$M3="",$L3=""), "",
      CONCAT("[",$N3,",",CHAR(34),$M3,CHAR(34),",",CHAR(34),$L3,CHAR(34),"]"))
 )
+```

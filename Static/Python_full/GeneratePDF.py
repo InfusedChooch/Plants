@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # GeneratePDF.py- Produce a printable plant-guide PDF (2025-06-05, portable paths)
 # Auto-detect link tags from the CSV and populate the legend.
-# todo Why is it doubling the outputs Outputs\Meow_Plant_Guide_EXPORT.pdf
+# todo Styling in the PDF, using a YAML file with regex substitutions.
+# todo The pdf text is misaligned, needs to be fixed.
+# todo Rev footers are  not working right, they are offset 1 and not showing on the last page.
 """
 Generate a title page, TOC and a page per plant with images using fpdf2.
 """
