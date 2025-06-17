@@ -415,7 +415,7 @@ class PlantPDF(FPDF):
                         self.write(6, f"{tag}")
                         if i < len(tags) - 1:
                             self.write(6, "  |  ")
-                    self.ln(6)
+                    self.ln(3)
 
 
 
