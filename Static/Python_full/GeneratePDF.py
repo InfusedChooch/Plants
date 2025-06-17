@@ -16,24 +16,12 @@ from fpdf.enums import XPos, YPos
 from fpdf.errors import FPDFException
 import yaml
 
-# ────────────────────────────── CLI ───────────────────────────────────────
-parser = argparse.ArgumentParser(description="Generate plant guide PDF")
-parser.add_argument("--in_csv",
-                    default="Outputs/Plants_Linked_Filled.csv",
-                    help="Input CSV file with filled data")
-parser.add_argument("--out_pdf",
-                    default="Outputs/Plant_Guide_EXPORT.pdf",
-                    help="Output PDF file")
-parser.add_argument("--img_dir",
-                    default="Outputs/Images/Plants",
-                    help="Folder that holds plant JPEGs")
-parser.add_argument("--logo_dir",
-                    default="Outputs/Images",
-                    help="Folder that holds Rutgers and NJAES logos")
-parser.add_argument("--template_csv",
-                    default="Templates/20250612_Masterlist_Master.csv",
-                    help="CSV file containing column template (must include 'Link: Others')")
-args = parser.parse_args()
+# ────────────── Globals populated in ``main`` ─────────────────────────────
+args = None
+REPO = CSV_FILE = IMG_DIR = OUTPUT = TEMPLATE_CSV = LOGO_DIR = None
+STYLE_FILE = None
+_style_rules = []
+df = pd.DataFrame()
 
 # ────────────── Path helpers ──────────────────────────────────────────────
 def repo_dir() -> Path:
@@ -49,25 +37,9 @@ def repo_dir() -> Path:
             return parent
     return here.parent.parent
 
-REPO        = repo_dir()
-CSV_FILE    = (REPO / args.in_csv).resolve()
-IMG_DIR     = (REPO / args.img_dir).resolve()
-OUTPUT      = (REPO / args.out_pdf).resolve()
-TEMPLATE_CSV = (REPO / args.template_csv).resolve()
-LOGO_DIR    = (REPO / args.logo_dir).resolve()
-OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+# Runtime paths initialised in ``main``
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-
-# ────────────── Load data ────────────────────────────────────────────────
-df = (pd.read_csv(CSV_FILE, dtype=str, keep_default_na=False)
-        .fillna("")
-        .replace("Needs Review", ""))
-template_cols = list(pd.read_csv(TEMPLATE_CSV, nrows=0, keep_default_na=False).columns)
-df = df.reindex(columns=template_cols + [c for c in df.columns if c not in template_cols])
-df["Plant Type"] = df["Plant Type"].str.upper()
-if "Page in PDF" in df.columns:
-    df["Page in PDF"] = pd.to_numeric(df["Page in PDF"], errors="coerce")
+# Data will be loaded in ``main``
 
 PLANT_TYPE_ORDER = [
     "HERBACEOUS, PERENNIAL",
@@ -113,17 +85,7 @@ def safe_text(text: str) -> str:
     return apply_style(text.strip())
 
 
-STYLE_FILE  = REPO / "Templates" / "style_rules.yaml"
-_style_rules = []
-if STYLE_FILE.exists():
-    with open(STYLE_FILE, "r", encoding="utf-8") as f:
-        subs = yaml.safe_load(f) or {}
-        subs = subs.get("substitutions", subs)
-    for pattern, repl in subs.items():
-        pat = re.compile(pattern)
-        _style_rules.append((pat, (lambda m: m.group(0).lower()) if repl == "<<lower>>" else repl))
-else:
-    logging.warning("Style file not found: %s (continuing without it)", STYLE_FILE)
+# Style rules loaded in ``main``
 
 def apply_style(text: str) -> str:
     for pat, repl in _style_rules:
@@ -150,12 +112,7 @@ OTHER_LINK_PATTERN = re.compile(r"\[(?P<tag>[^,\]]+),\"(?P<url>[^\"]+)\",\"(?P<l
 def parse_other_links(text: str) -> list[tuple[str, str, str]]:
     return OTHER_LINK_PATTERN.findall(text or "")
 
-# extend legend / color maps with custom tags
-if "Link: Others" in df.columns:
-    for cell in df["Link: Others"]:
-        for tag, url, label in parse_other_links(cell):
-            LINK_LEGEND.setdefault(tag, label)
-            LINK_COLORS.setdefault(tag, LINK_COLORS["OTH"])
+# Legend will be extended in ``main`` once the dataframe is loaded
 
 # ─────────── helper blocks for legend & characteristics ──────────────────
 def flush_columns(pdf, legend_items, col_count=3):
@@ -232,7 +189,7 @@ def draw_line_of_tags(pdf, row, *, left="Attracts", right="Tolerates"):
     l_txt, r_txt = safe_text(row.get(left,"")), safe_text(row.get(right,""))
     if not (l_txt or r_txt): return
     pdf.set_font("Times","B",12); pdf.write(6,f"{left}: ")
-    pdf.set_font("Times","",12); pdf.write(6,l_txt or "—")
+    pdf.set_font("Times","",12); pdf.write(6,l_txt or "-")
     if r_txt:
         pdf.set_font("Times","B",12); pdf.write(6,f"  |  {right}: ")
         pdf.set_font("Times","",12); pdf.write(6,r_txt)
@@ -311,6 +268,7 @@ class PlantPDF(FPDF):
                 LINK_COLORS.setdefault(tag, LINK_COLORS.get("OTH", (0, 0, 200)))
 
             self.current_plant_type = plant_type
+            self.current_rev = safe_text(row.get("Rev", "")) or None
             link = self.add_link()
             max_len = 240
 
@@ -416,7 +374,7 @@ class PlantPDF(FPDF):
                     self.set_font("Times", "B", 12)
                     self.write(6, "Attracts: ")
                     self.set_font("Times", "", 12)
-                    self.write(6, attracts or "—")
+                    self.write(6, attracts or "-")
                     if tolerates:
                         self.set_font("Times", "B", 12)
                         self.write(6, "  |  Tolerates: ")
@@ -476,23 +434,22 @@ class PlantPDF(FPDF):
                 self.write(6, f" - {level}\n")
                 self.set_text_color(0, 0, 0)
 
-                for key in ["WFMaintenance", "Problems", "Condition Comments"]:
-                    val = truncate_text(safe_text(row.get("WFMaintenance", "")), max_len, bot_name, "WFMaintenance")
+                # --- Detailed Maintenance and Issues ---
+                val = truncate_text(safe_text(row.get("WFMaintenance", "")), max_len, bot_name, "WFMaintenance")
+                if val:
+                    self.set_font("Times", "B", 12)
+                    self.write(6, "Maintenance: ")
+                    self.set_font("Times", "", 12)
+                    self.multi_cell(0, 4, val)
+
+                for key in ["Problems", "Condition Comments"]:
+                    val = truncate_text(safe_text(row.get(key, "")), max_len, bot_name, key)
                     if val:
                         self.set_font("Times", "B", 12)
-                        self.write(6, "Maintenance: ")
+                        self.write(6, f"{key.replace('_', ' ')}: ")
                         self.set_font("Times", "", 12)
                         self.multi_cell(0, 4, val)
-
-                    for key in ["Problems", "Condition Comments"]:
-                        val = truncate_text(safe_text(row.get(key, "")), max_len, bot_name, key)
-                        if val:
-                            self.set_font("Times", "B", 12)
-                            self.write(6, f"{key.replace('_', ' ')}: ")
-                            self.set_font("Times", "", 12)
-                            self.multi_cell(0, 4, val)
-
-                        self.ln(1)
+                    self.ln(1)
 
 
                 end_page = self.page_no()
@@ -541,64 +498,149 @@ class PlantPDF(FPDF):
                 self.cell(self.get_string_width(dots),6,dots,align="L")
                 self.cell(self.get_string_width(pg)+2,6,pg,align="R",new_x=XPos.LMARGIN,new_y=YPos.NEXT)
 
-# ─────────── build PDF ───────────────────────────────────────────────────
-pdf = PlantPDF(); pdf._ghost_pages = 0
+def main() -> None:
+    """Parse arguments and generate the PDF."""
+    global args, REPO, CSV_FILE, IMG_DIR, OUTPUT, TEMPLATE_CSV, LOGO_DIR
+    global STYLE_FILE, _style_rules, df
 
-# title page
-pdf.skip_footer = True; pdf.add_page()
+    parser = argparse.ArgumentParser(description="Generate plant guide PDF")
+    parser.add_argument("--in_csv", default="Outputs/Plants_Linked_Filled.csv", help="Input CSV file with filled data")
+    parser.add_argument("--out_pdf", default="Outputs/Plant_Guide_EXPORT.pdf", help="Output PDF file")
+    parser.add_argument("--img_dir", default="Outputs/Images/Plants", help="Folder that holds plant JPEGs")
+    parser.add_argument("--logo_dir", default="Outputs/Images", help="Folder that holds Rutgers and NJAES logos")
+    parser.add_argument("--template_csv", default="Templates/20250612_Masterlist_Master.csv", help="CSV file containing column template (must include 'Link: Others')")
+    args = parser.parse_args()
 
-def find_logo(base:Path, names:list[str]) -> Path|None:
-    for stem in names:
-        for ext in ("",".png",".jpg",".jpeg"):
-            p=base/f"{stem}{'' if stem.lower().endswith(ext) else ext}"
-            if p.exists(): return p
-    return None
+    REPO = repo_dir()
+    CSV_FILE = (REPO / args.in_csv).resolve()
+    IMG_DIR = (REPO / args.img_dir).resolve()
+    OUTPUT = (REPO / args.out_pdf).resolve()
+    TEMPLATE_CSV = (REPO / args.template_csv).resolve()
+    LOGO_DIR = (REPO / args.logo_dir).resolve()
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 
-left_logo  = find_logo(LOGO_DIR, ["Rutgers_Logo"])
-right_logo = find_logo(LOGO_DIR, ["NJAES_Logo"])
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
-def draw_logos(pdf:FPDF,left:Path,right:Path,*,y=16,h=24,gap=4):
-    if not (left and right): return
-    with Image.open(left) as im: w_left=h*im.width/im.height
-    with Image.open(right) as im: w_right=h*im.width/im.height
-    total=w_left+gap+w_right; x0=(pdf.w-total)/2
-    pdf.image(str(left),  x=x0,           y=y, h=h)
-    pdf.image(str(right), x=x0+w_left+gap,y=y, h=h)
+    df = (
+        pd.read_csv(CSV_FILE, dtype=str, keep_default_na=False)
+        .fillna("")
+        .replace("Needs Review", "")
+    )
+    template_cols = list(pd.read_csv(TEMPLATE_CSV, nrows=0, keep_default_na=False).columns)
+    df = df.reindex(columns=template_cols + [c for c in df.columns if c not in template_cols])
+    df["Plant Type"] = df["Plant Type"].str.upper()
+    if "Page in PDF" in df.columns:
+        df["Page in PDF"] = pd.to_numeric(df["Page in PDF"], errors="coerce")
 
-draw_logos(pdf,left_logo,right_logo)
+    STYLE_FILE = REPO / "Templates" / "style_rules.yaml"
+    _style_rules = []
+    if STYLE_FILE.exists():
+        with open(STYLE_FILE, "r", encoding="utf-8") as f:
+            subs = yaml.safe_load(f) or {}
+            subs = subs.get("substitutions", subs)
+        for pattern, repl in subs.items():
+            pat = re.compile(pattern)
+            _style_rules.append((pat, (lambda m: m.group(0).lower()) if repl == "<<lower>>" else repl))
+    else:
+        logging.warning("Style file not found: %s (continuing without it)", STYLE_FILE)
 
-pdf.set_y(70); pdf.set_font("Times","B",22); pdf.set_text_color(0,70,120)
-pdf.cell(0,12,"PLANT FACT SHEETS",align="C",new_x=XPos.LMARGIN,new_y=YPos.NEXT)
-pdf.set_font("Times","",16); pdf.ln(4)
-pdf.cell(0,10,"for Rain Gardens / Bioretention Systems",align="C",new_x=XPos.LMARGIN,new_y=YPos.NEXT)
-pdf.ln(10); pdf.set_font("Times","",14)
-pdf.cell(0,10,"Rutgers Cooperative Extension",align="C",new_x=XPos.LMARGIN,new_y=YPos.NEXT)
-pdf.cell(0,10,"Water Resources Program",align="C",new_x=XPos.LMARGIN,new_y=YPos.NEXT)
-pdf.ln(10); pdf.set_font("Times","I",12)
-pdf.cell(0,10,f"{datetime.today():%B %Y}",align="C",new_x=XPos.LMARGIN,new_y=YPos.NEXT)
-pdf.set_text_color(0,0,0); pdf.ln(4); pdf.set_font("Times","",10)
-draw_wrapped_legend(pdf); pdf.set_font("Times","",12)
+    if "Link: Others" in df.columns:
+        for cell in df["Link: Others"]:
+            for tag, url, label in parse_other_links(cell):
+                LINK_LEGEND.setdefault(tag, label)
+                LINK_COLORS.setdefault(tag, LINK_COLORS["OTH"])
 
-# reserve TOC pages
-pdf.skip_footer=False; pdf.add_page(); pdf.add_page(); pdf.add_page()
+    # ─────────── build PDF ───────────────────────────────────────────────────
+    pdf = PlantPDF()
+    pdf._ghost_pages = 0
 
-# add plant pages
-for ptype in PLANT_TYPE_ORDER:
-    grp=df[df["Plant Type"]==ptype]
-    if not grp.empty:
-        pdf.add_type_divider(ptype)
-        for _,row in grp.iterrows():
-            if row.get("Botanical Name","").strip():
-                pdf.add_plant(row, ptype)
-        pdf.skip_footer=False
+    # title page
+    pdf.skip_footer = True
+    pdf.add_page()
 
-# fill TOC
-pdf.page=2; pdf.add_table_of_contents()
+    def find_logo(base: Path, names: list[str]) -> Path | None:
+        for stem in names:
+            for ext in ("", ".png", ".jpg", ".jpeg"):
+                p = base / f"{stem}{'' if stem.lower().endswith(ext) else ext}"
+                if p.exists():
+                    return p
+        return None
 
-# ensure footer on last page
-pdf.skip_footer=False; pdf.set_auto_page_break(False)
-pdf.set_y(-15); pdf.set_font("Times","",1); pdf.cell(0,1,"")
+    left_logo = find_logo(LOGO_DIR, ["Rutgers_Logo"])
+    right_logo = find_logo(LOGO_DIR, ["NJAES_Logo"])
 
-# save
-pdf.output(str(OUTPUT))
-print(f"[OK] Exported PDF -> {OUTPUT}")
+    def draw_logos(pdf: FPDF, left: Path, right: Path, *, y=16, h=24, gap=4):
+        if not (left and right):
+            return
+        with Image.open(left) as im:
+            w_left = h * im.width / im.height
+        with Image.open(right) as im:
+            w_right = h * im.width / im.height
+        total = w_left + gap + w_right
+        x0 = (pdf.w - total) / 2
+        pdf.image(str(left), x=x0, y=y, h=h)
+        pdf.image(str(right), x=x0 + w_left + gap, y=y, h=h)
+
+    draw_logos(pdf, left_logo, right_logo)
+
+    pdf.set_y(70)
+    pdf.set_font("Times", "B", 22)
+    pdf.set_text_color(0, 70, 120)
+    pdf.cell(0, 12, "PLANT FACT SHEETS", align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.set_font("Times", "", 16)
+    pdf.ln(4)
+    pdf.cell(
+        0,
+        10,
+        "for Rain Gardens / Bioretention Systems",
+        align="C",
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+    )
+    pdf.ln(10)
+    pdf.set_font("Times", "", 14)
+    pdf.cell(0, 10, "Rutgers Cooperative Extension", align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(0, 10, "Water Resources Program", align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.ln(10)
+    pdf.set_font("Times", "I", 12)
+    pdf.cell(0, 10, f"{datetime.today():%B %Y}", align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(4)
+    pdf.set_font("Times", "", 10)
+    draw_wrapped_legend(pdf)
+    pdf.set_font("Times", "", 12)
+
+    # reserve TOC pages
+    pdf.skip_footer = False
+    pdf.add_page()
+    pdf.add_page()
+    pdf.add_page()
+
+    # add plant pages
+    for ptype in PLANT_TYPE_ORDER:
+        grp = df[df["Plant Type"] == ptype]
+        if not grp.empty:
+            pdf.add_type_divider(ptype)
+            for _, row in grp.iterrows():
+                if row.get("Botanical Name", "").strip():
+                    pdf.add_plant(row, ptype)
+            pdf.skip_footer = False
+
+    # fill TOC
+    pdf.page = 2
+    pdf.add_table_of_contents()
+
+    # ensure footer on last page
+    pdf.skip_footer = False
+    pdf.set_auto_page_break(False)
+    pdf.set_y(-15)
+    pdf.set_font("Times", "", 1)
+    pdf.cell(0, 1, "")
+
+    # save
+    pdf.output(str(OUTPUT))
+    print(f"[OK] Exported PDF -> {OUTPUT}")
+
+
+if __name__ == "__main__":
+    main()
