@@ -83,7 +83,10 @@ def safe_text(text: str) -> str:
 
     text = re.sub(r"\s*\n\s*", " ", text)
     text = re.sub(r"[^\x20-\x7E]+", "", text)  # strip non-Latin-1
-    return apply_style(text.strip())
+    text = text.strip()
+    if text.upper() == "NA":
+        return ""
+    return apply_style(text)
 
 
 # Style rules loaded in ``main``
@@ -259,13 +262,14 @@ class PlantPDF(FPDF):
 
             for col, label in LINK_LABELS:
                 url = row.get(col, "").strip()
-                if url:
+                if url and url.upper() != "NA":
                     links.append((label, url))
 
             for tag, url, label_name in parse_other_links(row.get("Link: Others", "")):
-                links.append((tag, url))
-                LINK_LEGEND.setdefault(tag, label_name)
-                LINK_COLORS.setdefault(tag, LINK_COLORS.get("OTH", (0, 0, 200)))
+                if url and url.upper() != "NA":
+                    links.append((tag, url))
+                    LINK_LEGEND.setdefault(tag, label_name)
+                    LINK_COLORS.setdefault(tag, LINK_COLORS.get("OTH", (0, 0, 200)))
 
             self.current_plant_type = plant_type
             self.current_rev = safe_text(row.get("Rev", "")) or None
@@ -411,7 +415,7 @@ class PlantPDF(FPDF):
                     if "|" in usexyz:
                         pieces = [t.strip() for t in usexyz.split("|") if t.strip()]
                     else:
-                        pat = re.compile(r"(?=Use [^:]+:")")
+                        pat = re.compile(r"(?=Use [^:]+:)")
                         pieces = [t.strip(", ") for t in pat.split(usexyz) if t.strip(", ")]
                     for i, tag in enumerate(pieces):
                         head, body = (p.strip() for p in tag.split(":", 1)) if ":" in tag else (tag, "")
