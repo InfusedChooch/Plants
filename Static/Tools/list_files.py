@@ -13,9 +13,11 @@ NO_FILE_DIRS = {
     Path("Outputs/Images/Plants"),
 }
 
+
 def skip_files_in_dir(rel_path: Path) -> bool:
     """Check if files in this folder should be skipped."""
     return any(rel_path == p or p in rel_path.parents for p in NO_FILE_DIRS)
+
 
 def list_all_paths(base_dir: Path) -> list[str]:
     base_dir = base_dir.resolve()
@@ -36,6 +38,7 @@ def list_all_paths(base_dir: Path) -> list[str]:
                 output.append((rel_root / file).as_posix())
 
     return output
+
 
 if __name__ == "__main__":
     cwd = Path.cwd()
