@@ -1,29 +1,15 @@
 ## Start
+
+I need the readme.md updated to discribe the intended tool chain use, and what fiiles to input output, Also it need to explain how to use the launcher first. Then gove explicit python instructions. Go through all python code and clea up the comments, also look for basic formatting fixes. 
+
 ```
 Static\Python_full\GeneratePDF.py makes Outputs\Meow_Plant_Guide_EXPORT.pdf with Outputs\20991212_Masterlist_Template.csv
 Static\Tools\Tool Test\WhatIhave.PNG needs to be Static\Tools\Tool Test\WhatIwant.png visually. 
 The Footer still isn't populating on the last page -- Ygenus yspecies 'Variety5'
 If a feild is blank, missing, or NA do not populate it. 
+```
 
-!Needs to be!
-Ygenus yspecies 'Variety5'
-COMMON NAME5
-Characteristics:
-Bloom Color: White, Green | Height: 1 - 3 ft | Spread: 1 - 2 ft | Bloom Time: Feb, Mar | Sun: No Sun | Water: Wet
-AGCP Status: | USDA Hardiness Zone: 5 - 9
-Attracts: Hummingbirds, Butterflies  |  Tolerates: Deer, Clay Soil
-Soil Description: Soil Lorem ipsum
-Native Habitats: Native Habitats Lorem ipsum
-
-Recommended Uses:
-Use Ornamental: EXAPMLE | Use Wildlife:  Wild. | Use Food:  Foods. | Use Medicinal:  Meds.  
-General Uses: Uses Lorem ipsum.
-Culture: Culture Lorem ipsum.
-
-General Maintenance Level - Low
-Maintenance: lorem ipsum.
-Problems: Problems Lorem ipsum
-Condition Comments: Condition Comments Lorem ipsum
+```
 
 ```
 
@@ -65,12 +51,12 @@ Link: Other              : [Tag,"URL","Label"]              : Entry list "[Tag,"
 Rev                      : User Input (YYYYMMDD_FL)         : "YYYYMMDD_FirstinitalLastinital" 
 ```
 
-```
+```CSV
 Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,AGCP Regional Status,USDA Hardiness Zone,Attracts,Tolerates,Soil Description,Condition Comments,MaintenanceLevel,Native Habitats,Culture,Uses,UseXYZ,WFMaintenance,Problems,Link: Missouri,Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com,Link: Others,Rev
 
 ```
 
-```
+```md
 Comment Style Guide Meaning -- This repo uses better-comments (VS Code) -- key functions
 * : Important information
 ! : Deprecated method
@@ -81,7 +67,7 @@ TODO : Next steps here
 
 
 
-```
+```excel
 Link String TEst
 
 =TEXTJOIN(

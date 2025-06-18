@@ -98,14 +98,16 @@ Rev                      : User Input (YYYYMMDD_FL)         : "YYYYMMDD_Firstini
 ```
 
 ## Master CSV Headers
-```
+
+```csv
 Plant Type,Key,Botanical Name,Common Name,Height (ft),Spread (ft),Bloom Color,Bloom Time,Sun,Water,AGCP Regional Status,USDA Hardiness Zone,Attracts,Tolerates,Soil Description,Condition Comments,MaintenanceLevel,Native Habitats,Culture,Uses,UseXYZ,WFMaintenance,Problems,Link: Missouri,Botanical Garden,Link: Wildflower.org,Link: Pleasantrunnursery.com,Link: Newmoonnursery.com,Link: Pinelandsnursery.com,Link: Others,Rev
 ```
+
 ## Important Note
 
 Any pd.read_csv needs to have "keep_default_na=False" added to work, This is only needed to preserve the NA tag with pandas 
 
-```
+```python
   df = ( pd.read_csv(CSV_FILE, dtype=str, encoding="utf-8-sig", keep_default_na=False,  ).fillna("") )
 ```
 
@@ -131,7 +133,8 @@ tqdm  # Static/Python_full/FillMissingData.py, Static/Python_full/PDFScraper_dep
 
 
 ## Building Executables (Optional)
-```
+
+```python
 pyinstaller --onefile --distpath helpers Static/Python_full/PDFScraper.py
 pyinstaller --onefile --distpath helpers Static/Python_full/GeneratePDF.py
 pyinstaller --onefile --distpath helpers Static/Python_full/Excelify2.py
@@ -173,6 +176,7 @@ pyinstaller Launcher_lite.py --onedir --noconfirm --windowed \
 ```
 
 ## Expected EXE Folder Layout
+
 ```
 RU Plant Guide/
 ├── Launcher.exe                     # ← main GUI
@@ -189,7 +193,3 @@ RU Plant Guide/
 ├── Templates/
 ├── Outputs/
 ```
-
-
-
-"[GM,""www.google.maps.com"",""Google Maps""];[YT,""https://youtube.com"",""YouTube""];[T1,""https://Test.com"",""Test 1""];[T2,""https://Test.com"",""Test 2""];[T3,""https://Test.com"",""Test 3""]"
