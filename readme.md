@@ -2,17 +2,16 @@
 
 ## Features in this Version
 
-❌**PDF Scraper**: **Broken** **OLD** Going to be Phased out / Retooled. 
-
-❌**Generate PDF**: **Broken** **Updating** Creates a printable plant guide with sections, photos, and formatting. Needs to be updated to fit new CSV Layout. 
+✅**Generate PDF**:  Creates a printable plant guide with sections, photos, and formatting. Needs spacing fixes still. 
 
 ✅**Export to Excel**: Produces a styled Excel file with filters, highlights, and version notes uses python from Static\Python_full for source relevance.
 
-❌**Find Links (GetLinks.py)**: **Broken**. Needs to Update Link Finding Logic to suit ""Genus species 'Variety'""
-
 ✅**Fill Missing Data (FillMissingData.py)**: **Updating** Fills based on Scraped HTML and Grabs, Need to refine column grabs for long chains.
 
+✅**Clean / Merge CSVs (CleanMerge.py)**: **Updating** Cleans the CSV output from Excel, The cleaned CSV then can be merged into master csv.
+
 ---
+
 ## Getting Started with the Launcher
 
 The easiest way to run the tool chain is through the provided GUI launcher.  Run
@@ -187,16 +186,12 @@ tqdm  # Static/Python_full/FillMissingData.py, Static/Python_full/PDFScraper_dep
 ## Building Executables (Optional)
 
 ```python
-pyinstaller --onefile --distpath helpers Static/Python_full/PDFScraper.py
+pyinstaller --onefile --distpath helpers Static/Python_full/CleanMerge.py
 pyinstaller --onefile --distpath helpers Static/Python_full/GeneratePDF.py
-pyinstaller --onefile --distpath helpers Static/Python_full/Excelify2.py
+pyinstaller --onefile --distpath helpers Static/Python_full/Excelify.py
 pyinstaller --onefile --distpath helpers Static/Python_full/FillMissingData.py
 
-pyinstaller Launcher_lite.py --onedir --noconfirm --windowed \
-  --add-data "Static;Static" \
-  --add-data "Templates;Templates" \
-  --add-data "helpers;helpers" \
-  --icon "Static/themes/leaf.ico"
+pyinstaller Launcher.py --onedir --noconfirm --windowed --add-data "Static;Static" --add-data "Templates;Templates" --add-data "helpers;helpers" --icon "Static/themes/leaf.ico"
 ```
 
 ## Folder Layout
