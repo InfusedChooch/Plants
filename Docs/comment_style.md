@@ -6,4 +6,5 @@ This project uses the VS Code **better-comments** extension. Tags:
 - `!` : Deprecated method
 - `?` : Something to consider
 - `TODO` : Next steps
-- `//` : Layman-facing notes
+- `LM:` : Layman-facing notes
+- `//` : Removed

@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-# GeneratePDF.py – produce a printable plant guide PDF (2025‑06‑05, portable paths)
-# Auto-detect link tags from the CSV and populate the legend.
-# TODO: use Templates/style_rules.yaml for PDF styling via regex substitutions.
-# TODO: text misalignment occurs on plant pages where descriptions shift under the images.
-"""
-Generate a title page, TOC and a page per plant with images using fpdf2.
-"""
-
+# GeneratePDF.py – produce a printable plant guide PDF
+# This script reads plant data from a CSV, formats it, and outputs a printable PDF guide.
+# Major features: title page, table of contents, plant pages with images, color-coded links, and more.
+# todo fix the TOC to not bleed into the next section
+# todo figure out how to handle spacing for 1 page, OR make it bleed to 2 pages for each plant seperated at Maintenance
 from pathlib import Path
 import sys, argparse, logging, re
 from datetime import datetime
@@ -17,15 +14,49 @@ from fpdf.enums import XPos, YPos
 from fpdf.errors import FPDFException
 import yaml
 
-# ────────────── Globals populated in ``main`` ─────────────────────────────
+# * GLOBALS: These are set in main() and used throughout the script
 args = None
 REPO = CSV_FILE = IMG_DIR = OUTPUT = TEMPLATE_CSV = LOGO_DIR = None
 STYLE_FILE = None
 _style_rules = []
 df = pd.DataFrame()
 
+# * PLANT TYPE ORDER: Controls the order of sections in the PDF
+PLANT_TYPE_ORDER = [
+    "HERBACEOUS, PERENNIAL",
+    "FERNS",
+    "GRASSES, SEDGES, AND RUSHES",
+    "SHRUBS",
+    "TREES",
+]
+# LM: Change this list to change the order or add/remove plant type sections.
 
-# ────────────── Path helpers ──────────────────────────────────────────────
+# * LINK LABELS/LEGEND: Used for source links in the footer and TOC
+LINK_LABELS = [
+    ("Link: Missouri Botanical Garden", "MBG"),
+    ("Link: Wildflower.org", "WF"),
+    ("Link: Pleasantrunnursery.com", "PRN"),
+    ("Link: Newmoonnursery.com", "NMN"),
+    ("Link: Pinelandsnursery.com", "PNL"),
+]
+LINK_LEGEND = {
+    "MBG": "Missouri Botanical Garden",
+    "WF": "Wildflower",
+    "PRN": "Pleasant Run Nursery",
+    "NMN": "New Moon Nursery",
+    "PNL": "Pinelands Nursery",
+}
+LINK_COLORS = {
+    "MBG": (0, 70, 120),
+    "WF": (200, 0, 0),
+    "PRN": (128, 0, 128),
+    "NMN": (255, 140, 0),
+    "PNL": (34, 139, 34),
+    "OTH": (0, 0, 200),
+}
+# LM: Change LINK_COLORS to change the color of link labels in the PDF.
+
+# * Helper: Find the root of the project folder
 def repo_dir() -> Path:
     """Return the root of the project folder (handles frozen EXE)."""
     if getattr(sys, "frozen", False):
@@ -42,53 +73,11 @@ def repo_dir() -> Path:
             return parent
     return here.parent.parent
 
-
-# Runtime paths initialised in ``main``
-
-# Data will be loaded in ``main``
-
-PLANT_TYPE_ORDER = [
-    "HERBACEOUS, PERENNIAL",
-    "FERNS",
-    "GRASSES, SEDGES, AND RUSHES",
-    "SHRUBS",
-    "TREES",
-]
-
-LINK_LABELS = [
-    ("Link: Missouri Botanical Garden", "MBG"),
-    ("Link: Wildflower.org", "WF"),
-    ("Link: Pleasantrunnursery.com", "PRN"),
-    ("Link: Newmoonnursery.com", "NMN"),
-    ("Link: Pinelandsnursery.com", "PNL"),
-]
-
-LINK_LEGEND = {
-    "MBG": "Missouri Botanical Garden",
-    "WF": "Wildflower",
-    "PRN": "Pleasant Run Nursery",
-    "NMN": "New Moon Nursery",
-    "PNL": "Pinelands Nursery",
-}
-
-LINK_COLORS = {
-    "MBG": (0, 70, 120),
-    "WF": (200, 0, 0),
-    "PRN": (128, 0, 128),
-    "NMN": (255, 140, 0),
-    "PNL": (34, 139, 34),
-    "OTH": (0, 0, 200),
-}
-
-
-# ────────────── Helpers ──────────────────────────────────────────────────
+# * Text cleaning and style application
 def safe_text(text: str) -> str:
     """Clean text for PDF core fonts (Latin-1)."""
     text = str(text).replace("\x00", "").replace("\r", "")
-
-    # NEW: map Unicode dashes → simple hyphen
     text = text.replace("–", "-").replace("—", "-")
-
     text = re.sub(r"\s*\n\s*", " ", text)
     text = re.sub(r"[^\x20-\x7E]+", "", text)  # strip non-Latin-1
     text = text.strip()
@@ -96,16 +85,13 @@ def safe_text(text: str) -> str:
         return ""
     return apply_style(text)
 
-
-# Style rules loaded in ``main``
-
-
 def apply_style(text: str) -> str:
+    # Applies regex-based substitutions from style_rules.yaml (if present)
     for pat, repl in _style_rules:
         text = pat.sub(repl, text)
     return text
 
-
+# * Utility: Get the primary common name (first if multiple)
 def primary_common_name(name: str) -> str:
     if "/" in name:
         return name.split("/")[0].strip()
@@ -113,32 +99,27 @@ def primary_common_name(name: str) -> str:
         return name.split(" or ")[0].strip()
     return name
 
-
+# * Utility: Truncate text to a max length, add ... if needed
 def truncate_text(text: str, max_len: int, plant: str, field: str) -> str:
     if len(text) > max_len:
         logging.warning("Truncating %s for %s", field, plant)
         return text[: max_len - 3] + "..."
     return text
 
-
+# * Utility: Make a slug (safe filename) from a string
 def name_slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
 
-
+# * Utility: Parse "other" links from CSV
 OTHER_LINK_PATTERN = re.compile(
     r"\[(?P<tag>[^,\]]+),\"(?P<url>[^\"]+)\",\"(?P<label>[^\"]+)\"\]"
 )
-
-
 def parse_other_links(text: str) -> list[tuple[str, str, str]]:
     return OTHER_LINK_PATTERN.findall(text or "")
 
-
-# Legend will be extended in ``main`` once the dataframe is loaded
-
-
-# ─────────── helper blocks for legend & characteristics ──────────────────
+# * Draw the legend (source links) on the title page
 def flush_columns(pdf, legend_items, col_count=3):
+    # LM: Draws a table of legend items in columns
     max_w = pdf.w - pdf.l_margin - pdf.r_margin
     col_w = max_w / col_count
     h = 6
@@ -155,8 +136,8 @@ def flush_columns(pdf, legend_items, col_count=3):
             pdf.cell(col_w - 18, h, label, new_x=XPos.RIGHT, new_y=YPos.TOP)
         pdf.ln(h)
 
-
 def draw_wrapped_legend(pdf):
+    # LM: Draws the legend for standard and "other" links
     std, oth = [], []
     for abbr, label in LINK_LEGEND.items():
         (std if abbr in {"MBG", "WF", "PRN", "NMN", "PNL"} else oth).append(
@@ -173,8 +154,9 @@ def draw_wrapped_legend(pdf):
         flush_columns(pdf, sorted(set(oth)), 3)
     pdf.set_font("Times", "", 12)
 
-
+# * Draw characteristics in a wrapped, labeled format
 def draw_labeled_parts(pdf, parts, sep=" | "):
+    # LM: Draws labeled characteristics (e.g., "Height: 3 ft | Spread: 2 ft")
     max_w = pdf.w - pdf.l_margin - pdf.r_margin
     buf, line_w = [], 0
     sep_w = pdf.get_string_width(sep)
@@ -213,8 +195,7 @@ def draw_labeled_parts(pdf, parts, sep=" | "):
         line_w += part_w
     flush()
 
-
-# ─────────── helpers for PDF generation ──────────────────────────────────
+# * Gather links for the footer
 def gather_footer_links(row):
     links = [
         (lab, row[col].strip()) for col, lab in LINK_LABELS if row.get(col, "").strip()
@@ -224,13 +205,13 @@ def gather_footer_links(row):
     ]
     return links
 
-
+# * Fetch images for a plant by slug
 def fetch_images(bot_name: str):
     slug = name_slug(bot_name)
     yield from sorted(IMG_DIR.glob(f"{slug}_*.jpg"))
     yield from sorted(IMG_DIR.glob(f"{slug}_*.png"))
 
-
+# * Draw Attracts/Tolerates line
 def draw_line_of_tags(pdf, row, *, left="Attracts", right="Tolerates"):
     l_txt, r_txt = safe_text(row.get(left, "")), safe_text(row.get(right, ""))
     if not (l_txt or r_txt):
@@ -246,8 +227,7 @@ def draw_line_of_tags(pdf, row, *, left="Attracts", right="Tolerates"):
         pdf.write(6, r_txt)
     pdf.ln(6)
 
-
-# ─────────── PDF class ────────────────────────────────────────────────────
+# * Main PDF class
 class PlantPDF(FPDF):
     def __init__(self):
         super().__init__(format="Letter")
@@ -257,15 +237,15 @@ class PlantPDF(FPDF):
         self.toc = {t: [] for t in PLANT_TYPE_ORDER}
         self.skip_footer = False
         self.footer_links = []
-        self.set_auto_page_break(auto=True, margin=20)
+        self.set_auto_page_break(auto=True, margin=20)  # LM: Change margin for more/less space at bottom
 
-    # ─────── footer ───────────────────────────────────────────────────────
+    # * Footer: Shows links, plant type, and page number
     def footer(self):
         if self.skip_footer:
             return
         self.set_y(-12)
         self.set_font("Times", "I", 9)
-        # left- source links, centered as a block with fixed spacing
+        # LM: Draws source links centered at the bottom
         gap = 4
         widths = [self.get_string_width(f"[{lab}]") + 2 for lab, _ in self.footer_links]
         total_w = sum(widths) + gap * max(0, len(widths) - 1)
@@ -277,22 +257,20 @@ class PlantPDF(FPDF):
             if i < len(self.footer_links) - 1:
                 self.cell(gap, 6, "")
         self.set_text_color(0, 0, 0)
-        # centre- plant type
+        # LM: Plant type centered
         if self.current_plant_type:
             cx = self.w / 2 - self.get_string_width(self.current_plant_type.title()) / 2
             self.set_xy(cx, -8)
             self.set_text_color(90, 90, 90)
             self.cell(0, 6, self.current_plant_type.title())
-        # right- Rev (moved to header for better styling)
-        # see add_plant for header placement
-        # right- page #
+        # LM: Page number right
         pg = str(self.page_no())
         self.set_text_color(128, 128, 128)
         self.set_xy(self.w - self.r_margin - self.get_string_width(pg), -12)
         self.cell(0, 6, pg)
         self.set_text_color(0, 0, 0)
 
-    # ─────── section divider ──────────────────────────────────────────────
+    # * Section divider page (e.g., "TREES")
     def add_type_divider(self, plant_type):
         self.add_page()
         self.skip_footer = True
@@ -307,18 +285,21 @@ class PlantPDF(FPDF):
         self.cell(0, 20, plant_type.title(), align="C")
         self.skip_footer = False
 
-    # ─────── single plant page ────────────────────────────────────────────
+    # * Add a single plant page
     def add_plant(self, row, plant_type):
-        """Add a single plant page using Layoutmk1 structure."""
+        """
+        Add a single plant page using Layoutmk1 structure.
+        If the content is too long, it will shrink/truncate to fit up to 2 pages.
+        """
         bot_name = safe_text(row.get("Botanical Name", ""))
         base_name = name_slug(bot_name)
         links = []
 
+        # * Gather links for the footer
         for col, label in LINK_LABELS:
             url = row.get(col, "").strip()
             if url and url.upper() != "NA":
                 links.append((label, url))
-
         for tag, url, label_name in parse_other_links(row.get("Link: Others", "")):
             if url and url.upper() != "NA":
                 links.append((tag, url))
@@ -328,7 +309,8 @@ class PlantPDF(FPDF):
         self.current_plant_type = plant_type
         self.current_rev = safe_text(row.get("Rev", "")) or None
         link = self.add_link()
-        max_len = 240
+        max_pages = 2  # LM: Change this to allow more/fewer pages per plant
+        max_len = 240  # LM: Change this to allow more/less text before truncation
 
         while True:
             self.set_auto_page_break(auto=False)
@@ -337,7 +319,7 @@ class PlantPDF(FPDF):
             self.footer_links = links
             self.set_link(link)
 
-            # --- Revision marker ---
+            # * Revision marker (top left)
             if self.current_rev:
                 rev_txt = f"Rev: {self.current_rev}"
                 self.set_font("Times", "I", 9)
@@ -346,7 +328,7 @@ class PlantPDF(FPDF):
                 self.cell(self.get_string_width(rev_txt) + 1, 5, rev_txt)
                 self.set_text_color(0, 0, 0)
 
-            # --- Botanical/Common Name ---
+            # * Botanical/Common Name (centered)
             self.ln(2)
             self.set_font("Times", "I", 18)
             self.set_text_color(22, 92, 34)
@@ -368,7 +350,7 @@ class PlantPDF(FPDF):
 
             self.ln(2)
 
-            # --- Images ---
+            # * Images (up to 3, or placeholder boxes)
             images = sorted(
                 list(IMG_DIR.glob(f"{base_name}_*.jpg"))
                 + list(IMG_DIR.glob(f"{base_name}_*.png"))
@@ -397,12 +379,13 @@ class PlantPDF(FPDF):
 
             self.set_y(y0 + img_h_fixed + 4)
 
-            # --- Characteristics ---
+            # * Characteristics section
             self.set_font("Times", "B", 13)
             self.cell(0, 8, "Characteristics:", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
             self.set_font("Times", "", 12)
             char_parts = []
 
+            # * Add labeled characteristics (color, height, spread, etc.)
             color_text = safe_text(row.get("Bloom Color", ""))
             if color_text:
                 segments = []
@@ -458,7 +441,7 @@ class PlantPDF(FPDF):
             draw_labeled_parts(self, char_parts)
             self.ln(1)
 
-            # --- Attracts + Tolerates inline ---
+            # * Attracts + Tolerates (inline)
             attracts = truncate_text(
                 safe_text(row.get("Attracts", "")), max_len, bot_name, "Attracts"
             )
@@ -477,7 +460,7 @@ class PlantPDF(FPDF):
                     self.write(6, tolerates)
                 self.ln(6)
 
-            # --- Soil / Habitat ---
+            # * Soil / Habitat
             for label, key in [
                 ("Native Habitats", "Native Habitats"),
                 ("Soil Description", "Soil Description"),
@@ -495,7 +478,7 @@ class PlantPDF(FPDF):
                     self.multi_cell(0, 6, val)
             self.ln(4)
 
-            # --- Recommended Uses ---
+            # * Recommended Uses
             self.set_font("Times", "B", 13)
             self.cell(0, 8, "Recommended Uses:", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
             self.set_font("Times", "", 12)
@@ -523,7 +506,7 @@ class PlantPDF(FPDF):
                         self.write(6, head)
                     if i < len(pieces) - 1:
                         self.write(6, "  |  ")
-                self.ln(6)  # <<< Added spacing below UseXYZ block
+                self.ln(6)  # LM: Spacing below UseXYZ block
 
             if uses := truncate_text(
                 safe_text(row.get("Uses", "")), max_len, bot_name, "Uses"
@@ -534,17 +517,16 @@ class PlantPDF(FPDF):
                 self.write(6, uses)
                 self.ln(10)
 
-            # --- Culture ---
+            # * Culture (shrink font if needed)
             if culture := truncate_text(
                 safe_text(row.get("Culture", "")), max_len, bot_name, "Culture"
             ):
-                self.set_font("Times", "B", 12)
-                self.write(6, "Culture: ")
-                self.set_font("Times", "", 12)
-                self.write(6, culture)
-                self.ln(10)  # ← Moderate visual pause
+                self.set_font("Times", "", 11)  # LM: Use 11pt instead of 12pt
+                self.write(5, culture)
+                self.ln(8)  # LM: Slightly less space
+                self.set_font("Times", "", 12)  # LM: Reset for next section
 
-            # --- General Maintenance Level ---
+            # * General Maintenance Level
             level = safe_text(row.get("MaintenanceLevel", "")).capitalize()
             color = {
                 "Low": (34, 139, 34),
@@ -556,9 +538,9 @@ class PlantPDF(FPDF):
             self.set_text_color(*color)
             self.write(6, f" - {level}")
             self.set_text_color(0, 0, 0)
-            self.ln(6)  # ← Slight gap before next bold label
+            self.ln(6)  # LM: Gap before next bold label
 
-            # --- Maintenance Details ---
+            # * Maintenance Details
             val = truncate_text(
                 safe_text(row.get("WFMaintenance", "")),
                 max_len,
@@ -566,7 +548,7 @@ class PlantPDF(FPDF):
                 "WFMaintenance",
             )
             if val:
-                # Normalize prefix variations and strip them if present
+                # Remove redundant prefixes
                 lower = val.lower().lstrip()
                 for p in ("maintenance:", "maintenace:", "maintenence:"):
                     if lower.startswith(p):
@@ -592,8 +574,8 @@ class PlantPDF(FPDF):
             pages_used = end_page - page_start + 1
             self.set_auto_page_break(auto=True, margin=20)
 
-            if pages_used > 1:
-                logging.warning("Truncating %s to fit on a single page", bot_name)
+            if pages_used > max_pages:
+                logging.warning("Truncating %s to fit on two pages", bot_name)
                 for _ in range(pages_used):
                     if self.page in self.pages:
                         del self.pages[self.page]
@@ -605,8 +587,9 @@ class PlantPDF(FPDF):
             self.toc[plant_type].append((bot_name, display_page, link, links))
             break
 
-    # ─────── TOC ───────────────────────────────────────────────────────────
+    # * Table of Contents (TOC)
     def add_table_of_contents(self):
+        # LM: This method auto-breaks pages so TOC sections/entries never bleed into each other.
         self.footer_links = []
         self.skip_footer = False
         self.current_plant_type = "Table of Contents"
@@ -615,20 +598,34 @@ class PlantPDF(FPDF):
         self.cell(0, 12, "Table of Contents", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         self.ln(4)
         self.set_font("Times", "", 12)
-        for ptype in PLANT_TYPE_ORDER:
-            for name, page, link, links in self.toc.get(ptype, []):
-                if name == ptype:
-                    continue
+        y_limit = self.h - 25  # LM: bottom margin
 
         for ptype in PLANT_TYPE_ORDER:
             ent = self.toc.get(ptype, [])
             if ent:
+                # * Check if there's enough space for the section header AND at least one entry
+                if self.get_y() > y_limit - 18:  # 10 for header + 8 for entry
+                    self.add_page()
+                    self.set_font("Times", "B", 16)
+                    self.cell(0, 12, "Table of Contents (cont.)", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                    self.ln(4)
+                    self.set_font("Times", "", 12)
                 self.set_font("Times", "B", 13)
                 self.set_text_color(0, 0, 128)
                 self.cell(0, 8, ptype.title(), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
                 self.set_font("Times", "", 11)
                 self.set_text_color(0, 0, 0)
             for name, page, link, links in ent:
+                if self.get_y() > y_limit - 8:
+                    self.add_page()
+                    self.set_font("Times", "B", 16)
+                    self.cell(0, 12, "Table of Contents (cont.)", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                    self.ln(4)
+                    self.set_font("Times", "B", 13)
+                    self.set_text_color(0, 0, 128)
+                    self.cell(0, 8, ptype.title() + " (cont.)", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                    self.set_font("Times", "", 11)
+                    self.set_text_color(0, 0, 0)
                 self.set_x(self.l_margin)
                 self.cell(self.get_string_width(name) + 2, 6, name, link=link)
                 for lab, url in links:
@@ -652,9 +649,58 @@ class PlantPDF(FPDF):
                     new_y=YPos.NEXT,
                 )
 
+    # * Helpers for fitting/shrinking text (used for advanced fitting)
+    def get_text_height(pdf, text, width, font_family, font_style, font_size):
+        pdf.set_font(font_family, font_style, font_size)
+        lines = pdf.multi_cell(width, pdf.font_size_pt * 1.2, text, split_only=True)
+        return len(lines) * pdf.font_size_pt * 1.2
 
+    def fit_text_to_space(pdf, text, width, max_height, font_family="Times", font_style="", min_font=8, max_font=12):
+        for font_size in range(max_font, min_font - 1, -1):
+            height = pdf.get_text_height(text, width, font_family, font_style, font_size)
+            if height <= max_height:
+                return font_size, text
+        # If nothing fits, truncate text
+        truncated = text
+        while pdf.get_text_height(truncated, width, font_family, font_style, min_font) > max_height and len(truncated) > 10:
+            truncated = truncated[:-10]
+        if len(truncated) < len(text):
+            truncated = truncated.rstrip() + "..."
+        return min_font, truncated
+
+    def write_section(self, label, text, max_len, font_size=11, line_height=5):
+        if text:
+            self.set_font("Times", "B", font_size)
+            self.cell(0, line_height, label, ln=1)
+            self.set_font("Times", "", font_size)
+            self.multi_cell(0, line_height, truncate_text(text, max_len))
+            self.ln(1)
+
+    def fit_section(self, label, text, max_len, min_font=8, max_font=11, line_height=4):
+        for font_size in range(max_font, min_font - 1, -1):
+            self.set_font("Times", "", font_size)
+            n_lines = len(self.multi_cell(0, line_height, truncate_text(text, max_len), split_only=True))
+            needed_height = n_lines * line_height
+            if self.get_y() + needed_height < self.h - 20:
+                self.set_font("Times", "B", font_size)
+                self.cell(0, line_height, label, ln=1)
+                self.set_font("Times", "", font_size)
+                self.multi_cell(0, line_height, truncate_text(text, max_len))
+                self.ln(1)
+                return
+        # If nothing fits, truncate more
+        self.set_font("Times", "B", min_font)
+        self.cell(0, line_height, label, ln=1)
+        self.set_font("Times", "", min_font)
+        self.multi_cell(0, line_height, truncate_text(text, int(max_len * 0.7)) + "...")
+        self.ln(1)
+
+# * MAIN: Parse arguments, load data, and build the PDF
 def main() -> None:
-    """Parse arguments and generate the PDF."""
+    """
+    Parse arguments and generate the PDF.
+    You can change the input/output files and image/logo folders here.
+    """
     global args, REPO, CSV_FILE, IMG_DIR, OUTPUT, TEMPLATE_CSV, LOGO_DIR
     global STYLE_FILE, _style_rules, df
 
@@ -684,6 +730,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    # * Set up paths
     REPO = repo_dir()
     CSV_FILE = (REPO / args.in_csv).resolve()
     IMG_DIR = (REPO / args.img_dir).resolve()
@@ -694,6 +741,7 @@ def main() -> None:
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
+    # * Load plant data
     df = (
         pd.read_csv(CSV_FILE, dtype=str, keep_default_na=False)
         .fillna("")
@@ -709,6 +757,7 @@ def main() -> None:
     if "Page in PDF" in df.columns:
         df["Page in PDF"] = pd.to_numeric(df["Page in PDF"], errors="coerce")
 
+    # * Load style rules (if present)
     STYLE_FILE = REPO / "Templates" / "style_rules.yaml"
     _style_rules = []
     if STYLE_FILE.exists():
@@ -723,19 +772,21 @@ def main() -> None:
     else:
         logging.warning("Style file not found: %s (continuing without it)", STYLE_FILE)
 
+    # * Extend link legend with "other" links found in data
     if "Link: Others" in df.columns:
         for cell in df["Link: Others"]:
             for tag, url, label in parse_other_links(cell):
                 LINK_LEGEND.setdefault(tag, label)
                 LINK_COLORS.setdefault(tag, LINK_COLORS["OTH"])
 
-    # ─────────── build PDF ───────────────────────────────────────────────────
+    # * Build the PDF
     pdf = PlantPDF()
 
-    # title page
+    # * Title page
     pdf.skip_footer = True
     pdf.add_page()
 
+    # * Draw logos on title page
     def find_logo(base: Path, names: list[str]) -> Path | None:
         for stem in names:
             for ext in ("", ".png", ".jpg", ".jpeg"):
@@ -761,6 +812,7 @@ def main() -> None:
 
     draw_logos(pdf, left_logo, right_logo)
 
+    # * Title and legend
     pdf.set_y(70)
     pdf.set_font("Times", "B", 22)
     pdf.set_text_color(0, 70, 120)
@@ -804,30 +856,34 @@ def main() -> None:
     draw_wrapped_legend(pdf)
     pdf.set_font("Times", "", 12)
 
-    # reserve TOC pages
+    # * Reserve TOC pages (will be overwritten later)
     pdf.skip_footer = False
     pdf.add_page()
     pdf.add_page()
     pdf.add_page()
 
-    # add plant pages
+    # * Add plant pages by type
     for ptype in PLANT_TYPE_ORDER:
         grp = df[df["Plant Type"] == ptype]
         if not grp.empty:
             pdf.add_type_divider(ptype)
             for _, row in grp.iterrows():
                 if row.get("Botanical Name", "").strip():
+                    start_page = len(pdf.pages) + 1
                     pdf.add_plant(row, ptype)
-            pdf.skip_footer = False
+                    end_page = len(pdf.pages)
+                    pages_used = end_page - start_page + 1
+                    if pages_used > 2:
+                        logging.warning("Plant %s spans %d pages, consider revising", row.get("Botanical Name", ""), pages_used)
 
     last_type = pdf.current_plant_type
     last_links = pdf.footer_links
-    # fill TOC
+    # * Fill TOC (overwrite reserved pages)
     pdf.page = 2
     pdf.add_table_of_contents()
     pdf.current_plant_type = ""
 
-    # ensure footer on last page
+    # * Ensure footer on last page
     pdf.page = len(pdf.pages)
     pdf.current_plant_type = last_type
     pdf.footer_links = last_links
@@ -839,10 +895,9 @@ def main() -> None:
     pdf.cell(0, 1, "")
     pdf.footer()
 
-    # save
+    # * Save the PDF
     pdf.output(str(OUTPUT))
     print(f"[OK] Exported PDF -> {OUTPUT}")
-
 
 if __name__ == "__main__":
     main()
