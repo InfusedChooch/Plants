@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-# Launcher_lite.py – CTk GUI for the plant-database tool-chain
-# 2025-06-09  portable-layout & resizable console edition
-# todo 
+# Launcher_lite.py – CTk GUI for the plant‑database tool-chain
+# 2025‑06‑09 portable-layout & resizable console edition
 
 import sys, subprocess, threading, queue, customtkinter as ctk
 from tkinter import filedialog
@@ -33,6 +32,7 @@ def prefer(*candidates: Path) -> Path:
 def nice_path(p: Path | str) -> str:
     """Return string path with forward slashes (even on Windows)."""
     return str(p).replace("\\", "/")
+
 
 def latest_masterlist(dir: Path) -> Path:
     """Return newest *_Masterlist_Master.csv within ``dir``."""
@@ -74,8 +74,7 @@ TOOLS = [
         "Plants_Linked_Filled",
         ".csv",
     ),
-
-        (
+    (
         "Excelify.py",
         "--in_csv",
         "--out_xlsx",
@@ -83,8 +82,7 @@ TOOLS = [
         "Plants_Linked_Filled_Review",
         ".xlsx",
     ),
-
-            (
+    (
         "CleanMerge.py:clean",
         "--input",
         "--out",
@@ -92,7 +90,6 @@ TOOLS = [
         "Plants_Linked_Filled_Reviewed_Clean",
         ".csv",
     ),
-
     (
         "GeneratePDF.py",
         "--in_csv",
@@ -101,7 +98,6 @@ TOOLS = [
         "Plant_Guide_EXPORT",
         ".pdf",
     ),
-
     (
         "CleanMerge.py:merge",
         "--input",

@@ -12,24 +12,56 @@ NEW_DIR = Path("Outputs/NewMaster")
 MISSING = {"", "NA", "N/A", "na"}
 
 COLUMN_ORDER = [
-    "Plant Type", "Key", "Botanical Name", "Common Name", "Height (ft)", "Spread (ft)",
-    "Bloom Color", "Bloom Time", "Sun", "Water", "AGCP Regional Status",
-    "USDA Hardiness Zone", "Attracts", "Tolerates", "Soil Description",
-    "Condition Comments", "MaintenanceLevel", "Native Habitats", "Culture", "Uses",
-    "UseXYZ", "WFMaintenance", "Problems",
-    "Link: Missouri Botanical Garden", "Link: Wildflower.org",
-    "Link: Pleasantrunnursery.com", "Link: Newmoonnursery.com",
-    "Link: Pinelandsnursery.com", "Link: Others", "Rev",
+    "Plant Type",
+    "Key",
+    "Botanical Name",
+    "Common Name",
+    "Height (ft)",
+    "Spread (ft)",
+    "Bloom Color",
+    "Bloom Time",
+    "Sun",
+    "Water",
+    "AGCP Regional Status",
+    "USDA Hardiness Zone",
+    "Attracts",
+    "Tolerates",
+    "Soil Description",
+    "Condition Comments",
+    "MaintenanceLevel",
+    "Native Habitats",
+    "Culture",
+    "Uses",
+    "UseXYZ",
+    "WFMaintenance",
+    "Problems",
+    "Link: Missouri Botanical Garden",
+    "Link: Wildflower.org",
+    "Link: Pleasantrunnursery.com",
+    "Link: Newmoonnursery.com",
+    "Link: Pinelandsnursery.com",
+    "Link: Others",
+    "Rev",
 ]
 LINK_COLS = COLUMN_ORDER[-6:-1]
-PLANT_ORDER = ["Herbaceous, Perennial", "Ferns", "Grasses, Sedges, and Rushes", "Shrubs", "Trees"]
+PLANT_ORDER = [
+    "Herbaceous, Perennial",
+    "Ferns",
+    "Grasses, Sedges, and Rushes",
+    "Shrubs",
+    "Trees",
+]
 PLANT_RANK = {pt: i for i, pt in enumerate(PLANT_ORDER)}
+
 
 def to_md(records):
     esc = lambda t: str(t).replace("|", "\\|")
     hdr = ["| Action | Botanical Name | Note |", "|:------:|:---------------|:----|"]
-    rows = [f"| {r['Action']} | {esc(r['Botanical'])} | {esc(r['Note'])} |" for r in records]
+    rows = [
+        f"| {r['Action']} | {esc(r['Botanical'])} | {esc(r['Note'])} |" for r in records
+    ]
     return "\n".join(hdr + rows)
+
 
 def parse_rev_date(rev: str) -> datetime | None:
     rev = rev.strip()
@@ -40,15 +72,23 @@ def parse_rev_date(rev: str) -> datetime | None:
             return None
     return None
 
+
 def clean_csv(input_csv: Path, output_csv: Path) -> None:
-    df = pd.read_csv(input_csv, dtype=str, encoding="utf-8-sig", keep_default_na=False).fillna("")
-    df.columns = [col.replace('\ufeff', '').strip() for col in df.columns]
+    df = pd.read_csv(
+        input_csv, dtype=str, encoding="utf-8-sig", keep_default_na=False
+    ).fillna("")
+    df.columns = [col.replace("\ufeff", "").strip() for col in df.columns]
     df = df.loc[:, ~df.columns.duplicated()]
     desired_cols = COLUMN_ORDER
     log = []
 
     TAG_WORDS = ["Masterlist", "FillMissingData", "GetLinks"]
-    df = df[~df.apply(lambda row: any(any(tag in str(cell) for tag in TAG_WORDS) for cell in row), axis=1)]
+    df = df[
+        ~df.apply(
+            lambda row: any(any(tag in str(cell) for tag in TAG_WORDS) for cell in row),
+            axis=1,
+        )
+    ]
 
     if "Mark Reviewed" in df.columns:
         df.drop(columns=["Mark Reviewed"], inplace=True)
@@ -57,11 +97,17 @@ def clean_csv(input_csv: Path, output_csv: Path) -> None:
         for col in df.columns:
             val = str(df.at[row_idx, col]).strip()
             if val == "Needs Review":
-                log.append({
-                    "Action": "STRIPPED",
-                    "Botanical": df.at[row_idx, "Botanical Name"] if "Botanical Name" in df.columns else "",
-                    "Note": f"Cleared '{col}' (was: \"{val}\")"
-                })
+                log.append(
+                    {
+                        "Action": "STRIPPED",
+                        "Botanical": (
+                            df.at[row_idx, "Botanical Name"]
+                            if "Botanical Name" in df.columns
+                            else ""
+                        ),
+                        "Note": f"Cleared '{col}' (was: \"{val}\")",
+                    }
+                )
                 df.at[row_idx, col] = ""
 
     if "Rev" not in df.columns:
@@ -77,14 +123,24 @@ def clean_csv(input_csv: Path, output_csv: Path) -> None:
 
         stripped = no_rev & df[col].eq("NA")
         for idx in df[stripped].index:
-            log.append({"Action": "CLEANED", "Botanical": df.at[idx, "Botanical Name"],
-                        "Note": f"Cleared '{col}' (was: \"NA\", no Rev)"})
+            log.append(
+                {
+                    "Action": "CLEANED",
+                    "Botanical": df.at[idx, "Botanical Name"],
+                    "Note": f"Cleared '{col}' (was: \"NA\", no Rev)",
+                }
+            )
         df.loc[stripped, col] = ""
 
         inserted = has_rev & df[col].eq("")
         for idx in df[inserted].index:
-            log.append({"Action": "INSERTED", "Botanical": df.at[idx, "Botanical Name"],
-                        "Note": f"Inserted 'NA' into '{col}' (Rev present)"})
+            log.append(
+                {
+                    "Action": "INSERTED",
+                    "Botanical": df.at[idx, "Botanical Name"],
+                    "Note": f"Inserted 'NA' into '{col}' (Rev present)",
+                }
+            )
         df.loc[inserted, col] = "NA"
 
     for col in desired_cols:
@@ -108,9 +164,11 @@ def clean_csv(input_csv: Path, output_csv: Path) -> None:
     else:
         print("No cleaning log to save — no changes found.")
 
+
 def find_latest_master(input_dir: Path) -> Path | None:
     candidates = sorted(input_dir.glob("20??????_Masterlist.csv"), reverse=True)
     return candidates[0] if candidates else None
+
 
 def merge_csv(input_csv: Path, master_csv: Path | None = None) -> None:
     if master_csv is None:
@@ -145,24 +203,49 @@ def merge_csv(input_csv: Path, master_csv: Path | None = None) -> None:
 
         if bn not in mdf.index:
             mdf.loc[bn] = row
-            log.append({"Action": "ADDED", "Botanical": bn, "Note": "New entry from verified list."})
+            log.append(
+                {
+                    "Action": "ADDED",
+                    "Botanical": bn,
+                    "Note": "New entry from verified list.",
+                }
+            )
             continue
 
         m_rev = mdf.at[bn, "Rev"]
         m_date = parse_rev_date(m_rev)
 
         if not v_date:
-                mdf.loc[bn] = row
-                log.append({"Action": "MERGED", "Botanical": bn, "Note": "No Rev, combining fields"})
+            mdf.loc[bn] = row
+            log.append(
+                {
+                    "Action": "MERGED",
+                    "Botanical": bn,
+                    "Note": "No Rev, combining fields",
+                }
+            )
         elif not m_date:
-                mdf.loc[bn] = row
-                log.append({"Action": "MERGED", "Botanical": bn, "Note": "Master has no Rev, replaced"})
+            mdf.loc[bn] = row
+            log.append(
+                {
+                    "Action": "MERGED",
+                    "Botanical": bn,
+                    "Note": "Master has no Rev, replaced",
+                }
+            )
         elif v_date > m_date:
-                mdf.loc[bn] = row
-                log.append({"Action": "MERGED", "Botanical": bn, "Note": "Verified is newer"})
+            mdf.loc[bn] = row
+            log.append(
+                {"Action": "MERGED", "Botanical": bn, "Note": "Verified is newer"}
+            )
         else:
-                log.append({"Action": "SKIPPED", "Botanical": bn, "Note": "Master has newer or equal Rev."})
-
+            log.append(
+                {
+                    "Action": "SKIPPED",
+                    "Botanical": bn,
+                    "Note": "Master has newer or equal Rev.",
+                }
+            )
 
     mdf.reset_index(inplace=True)
     mdf["Plant Type"] = mdf["Plant Type"].map(lambda pt: pt if pt in PLANT_RANK else "")
@@ -177,7 +260,6 @@ def merge_csv(input_csv: Path, master_csv: Path | None = None) -> None:
 
     mdf = mdf[COLUMN_ORDER]
 
-
     out_csv.parent.mkdir(exist_ok=True)
     mdf.to_csv(out_csv, index=False, quoting=csv.QUOTE_ALL)
     print(f"Merged master list saved to: {out_csv}")
@@ -190,10 +272,18 @@ def merge_csv(input_csv: Path, master_csv: Path | None = None) -> None:
 
 def main():
     ap = argparse.ArgumentParser(description="Clean or merge plant data files.")
-    ap.add_argument("--mode", required=True, choices=["clean", "merge"], help="Run mode")
-    ap.add_argument("--input", required=True, type=Path, help="Input CSV (dirty file or verified)")
-    ap.add_argument("--out", type=Path, help="Optional output CSV (auto-names if clean mode)")
-    ap.add_argument("--master", type=Path, help="Optional path to masterlist CSV (for merge)")
+    ap.add_argument(
+        "--mode", required=True, choices=["clean", "merge"], help="Run mode"
+    )
+    ap.add_argument(
+        "--input", required=True, type=Path, help="Input CSV (dirty file or verified)"
+    )
+    ap.add_argument(
+        "--out", type=Path, help="Optional output CSV (auto-names if clean mode)"
+    )
+    ap.add_argument(
+        "--master", type=Path, help="Optional path to masterlist CSV (for merge)"
+    )
     args = ap.parse_args()
 
     if args.mode == "clean" and not args.out:
@@ -205,6 +295,7 @@ def main():
         merge_csv(args.input, args.master)
     else:
         sys.exit("Invalid mode.")
+
 
 if __name__ == "__main__":
     main()

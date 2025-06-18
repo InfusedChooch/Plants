@@ -3,17 +3,22 @@
 # 2025-06-11 (patched with helpers restored)
 
 from __future__ import annotations
-import argparse, csv, re, sys, time
+import argparse
+import csv
+import re
+import sys
+import time
 from pathlib import Path
 from typing import Dict, Optional
 from collections import OrderedDict
-import re
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 from urllib.parse import urlparse
-import hashlib, re, os
+import hashlib
+import os
+
 
 # ───────────────────────────── CLI ────────────────────────────────────────
 def parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
@@ -23,7 +28,9 @@ def parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
         description="Fill missing plant-guide fields from MBG, Wildflower.org "
         "and nursery sites."
     )
-    p.add_argument("--in_csv", default="Outputs/Plants_Linked.csv")  # forward slash not needed
+    p.add_argument(
+        "--in_csv", default="Outputs/Plants_Linked.csv"
+    )  # forward slash not needed
     p.add_argument("--out_csv", default="Outputs/Plants_Linked_Filled.csv")
 
     p.add_argument(
@@ -200,9 +207,8 @@ def missing(v: str | None, rev: str | None = None) -> bool:
     return not s
 
 
-
 def rng(s: str | None) -> str | None:
-    """“1–3 ft” -> “1 - 3” (or None), skip invalid floats like '.' """
+    """“1–3 ft” -> “1 - 3” (or None), skip invalid floats like '.'"""
     if not s:
         return None
     nums = re.findall(r"[\d.]+", s)
@@ -214,7 +220,6 @@ def rng(s: str | None) -> str | None:
         except ValueError:
             continue  # skip invalid float like '.'
     return " - ".join(out) if out else None
-
 
 
 def csv_join(parts: list[str]) -> str | None:
@@ -237,11 +242,8 @@ def merge_field(a: str | None, b: str | None) -> str | None:
         *(re.split(r"[|,]", a) if a else []),
         *(re.split(r"[|,]", b) if b else []),
     ]
-    items = OrderedDict.fromkeys(
-        p.strip() for p in parts if p and p.strip()
-    )
+    items = OrderedDict.fromkeys(p.strip() for p in parts if p and p.strip())
     return ", ".join(items.keys()) if items else None
-
 
 
 def _merge_months(a: str | None, b: str | None) -> str | None:
@@ -281,6 +283,7 @@ def merge_additive(field: str, a: str | None, b: str | None) -> str | None:
         return _merge_colors(a, b)
     return merge_field(a, b)
 
+
 def normalise_botanical(name: str) -> str:
     """
     Force “Genus species 'Cultivar'” capitalisation.
@@ -302,29 +305,30 @@ def normalise_botanical(name: str) -> str:
     # Grab Genus + species (optionally followed by anything else)
     m = re.match(r"^([A-Za-z×\-]+)\s+([A-Za-z×\-]+)(.*)$", name)
     if not m:
-        return name          # unknown format -> leave untouched
+        return name  # unknown format -> leave untouched
 
     genus, species, rest = m.groups()
-    genus   = genus.capitalize()       # Acer, Quercus, ×Chrysanthemum
-    species = species.lower()          # rubrum, palustris, ×grandiflora
+    genus = genus.capitalize()  # Acer, Quercus, ×Chrysanthemum
+    species = species.lower()  # rubrum, palustris, ×grandiflora
 
     rest = rest.strip()
 
     # If it *does* have quotes, title-case the inside
     if rest.startswith("'"):
         inner = rest.strip("'").strip()
-        rest = f"'{inner.title()}'"    #  'Blue Star'  not  'blue star'
+        rest = f"'{inner.title()}'"  #  'Blue Star'  not  'blue star'
 
     return " ".join(filter(None, [genus, species, rest]))
+
 
 def gen_key(botanical: str, used: set[str]) -> str:
     """Build a unique plant key from botanical name."""
     # * Ensures each plant has a stable identifier
     if not botanical:
-        base = "XX"        # fallback for badly-formed rows
+        base = "XX"  # fallback for badly-formed rows
     else:
         parts = botanical.split()
-        genus_letter   = parts[0][0].upper() if parts else "X"
+        genus_letter = parts[0][0].upper() if parts else "X"
         species_letter = parts[1][0].upper() if len(parts) > 1 else "X"
 
         # look for 'Cultivar Name'
@@ -688,8 +692,7 @@ def parse_mbg(html: str) -> Dict[str, Optional[str]]:
         "Culture": section("Culture") or section("Growing Tips"),
         "Uses": section("Uses"),
         "Problems": section("Problems"),
-        "Zone": (f"Zone {grab('Zone')}" if grab("Zone") else None
-        ),
+        "Zone": (f"Zone {grab('Zone')}" if grab("Zone") else None),
     }
 
 
@@ -775,7 +778,6 @@ def parse_pn(html: str) -> Dict[str, Optional[str]]:
     return {k: v for k, v in data.items() if v}
 
 
-
 def gen_key(botanical: str, used: set[str]) -> str:
     """Generate a short unique key for each plant."""
     # * Helps track plants across spreadsheets
@@ -795,6 +797,7 @@ def gen_key(botanical: str, used: set[str]) -> str:
     used.add(key)
     return key
 
+
 def normalise_botanical(name: str) -> str:
     """Return botanical name as “Genus species 'Cultivar'”."""
     # // Provides consistent formatting for lookups
@@ -806,7 +809,7 @@ def normalise_botanical(name: str) -> str:
 
     m = re.match(r"^([A-Za-z×\-]+)\s+([A-Za-z×\-]+)(.*)$", name)
     if not m:
-        return name          # something odd – leave unchanged
+        return name  # something odd – leave unchanged
 
     genus, species, rest = m.groups()
     genus, species = genus.capitalize(), species.lower()
@@ -824,20 +827,24 @@ def normalise_botanical(name: str) -> str:
     parts = [genus, species] + ([rest] if rest else [])
     return " ".join(parts)
 
+
 # ──────────────────────────── main routine ────────────────────────────────
 def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
     """Fill missing plant data using various website scrapers."""
     # * Core driver for the enrichment process
     df = pd.read_csv(in_csv, dtype=str, keep_default_na=False).fillna("")
 
-    df.rename(columns={
-        "Link: Missouri Botanical Garden": "MBG Link",
-        "Link: Wildflower.org": "WF Link",
-        "Link: Pleasantrunnursery.com": "PR Link",
-        "Link: Newmoonnursery.com": "NM Link",
-        "Link: Pinelandsnursery.com": "PN Link",
-        "Distribution": "USDA Hardiness Zone",
-    }, inplace=True)
+    df.rename(
+        columns={
+            "Link: Missouri Botanical Garden": "MBG Link",
+            "Link: Wildflower.org": "WF Link",
+            "Link: Pleasantrunnursery.com": "PR Link",
+            "Link: Newmoonnursery.com": "NM Link",
+            "Link: Pinelandsnursery.com": "PN Link",
+            "Distribution": "USDA Hardiness Zone",
+        },
+        inplace=True,
+    )
 
     for col in MBG_COLS | WF_COLS | PR_COLS | NM_COLS | PN_COLS:
         if col not in df.columns:
@@ -927,26 +934,36 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
         df.at[idx, "Water"] = clean(df.at[idx, "Water"])
         df.at[idx, "Tolerates"] = clean(df.at[idx, "Tolerates"])
         df.at[idx, "Soil Description"] = clean(df.at[idx, "Soil Description"])
-        df.at[idx, "Bloom Time"] = merge_additive("Bloom Time", df.at[idx, "Bloom Time"], None)
-        df.at[idx, "Bloom Color"] = merge_additive("Bloom Color", df.at[idx, "Bloom Color"], None)
+        df.at[idx, "Bloom Time"] = merge_additive(
+            "Bloom Time", df.at[idx, "Bloom Time"], None
+        )
+        df.at[idx, "Bloom Color"] = merge_additive(
+            "Bloom Color", df.at[idx, "Bloom Color"], None
+        )
 
     if "Zone" in df.columns:
         if "USDA Hardiness Zone" in df.columns:
             df["USDA Hardiness Zone"] = df["USDA Hardiness Zone"].where(
-                df["USDA Hardiness Zone"].astype(bool), df["Zone"])
+                df["USDA Hardiness Zone"].astype(bool), df["Zone"]
+            )
         else:
             df.rename(columns={"Zone": "USDA Hardiness Zone"}, inplace=True)
         df.drop(columns=["Zone"], errors="ignore", inplace=True)
 
-    df.rename(columns={
-        "MBG Link": "Link: Missouri Botanical Garden",
-        "WF Link":  "Link: Wildflower.org",
-        "PR Link":  "Link: Pleasantrunnursery.com",
-        "NM Link":  "Link: Newmoonnursery.com",
-        "PN Link":  "Link: Pinelandsnursery.com",
-    }, inplace=True)
+    df.rename(
+        columns={
+            "MBG Link": "Link: Missouri Botanical Garden",
+            "WF Link": "Link: Wildflower.org",
+            "PR Link": "Link: Pleasantrunnursery.com",
+            "NM Link": "Link: Newmoonnursery.com",
+            "PN Link": "Link: Pinelandsnursery.com",
+        },
+        inplace=True,
+    )
 
-    template_cols = list(pd.read_csv(master_csv, nrows=0, keep_default_na=False).columns)
+    template_cols = list(
+        pd.read_csv(master_csv, nrows=0, keep_default_na=False).columns
+    )
     for c in template_cols:
         if c not in df.columns:
             df[c] = ""
@@ -956,6 +973,7 @@ def fill_csv(in_csv: Path, out_csv: Path, master_csv: Path) -> None:
     # // Ensure uniform quoting across all columns
     df.to_csv(out_csv, index=False, quoting=csv.QUOTE_ALL, na_rep="")
     print(f"[OK] saved -> {out_csv.relative_to(REPO)}")
+
 
 # ────────────────────────── entrypoint ────────────────────────────────────
 if __name__ == "__main__":

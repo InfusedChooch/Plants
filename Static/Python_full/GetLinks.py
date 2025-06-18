@@ -35,6 +35,7 @@ args = parser.parse_args()
 
 # --- Repo layout & path helpers -----------------------------------------
 
+
 def repo_dir() -> Path:
     """
     Return the root of the project folder.
@@ -45,7 +46,10 @@ def repo_dir() -> Path:
     if getattr(sys, "frozen", False):
         exe_dir = Path(sys.executable).resolve().parent
         # If we're in .../_internal/helpers/, go up 2
-        if exe_dir.name.lower() == "helpers" and exe_dir.parent.name.lower() == "_internal":
+        if (
+            exe_dir.name.lower() == "helpers"
+            and exe_dir.parent.name.lower() == "_internal"
+        ):
             return exe_dir.parent.parent
         return exe_dir.parent  # fallback: go up 1
     here = Path(__file__).resolve()
@@ -76,7 +80,9 @@ def repo_path(arg: str | Path) -> Path:
 
 INPUT = repo_path(args.in_csv)  # e.g.  .../Outputs/Plants_NeedLinks.csv
 OUTPUT = repo_path(args.out_csv)  # e.g.  .../Outputs/Plants_Linked.csv
-MASTER = repo_path(args.master_csv)  # e.g.  .../Templates/Plants_Linked_Filled_Master.csv
+MASTER = repo_path(
+    args.master_csv
+)  # e.g.  .../Templates/Plants_Linked_Filled_Master.csv
 
 # first run from a fresh flash-drive: make sure Outputs exists
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
@@ -222,7 +228,8 @@ def find_chrome() -> Path:
         return launcher
 
     raise SystemExit(
-        "[ERROR] Chrome not found - place portable Chrome in " "Static\\GoogleChromePortable"
+        "[ERROR] Chrome not found - place portable Chrome in "
+        "Static\\GoogleChromePortable"
     )
 
 
