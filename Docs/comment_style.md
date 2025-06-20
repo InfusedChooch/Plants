@@ -3,7 +3,7 @@
 This project uses the VS Code **better-comments** extension. Tags:
 
 - `*` : Important information
-- `!` : Deprecated method
+- `!` : Possible Bug
 - `?` : Something to consider
 - `TODO` : Next steps
 - `LM:` : Layman-facing notes
